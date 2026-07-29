@@ -1,0 +1,11 @@
+{
+    "BUREAU_BALANCE": {
+        "group_col": "SK_ID_BUREAU",
+        "numeric_agg": {
+            "MONTHS_BALANCE": ["min", "max", "count"]
+        },
+        "categorical_agg": {
+            "STATUS": ["value_counts"]
+        }
+    }
+}
