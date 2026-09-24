@@ -14,7 +14,7 @@ warnings.filterwarnings('ignore')
 optuna.logging.set_verbosity(optuna.logging.WARNING)
 
 # 1. ĐỌC DỮ LIỆU
-file_path = '../../../data/processed/master_train_dataset_v4_clean.parquet'
+file_path = '../../data/processed/master_train_dataset_v4_clean.parquet'
 print("=" * 75)
 print(f"📂 [XGBOOST TUNING] Đang tải file: {file_path}")
 print("=" * 75)
