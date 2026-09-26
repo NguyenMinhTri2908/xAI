@@ -5,3 +5,6 @@ __pycache__/
 assets/external/
 *.py[cod]
 /data/
+.DS_Store
+venv/
+.venv/
