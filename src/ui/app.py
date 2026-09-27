@@ -1,233 +1,189 @@
 import reflex as rx
 from src.ui.state import UnderwritingState
-from src.ui.components.header import header_view
 
-# Policy Cut-off Threshold (5.0% PD)
-CUTOFF_THRESHOLD = 5.0
-
-
-def recommendation_badge(pd_score: float) -> rx.Component:
-    """Renders binary underwriting decision support badge."""
-    return rx.cond(
-        pd_score < CUTOFF_THRESHOLD,
-        rx.badge("RECOMMEND APPROVE", color_scheme="green", size="3", variant="surface"),
-        rx.badge("RECOMMEND REJECT", color_scheme="red", size="3", variant="surface"),
-    )
+# Import các components con đã module hóa
+from src.ui.components.shap_card import shap_card_view
+from src.ui.components.kpi_card import kpi_card_view
+from src.ui.components.cash_flow import cash_flow_view
+from src.ui.components.what_if import what_if_view
+from src.ui.components.decision_notes import decision_notes_view
 
 
-def factor_row(factor: dict, is_risk: bool = True) -> rx.Component:
-    """Renders a single SHAP attribution factor row safely using Reflex Var operations."""
-    color = "red" if is_risk else "green"
-    sign = "+" if is_risk else ""
+def top_fixed_header() -> rx.Component:
     return rx.box(
-        rx.hstack(
-            rx.vstack(
-                rx.text(factor["feature"], weight="bold", size="2"),
+        rx.box(
+            rx.hstack(
+                # Nút mở Sidebar Drawer (Đẩy ngang từ trái qua phải)
                 rx.hstack(
-                    rx.text("Observed Value:", size="1", color_scheme="gray"),
-                    rx.text(factor["display_value"].to_string(), size="1", color_scheme="gray"),
-                    spacing="1",
+                    rx.drawer.root(
+                        rx.drawer.trigger(
+                            rx.button(
+                                rx.icon("panel-left", size=18),
+                                rx.text("Queue", size="2"),
+                                variant="surface",
+                                color_scheme="gray",
+                                size="2",
+                                cursor="pointer",
+                            )
+                        ),
+                        rx.drawer.overlay(background="rgba(0, 0, 0, 0.6)"),
+                        # side="left" bảo đảm đẩy ngang từ hông trái ra
+                        rx.drawer.content(
+                            rx.vstack(
+                                rx.hstack(
+                                    rx.vstack(
+                                        rx.heading("Loan Applications Queue", size="4", color="white"),
+                                        rx.text("Select a client to evaluate", size="1", color="#9CA3AF"),
+                                        spacing="0",
+                                    ),
+                                    rx.spacer(),
+                                    rx.drawer.close(
+                                        rx.button(rx.icon("x", size=18), variant="ghost", color_scheme="gray", size="1")
+                                    ),
+                                    width="100%",
+                                    align="center",
+                                    padding_bottom="3",
+                                    border_bottom="1px solid #1F2937",
+                                ),
+                                # Danh sách bảng trong Drawer
+                                rx.box(
+                                    rx.table.root(
+                                        rx.table.header(
+                                            rx.table.row(
+                                                rx.table.column_header_cell("Client ID"),
+                                                rx.table.column_header_cell("Income"),
+                                                rx.table.column_header_cell("Action"),
+                                            )
+                                        ),
+                                        rx.table.body(
+                                            rx.foreach(
+                                                UnderwritingState.client_list,
+                                                lambda row: rx.table.row(
+                                                    rx.table.cell(rx.text(row["SK_ID_CURR"], weight="medium", size="2")),
+                                                    rx.table.cell(rx.text(row["INCOME_DISPLAY"], size="2")),
+                                                    rx.table.cell(
+                                                        rx.drawer.close(
+                                                            rx.button(
+                                                                "Open",
+                                                                size="1",
+                                                                variant=rx.cond(
+                                                                    UnderwritingState.selected_client_id == row["SK_ID_CURR"].to_string(),
+                                                                    "solid",
+                                                                    "soft",
+                                                                ),
+                                                                on_click=lambda: UnderwritingState.select_and_evaluate_client(
+                                                                    row["SK_ID_CURR"].to_string()
+                                                                ),
+                                                            )
+                                                        )
+                                                    ),
+                                                    style={
+                                                        "background_color": rx.cond(
+                                                            UnderwritingState.selected_client_id == row["SK_ID_CURR"].to_string(),
+                                                            "#1F2937",
+                                                            "transparent",
+                                                        )
+                                                    },
+                                                ),
+                                            )
+                                        ),
+                                        width="100%",
+                                        variant="surface",
+                                    ),
+                                    overflow_y="auto",
+                                    max_height="80vh",
+                                    width="100%",
+                                ),
+                                spacing="4",
+                                padding="4",
+                                height="100%",
+                                background="#111827",
+                            ),
+                            side="left",
+                            width="360px",
+                        ),
+                    ),
+                    rx.badge("#LN-2026-8891", color_scheme="blue", variant="surface", size="2"),
+                    rx.text("Trần Văn A", font_weight="bold", size="3", color="white"),
+                    rx.badge("Age: 34", variant="soft", color_scheme="gray"),
+                    spacing="3",
+                    align="center",
                 ),
-                align_items="start",
-                spacing="1",
-            ),
-            rx.spacer(),
-            rx.badge(
+                # Thông tin Loan Terms & Cut-off 16%
                 rx.hstack(
-                    rx.text(sign),
-                    rx.text(factor["shap_value"].to_string()),
-                    spacing="0",
+                    rx.vstack(
+                        rx.text("LOAN TERMS", size="1", color="#9CA3AF", font_weight="bold"),
+                        rx.text("$25,000 / 24 mos", font_weight="bold", size="2", color="white"),
+                        rx.text("Suggested Rate: 11.2% APR (Tier B)", size="1", color="#9CA3AF"),
+                        align_items="flex-end",
+                        spacing="0",
+                    ),
+                    rx.divider(orientation="vertical", size="2", color_scheme="gray"),
+                    rx.vstack(
+                        rx.badge("PD: 4.8%", color_scheme="amber", size="3", variant="solid"),
+                        rx.text("Cut-off: 16.0%", size="1", color="#9CA3AF"),
+                        align_items="center",
+                        spacing="0",
+                    ),
+                    spacing="4",
+                    align="center",
                 ),
-                color_scheme=color,
-                variant="surface",
-                size="2",
+                justify="between",
+                width="100%",
+                align="center",
             ),
-            align="center",
-            width="100%",
-            padding_y="2",
+            max_width="1600px",
+            margin="0 auto",
+            padding_x="6",
+            padding_y="3",
         ),
-        rx.divider(color_scheme="gray", opacity="0.3"),
+        position="sticky",
+        top="0",
+        z_index="50",
+        background="#0F172A",
+        border_bottom="1px solid #1E293B",
+        box_shadow="0 4px 6px -1px rgba(0, 0, 0, 0.3)",
+        width="100%",
     )
 
 
 def index() -> rx.Component:
-    return rx.container(
-        # Top Navigation Bar
-        header_view(),
+    return rx.box(
+        top_fixed_header(),
 
-
-
-        # Main Dashboard Layout: 2 Columns
-        rx.grid(
-            # Left Column: Client Queue
-            rx.vstack(
-                rx.heading("Loan Applications Queue", size="4"),
-                rx.text("Select a client to run automated risk assessment", size="2", color_scheme="gray"),
-
-                rx.box(
-                    rx.table.root(
-                        rx.table.header(
-                            rx.table.row(
-                                rx.table.column_header_cell("Client ID"),
-                                rx.table.column_header_cell("Income"),
-                                rx.table.column_header_cell("Requested Loan"),
-                                rx.table.column_header_cell("Action"),
-                            )
-                        ),
-                        rx.table.body(
-                            rx.foreach(
-                                UnderwritingState.client_list,
-                                lambda row: rx.table.row(
-                                    rx.table.cell(rx.text(row["SK_ID_CURR"], weight="medium")),
-                                    rx.table.cell(row["INCOME_DISPLAY"]),
-                                    rx.table.cell(row["CREDIT_DISPLAY"]),
-                                    rx.table.cell(
-                                        rx.button(
-                                            "Evaluate",
-                                            size="1",
-                                            variant=rx.cond(
-                                                UnderwritingState.selected_client_id == row["SK_ID_CURR"].to_string(),
-                                                "solid",
-                                                "soft",
-                                            ),
-                                            on_click=lambda: UnderwritingState.select_and_evaluate_client(
-                                                row["SK_ID_CURR"].to_string()
-                                            ),
-                                        )
-                                    ),
-                                    style={
-                                        "background_color": rx.cond(
-                                            UnderwritingState.selected_client_id == row["SK_ID_CURR"].to_string(),
-                                            "#18181b",
-                                            "transparent",
-                                        )
-                                    },
-                                )
-                            )
-                        ),
-                        width="100%",
-                        variant="surface",
-                    ),
-                    max_height="640px",
-                    overflow_y="auto",
-                    width="100%",
-                    border="1px solid #27272a",
-                    border_radius="8px",
+        # Khung nội dung chính với giới hạn max_width và padding 2 bên cân đối
+        rx.box(
+            rx.hstack(
+                # CỘT TRÁI (70%): BẢO ĐẢM RỘNG RÃI CHO BIỂU ĐỒ SHAP
+                rx.vstack(
+                    shap_card_view(),
+                    spacing="4",
+                    width="70%",
                 ),
-                align_items="start",
-                spacing="3",
-                width="100%",
-            ),
 
-            # Right Column: Underwriting Decision & SHAP Attribution
-            rx.vstack(
-                rx.heading("Underwriting Assessment Report", size="4"),
-
-                rx.cond(
-                    UnderwritingState.selected_client_id != "",
-                    rx.vstack(
-                        # KPI Card
-                        rx.card(
-                            rx.vstack(
-                                rx.hstack(
-                                    rx.hstack(
-                                        rx.text("Application: #", size="3", weight="bold"),
-                                        rx.text(UnderwritingState.selected_client_id, size="3", weight="bold"),
-                                        spacing="0",
-                                    ),
-                                    rx.spacer(),
-                                    recommendation_badge(UnderwritingState.current_score_percent),
-                                    width="100%",
-                                    align="center",
-                                ),
-                                rx.hstack(
-                                    rx.vstack(
-                                        rx.text("Probability of Default (PD)", size="2", color_scheme="gray"),
-                                        rx.text(
-                                            UnderwritingState.current_score_percent.to_string() + "%",
-                                            size="7",
-                                            weight="bold",
-                                            color_scheme=rx.cond(
-                                                UnderwritingState.current_score_percent < CUTOFF_THRESHOLD,
-                                                "green",
-                                                "red",
-                                            ),
-                                        ),
-                                        align_items="start",
-                                    ),
-                                    rx.spacer(),
-                                    rx.vstack(
-                                        rx.text("Recommended Action", size="2", color_scheme="gray"),
-                                        rx.text(
-                                            rx.cond(
-                                                UnderwritingState.current_score_percent < CUTOFF_THRESHOLD,
-                                                "APPROVE",
-                                                "REJECT",
-                                            ),
-                                            size="5",
-                                            weight="bold",
-                                            color_scheme=rx.cond(
-                                                UnderwritingState.current_score_percent < CUTOFF_THRESHOLD,
-                                                "green",
-                                                "red",
-                                            ),
-                                        ),
-                                        align_items="end",
-                                    ),
-                                    width="100%",
-                                    align="center",
-                                    padding_top="2",
-                                ),
-                                spacing="2",
-                            ),
-                            width="100%",
-                        ),
-
-                        # SHAP Drivers
-                        rx.card(
-                            rx.vstack(
-                                rx.heading("Key Risk Drivers (Top Negative Factors)", size="3", color_scheme="red"),
-                                rx.foreach(
-                                    UnderwritingState.top_risk_factors,
-                                    lambda f: factor_row(f, is_risk=True),
-                                ),
-                                rx.heading(
-                                    "Key Trust Factors (Top Positive Factors)",
-                                    size="3",
-                                    color_scheme="green",
-                                    padding_top="3",
-                                ),
-                                rx.foreach(
-                                    UnderwritingState.top_positive_factors,
-                                    lambda f: factor_row(f, is_risk=False),
-                                ),
-                                spacing="2",
-                                width="100%",
-                            ),
-                            width="100%",
-                        ),
-                        spacing="4",
-                        width="100%",
-                    ),
-                    rx.card(
-                        rx.text(
-                            "Please select an application record from the queue to view assessment.",
-                            color_scheme="gray",
-                        ),
-                        width="100%",
-                    ),
+                # CỘT PHẢI (30%): KPI, CASH FLOW, SIMULATOR & DECISION NOTES
+                rx.vstack(
+                    kpi_card_view(),
+                    cash_flow_view(),
+                    what_if_view(),
+                    decision_notes_view(),
+                    spacing="4",
+                    width="30%",
                 ),
-                align_items="start",
-                spacing="3",
                 width="100%",
+                spacing="5",
+                align_items="flex-start",
             ),
-            columns="2",
-            spacing="6",
+            max_width="1600px",
+            margin="0 auto",
+            padding_x="6",
+            padding_y="5",
             width="100%",
-            padding_top="4",
         ),
         on_mount=UnderwritingState.load_demo_clients,
-        max_width="1280px",
+        width="100%",
+        min_height="100vh",
+        background="#090D16",
     )
 
 

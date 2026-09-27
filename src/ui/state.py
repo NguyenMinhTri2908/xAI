@@ -98,7 +98,30 @@ class UnderwritingState(rx.State):
         self.current_score_percent = result["score_percent"]
         self.current_tier = result["tier"]
         self.current_decision = result["decision"]
-        self.top_risk_factors = result["top_risk_factors"]
-        self.top_positive_factors = result["top_positive_factors"]
+
+        # Lấy danh sách thô từ kết quả suy luận
+        raw_risks = [dict(item) for item in result.get("top_risk_factors", [])]
+        raw_positives = [dict(item) for item in result.get("top_positive_factors", [])]
+
+        # 1. Tính bar_width cho nhóm Risk (Thanh đỏ - Increases risk)
+        if raw_risks:
+            max_risk = max([abs(float(f.get("shap_value", 0.0))) for f in raw_risks])
+            if max_risk == 0:
+                max_risk = 1.0
+            for f in raw_risks:
+                pct = round((abs(float(f.get("shap_value", 0.0))) / max_risk) * 100, 1)
+                f["bar_width"] = f"{max(pct, 6.0)}%"  # Tối thiểu 6% để thanh không bị ẩn
+
+        # 2. Tính bar_width cho nhóm Trust (Thanh xanh - Reduces risk)
+        if raw_positives:
+            max_trust = max([abs(float(f.get("shap_value", 0.0))) for f in raw_positives])
+            if max_trust == 0:
+                max_trust = 1.0
+            for f in raw_positives:
+                pct = round((abs(float(f.get("shap_value", 0.0))) / max_trust) * 100, 1)
+                f["bar_width"] = f"{max(pct, 6.0)}%"
+
+        self.top_risk_factors = raw_risks
+        self.top_positive_factors = raw_positives
 
         self.is_loading = False
