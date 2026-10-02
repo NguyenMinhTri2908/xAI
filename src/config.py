@@ -8,7 +8,7 @@ SRC_DIR = Path(__file__).resolve().parent
 # 2. Model Directory: Lưu TRỰC TIẾP trong src/models/
 MODEL_DIR = os.path.join(SRC_DIR, "models")
 
-CONFIG_PATH = os.path.join(MODEL_DIR, "blend_config_v2.json")
+CONFIG_PATH = os.path.join(MODEL_DIR, "feature_constraints.json")
 BENCHMARK_PATH = os.path.join(MODEL_DIR, "train_benchmarks.json")
 SCHEMA_PATH = os.path.join(MODEL_DIR, "feature_metadata.json")
 

@@ -46,6 +46,7 @@ RAW_BUREAU_MAP_PATH = os.path.join(DATA_RAW_DIR, "bureau.csv")
 PROD_DIR = DATA_PRODUCTION_DIR
 OUTPUT_MASTER_PATH = MASTER_TEST_PARQUET
 OUTPUT_DEMO_PATH = DEMO_SAMPLES_PARQUET
+FEATURE_DICT_PATH = os.path.join(BASE_DIR, "src/models/feature_dictionary.json")
 
 FAIR_PROHIBITED_COLUMNS = [
     'CODE_GENDER', 'NAME_FAMILY_STATUS', 'CNT_CHILDREN', 'CNT_FAM_MEMBERS',
@@ -61,6 +62,43 @@ def load_json_artifact(filepath: str) -> dict:
         raise FileNotFoundError(f"Missing required artifact: {filepath}")
     with open(filepath, "r", encoding="utf-8") as f:
         return json.load(f)
+
+
+def update_feature_dictionary(feature_table_map: dict, output_path: str):
+    """
+    Cập nhật từ điển đặc trưng chuẩn tinh gọn:
+    - Chỉ lưu duy nhất 2 trường: 'table' (tên bảng raw) và 'description'.
+    - Lọc bỏ sạch sẽ các trường rác cũ (source, tag).
+    - Bảo toàn 100% nội dung description đã tự nhập tay trước đó.
+    """
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    existing_dict = {}
+    if os.path.exists(output_path):
+        try:
+            with open(output_path, "r", encoding="utf-8") as f:
+                existing_dict = json.load(f)
+        except Exception:
+            existing_dict = {}
+
+    cleaned_dict = {}
+    for feat, tbl in feature_table_map.items():
+        # Lấy description cũ nếu đã có (và không phải là giá trị tự gen dạng title-case cũ)
+        old_desc = ""
+        if feat in existing_dict:
+            old_desc = existing_dict[feat].get("description", "")
+            # Nếu description cũ trùng khớp với tên cột biến đổi title thì reset rỗng để nhập tay
+            if old_desc == feat.replace("_", " ").title():
+                old_desc = ""
+
+        # Cấu trúc tinh gọn tuyệt đối: CHỈ CÓ table VÀ description
+        cleaned_dict[feat] = {
+            "table": tbl,
+            "description": old_desc
+        }
+
+    with open(output_path, "w", encoding="utf-8") as f:
+        json.dump(cleaned_dict, f, indent=4, ensure_ascii=False)
+    print(f"📖 Đã tinh gọn và đồng bộ {len(cleaned_dict)} đặc trưng vào: {output_path}")
 
 
 def prepare_bureau_balance_client_level() -> pd.DataFrame:
@@ -119,40 +157,55 @@ def build_master_dataset():
     initial_rows = len(df_master)
     print(f"   • Baseline Master Test records: {initial_rows:,} clients | {df_master.shape[1]} columns")
 
-    # 3. Step-by-Step Cascading Joins with Sub-Tables (Sử dụng bộ dò file tự động)
+    # Bộ theo dõi nguồn gốc theo đúng tên bảng raw gốc
+    column_source_tracker = {}
+    for col in df_master.columns:
+        if col != 'SK_ID_CURR':
+            column_source_tracker[col] = "application"
+
+    # 3. Step-by-Step Cascading Joins with Sub-Tables (Đúng chuẩn tên bảng RAW)
     sub_tables = [
-        ("Bureau", "df_bureau_clean_fe.parquet"),
-        ("Previous Application", "prev_app_clean_fe_v2.parquet"),
-        ("POS CASH Balance", "pos_cash_clean_FE.parquet"),
-        ("Installments Payments", "installments_payments_clean_FE.parquet"),
-        ("Credit Card Balance", "credit_card_balance_aggregated.parquet")
+        ("bureau", "df_bureau_clean_fe.parquet"),
+        ("previous_application", "prev_app_clean_fe_v2.parquet"),
+        ("POS_CASH_balance", "pos_cash_clean_FE.parquet"),
+        ("installments_payments", "installments_payments_clean_FE.parquet"),
+        ("credit_card_balance", "credit_card_balance_aggregated.parquet")
     ]
 
+    # 3.1. Merge Bureau Balance
     df_bb_curr = prepare_bureau_balance_client_level()
     if not df_bb_curr.empty:
         cols_to_use = df_bb_curr.columns.difference(df_master.columns).tolist() + ['SK_ID_CURR']
+        for col in cols_to_use:
+            if col != 'SK_ID_CURR':
+                column_source_tracker[col] = "bureau_balance"
         df_master = df_master.merge(df_bb_curr[cols_to_use], on='SK_ID_CURR', how='left')
         del df_bb_curr
         gc.collect()
 
-    for name, filename in sub_tables:
+    # 3.2. Merge các sub-tables
+    for raw_name, filename in sub_tables:
         resolved_path = find_file(filename)
         if not resolved_path:
-            print(f"⚠️ [{name}] File '{filename}' not found in any search path. Skipping!")
+            print(f"⚠️ [{raw_name}] File '{filename}' not found in any search path. Skipping!")
             continue
 
-        print(f"⏳ Left-joining with {name} từ {resolved_path}...")
+        print(f"⏳ Left-joining with {raw_name} từ {resolved_path}...")
         df_sub = pd.read_parquet(resolved_path)
 
         if 'SK_ID_CURR' not in df_sub.columns:
             if df_sub.index.name == 'SK_ID_CURR' or 'SK_ID_CURR' in str(df_sub.index.names):
                 df_sub = df_sub.reset_index()
             else:
-                print(f"   ❌ Missing 'SK_ID_CURR' in {name}. Skipping!")
+                print(f"   ❌ Missing 'SK_ID_CURR' in {raw_name}. Skipping!")
                 del df_sub
                 continue
 
         cols_to_use = df_sub.columns.difference(df_master.columns).tolist() + ['SK_ID_CURR']
+        for col in cols_to_use:
+            if col != 'SK_ID_CURR':
+                column_source_tracker[col] = raw_name
+
         df_master = df_master.merge(df_sub[cols_to_use], on='SK_ID_CURR', how='left')
         print(f"   ✓ Merged! Current total columns: {df_master.shape[1]}")
 
@@ -160,22 +213,27 @@ def build_master_dataset():
         gc.collect()
 
     # 4. Integrity Validation
-    assert len(
-        df_master) == initial_rows, f"❌ Data Integrity Failed: Row count changed from {initial_rows} to {len(df_master)}!"
+    assert len(df_master) == initial_rows, f"❌ Data Integrity Failed: Row count changed from {initial_rows} to {len(df_master)}!"
     print(f"✅ Row integrity verified: Exact {initial_rows:,} clients preserved.")
 
     # 5. Fair-Lending Enforcement: Strip prohibited demographic and proxy attributes
     drop_fair = [c for c in FAIR_PROHIBITED_COLUMNS if c in df_master.columns]
     if drop_fair:
         df_master.drop(columns=drop_fair, inplace=True)
-        print(f"🛡️ Fair Lending: Stripped {len(drop_fair)} sensitive/proxy attributes.")
+        print(f"🛡️️ Fair Lending: Stripped {len(drop_fair)} sensitive/proxy attributes.")
 
     # 6. Data Contract Feature Alignment (Tối ưu chống phân mảnh RAM)
     print("📐 Aligning feature matrix with trained ensemble model contract...")
     final_cols = ['SK_ID_CURR'] + target_features
 
-    # Sử dụng reindex thay cho vòng lặp gán np.nan (Triệt tiêu 100% PerformanceWarning)
     df_final = df_master.reindex(columns=final_cols)
+
+    # ĐỒNG BỘ FEATURE DICTIONARY: Đúng tên bảng raw và description
+    model_feature_table_map = {
+        feat: column_source_tracker.get(feat, "application")
+        for feat in target_features
+    }
+    update_feature_dictionary(model_feature_table_map, FEATURE_DICT_PATH)
 
     # Ép kiểu dữ liệu phân loại theo schema
     for cat_col, map_info in categorical_mappings.items():

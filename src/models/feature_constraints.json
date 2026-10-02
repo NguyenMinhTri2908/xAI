@@ -1,7 +1,7 @@
 {
     "best_weight_lgb": 0.5,
     "best_weight_xgb": 0.5,
-    "ensemble_auc": 0.7922645214106693,
+
     "feature_names": [
         "AMT_INCOME_TOTAL",
         "AMT_CREDIT",
