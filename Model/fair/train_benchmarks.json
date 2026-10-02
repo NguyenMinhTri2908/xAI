@@ -1,0 +1,40 @@
+{
+    "income_cap_999": 900000.0,
+    "annuity_median": 24903.0,
+    "overall_median_income": 147150.0,
+    "occ_income_means": {
+        "Accountants": 193865.0745949251,
+        "Cleaning staff": 130752.21083172147,
+        "Cooking staff": 138396.50817608475,
+        "Core staff": 172203.8179961915,
+        "Drivers": 186832.6030261248,
+        "HR staff": 188916.28241563056,
+        "High skill tech staff": 182537.56413664322,
+        "IT staff": 211326.81844106465,
+        "Laborers": 163936.78945085712,
+        "Low-skill Laborers": 133228.00191113233,
+        "Managers": 256292.13958003838,
+        "Medicine staff": 149625.30467377297,
+        "Missing": 152924.4403175089,
+        "Private service staff": 181376.10237556562,
+        "Realty agents": 195003.99467376832,
+        "Sales staff": 152151.4822736901,
+        "Secretaries": 158300.28275862068,
+        "Security staff": 149662.6959529832,
+        "Waiters/barmen staff": 144272.58382789316
+    },
+    "edu_income_means": {
+        "Academic degree": 240009.1463414634,
+        "Higher education": 206780.22091967994,
+        "Incomplete higher": 181259.49206967014,
+        "Lower secondary": 129949.64150943396,
+        "Secondary / secondary special": 154371.26533476653
+    },
+    "inc_type_income_means": {
+        "Commercial associate": 201396.95228709665,
+        "Other": 206869.0909090909,
+        "Pensioner": 136293.18562967377,
+        "State servant": 179259.62549785743,
+        "Working": 161996.15485835212
+    }
+}
