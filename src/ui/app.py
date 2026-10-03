@@ -1,5 +1,6 @@
 import reflex as rx
 from src.ui.state import UnderwritingState
+from .components.feature_search_view import feature_search_view
 
 # Import các components con đã module hóa
 from src.ui.components.shap_card import shap_card_view
@@ -157,6 +158,14 @@ def index() -> rx.Component:
                 # CỘT TRÁI (70%): BẢO ĐẢM RỘNG RÃI CHO BIỂU ĐỒ SHAP
                 rx.vstack(
                     shap_card_view(),
+                    rx.box(
+                        feature_search_view(),
+                        background="#0F172A",
+                        border="1px solid #1E293B",
+                        border_radius="12px",
+                        box_shadow="0 4px 6px -1px rgba(0, 0, 0, 0.3)",
+                        width="100%",
+                    ),
                     spacing="4",
                     width="70%",
                 ),

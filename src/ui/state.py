@@ -2,6 +2,7 @@ import os
 import sys
 from pathlib import Path
 from typing import List, Dict, Any
+from .feature_search_state import FeatureSearchState
 
 # Ensure project root is present in sys.path
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
@@ -40,6 +41,9 @@ class UnderwritingState(rx.State):
     top_risk_factors: List[Dict[str, Any]] = []
     top_positive_factors: List[Dict[str, Any]] = []
     selected_client_raw: Dict[str, Any] = {}
+
+    # Comprehensive SHAP map for all 891 features of the active client
+    current_client_shap: Dict[str, float] = {}
 
     def load_demo_clients(self):
         """Loads records from demo_samples.parquet into the overview table."""
@@ -99,20 +103,34 @@ class UnderwritingState(rx.State):
         self.current_tier = result["tier"]
         self.current_decision = result["decision"]
 
-        # Lấy danh sách thô từ kết quả suy luận
+        # Trích xuất danh sách thô
         raw_risks = [dict(item) for item in result.get("top_risk_factors", [])]
         raw_positives = [dict(item) for item in result.get("top_positive_factors", [])]
 
-        # 1. Tính bar_width cho nhóm Risk (Thanh đỏ - Increases risk)
+        # 1. Trích xuất SHAP lookup
+        shap_lookup: Dict[str, float] = {}
+        if "all_shap_values" in result and isinstance(result["all_shap_values"], dict):
+            shap_lookup = {k: round(float(v), 4) for k, v in result["all_shap_values"].items()}
+        else:
+            for item in raw_risks:
+                feat = item.get("feature")
+                if feat:
+                    shap_lookup[feat] = round(float(item.get("shap_value", 0.0)), 4)
+            for item in raw_positives:
+                feat = item.get("feature")
+                if feat:
+                    shap_lookup[feat] = round(float(item.get("shap_value", 0.0)), 4)
+
+        # 2. Tính bar_width cho nhóm Risk
         if raw_risks:
             max_risk = max([abs(float(f.get("shap_value", 0.0))) for f in raw_risks])
             if max_risk == 0:
                 max_risk = 1.0
             for f in raw_risks:
                 pct = round((abs(float(f.get("shap_value", 0.0))) / max_risk) * 100, 1)
-                f["bar_width"] = f"{max(pct, 6.0)}%"  # Tối thiểu 6% để thanh không bị ẩn
+                f["bar_width"] = f"{max(pct, 6.0)}%"
 
-        # 2. Tính bar_width cho nhóm Trust (Thanh xanh - Reduces risk)
+        # 3. Tính bar_width cho nhóm Trust
         if raw_positives:
             max_trust = max([abs(float(f.get("shap_value", 0.0))) for f in raw_positives])
             if max_trust == 0:
@@ -123,5 +141,7 @@ class UnderwritingState(rx.State):
 
         self.top_risk_factors = raw_risks
         self.top_positive_factors = raw_positives
-
         self.is_loading = False
+
+        # Đẩy dữ liệu SHAP trực tiếp sang FeatureSearchState
+        return FeatureSearchState.update_client_shap(shap_lookup)
