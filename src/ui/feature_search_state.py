@@ -11,22 +11,29 @@ class FeatureSearchState(rx.State):
     """Manages feature dictionary search, impact filtering, and real-time SHAP binding."""
 
     raw_feature_dict: Dict[str, Dict[str, str]] = {}
-    client_shap: Dict[str, float] = {}  # Nhận trực tiếp từ UnderwritingState
+    client_shap: Dict[str, float] = {}
     search_query: str = ""
     selected_table: str = "All"
-    selected_impact: str = "All"  # "All", "Increases Risk (+)", "Reduces Risk (-)"
+    selected_impact: str = "All"
     display_limit: int = 20
 
-    def load_feature_dictionary(self):
-        """Loads the 891 features into memory once on mount."""
+    async def load_feature_dictionary(self):
+        """Loads feature dictionary from disk and immediately syncs current client's SHAP values."""
         if os.path.exists(FEATURE_DICT_PATH):
             with open(FEATURE_DICT_PATH, "r", encoding="utf-8") as f:
                 self.raw_feature_dict = json.load(f)
         else:
             self.raw_feature_dict = {}
 
+        # Import cục bộ tại đây để phá vỡ circular import
+        from .state import UnderwritingState
+
+        underwriting_state = await self.get_state(UnderwritingState)
+        if underwriting_state.current_client_shap:
+            self.client_shap = underwriting_state.current_client_shap
+
     def update_client_shap(self, shap_dict: Dict[str, float]):
-        """Handler to receive live SHAP contributions from UnderwritingState."""
+        """Handler to receive live SHAP contributions from UnderwritingState on client switch."""
         self.client_shap = shap_dict
 
     @rx.var

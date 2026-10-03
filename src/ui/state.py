@@ -69,10 +69,10 @@ class UnderwritingState(rx.State):
 
         self.client_list = table_df.to_dict(orient="records")
 
-        # Automatically evaluate the first client by default
+        # THÊM RETURN ĐỂ BẮN EVENT SANG FEATURESEARCHSTATE
         if self.client_list and not self.selected_client_id:
             first_id = str(self.client_list[0]["SK_ID_CURR"])
-            self.select_and_evaluate_client(first_id)
+            return self.select_and_evaluate_client(first_id)
 
     def select_and_evaluate_client(self, client_id: str):
         """Selects a client, runs the inference engine, and updates underwriting metrics."""

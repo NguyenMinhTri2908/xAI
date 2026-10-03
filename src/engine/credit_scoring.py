@@ -150,9 +150,17 @@ class CreditScoringEngine:
 
         # 5. TreeSHAP feature attribution
         shap_values = self.shap_explainer(df_clean)
+        shap_array = shap_values.values[0]
+
+        # Extract full 891 SHAP map for Feature Search Explorer
+        all_shap_dict: Dict[str, float] = {
+            feat: round(float(val), 4)
+            for feat, val in zip(self.features, shap_array)
+        }
+
         feature_importance = pd.DataFrame({
             "feature": self.features,
-            "shap_value": shap_values.values[0],
+            "shap_value": shap_array,
             "raw_value": df_row[self.features].iloc[0].values
         })
 
@@ -195,7 +203,8 @@ class CreditScoringEngine:
                 "xgboost_mean_pd": round(mean_xgb, 4)
             },
             "top_risk_factors": risk_drivers,
-            "top_positive_factors": trust_drivers
+            "top_positive_factors": trust_drivers,
+            "all_shap_values": all_shap_dict  # <- Cung cấp toàn bộ 891 giá trị SHAP
         }
 
 
@@ -223,6 +232,7 @@ if __name__ == "__main__":
     print(f" • Credit Rating Tier          : {result['tier']}")
     print(f" • Recommended Decision        : {result['decision']}")
     print(f" • Inference Latency           : {latency:.2f} ms")
+    print(f" • Total SHAP Features Mapped  : {len(result['all_shap_values']):,}")
     print("\n🔍 TOP 3 RISK DRIVERS (SHAP Positive Contributions):")
     for idx, f in enumerate(result["top_risk_factors"][:3], 1):
         print(f"   {idx}. {f['feature']} (Value: {f['display_value']}) -> Impact: +{f['shap_value']:.4f}")
