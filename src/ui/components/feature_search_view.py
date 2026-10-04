@@ -1,5 +1,6 @@
 import reflex as rx
 from ..feature_search_state import FeatureSearchState
+from src.ui.drawer_state import FeatureDrawerState  # <-- 1. Import state Drawer
 
 
 def table_badge(table_name: str) -> rx.Component:
@@ -25,16 +26,18 @@ def table_badge(table_name: str) -> rx.Component:
 def feature_search_view() -> rx.Component:
     """Component view displaying feature search, real-time SHAP impact, and auto-scroll streaming."""
     return rx.vstack(
-        # 1. Header tinh gọn: Đổi tiêu đề, bỏ badge đếm
+        # 1. Header (đã giữ đúng padding_left=12px để thẳng hàng chữ)
         rx.vstack(
             rx.heading("Feature Search & Attribution", size="4", color="white", weight="bold"),
             rx.text(
                 "Search 891 audited features and inspect active client local attributions.",
                 color="#9CA3AF",
-                size="1",
+                size="2",
             ),
             spacing="0",
             width="100%",
+            padding_top="2px",
+            padding_left="12px",
         ),
 
         rx.divider(border_color="#1E293B", margin_y="1"),
@@ -107,6 +110,18 @@ def feature_search_view() -> rx.Component:
                                     color="#94A3B8",
                                 )
                             ),
+                            # --- 2. HIỆU ỨNG HOVER SÁNG TOÀN DÒNG + CLICK MỞ DRAWER ---
+                            cursor="pointer",
+                            transition="background 0.15s ease",
+                            _hover={
+                                "background": "rgba(56, 189, 248, 0.08)",  # Sáng nhẹ màu xanh hồ quang
+                            },
+                            on_click=lambda: FeatureDrawerState.open_feature({
+                                "feature": item["name"],
+                                "display_value": "Portfolio Active",
+                                "shap_value": item["impact_text"],
+                                "description": item["description"],
+                            }),
                         ),
                     ),
                     # Dòng thông báo trạng thái cuộn nhẹ ở cuối danh sách

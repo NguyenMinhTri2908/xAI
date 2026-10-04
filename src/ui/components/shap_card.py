@@ -1,6 +1,6 @@
 import reflex as rx
 from src.ui.state import UnderwritingState
-
+from src.ui.drawer_state import FeatureDrawerState
 
 def risk_driver_row(factor: dict) -> rx.Component:
     """Hàng yếu tố làm tăng rủi ro (Đỏ) có Hover sáng hàng + Tooltip chuỗi hợp lệ."""
@@ -55,6 +55,7 @@ def risk_driver_row(factor: dict) -> rx.Component:
             "background": "rgba(255, 255, 255, 0.06)",
         },
         transition="background 0.15s ease",
+        on_click=lambda: FeatureDrawerState.open_feature(factor),
     )
 
     # Tooltip.content chỉ nhận chuỗi văn bản (String)
@@ -126,6 +127,7 @@ def trust_driver_row(factor: dict) -> rx.Component:
             "background": "rgba(255, 255, 255, 0.06)",
         },
         transition="background 0.15s ease",
+        on_click=lambda: FeatureDrawerState.open_feature(factor),
     )
 
     # Tooltip.content chỉ nhận chuỗi văn bản (String)

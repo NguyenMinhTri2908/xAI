@@ -112,20 +112,19 @@ class CreditScoringEngine:
 
     def _determine_credit_tier(self, pd_score: float) -> Tuple[str, str]:
         """
-        Risk tier stratification and automated policy recommendation:
-        - Tier A (PD < 3.5%): Prime Low Risk -> Auto-Approve
-        - Tier B (3.5% <= PD < 8.0%): Near-Prime Moderate Risk -> Standard Approve
-        - Tier C (8.0% <= PD < 15.0%): Sub-Prime High Risk -> Manual Underwriter Review
-        - Tier D (PD >= 15.0%): Deep Sub-Prime / Default Imminent -> Reject
+        Risk tier stratification and policy decision based on 16.0% (±1.0%) cut-off:
+        - PD <= 15.0%: Low/Moderate Risk -> APPROVE (Tier A / Tier B)
+        - 15.0% < PD <= 17.0%: Gray Zone / Ambiguous Risk -> WAITING / COMMITTEE REVIEW (Tier C)
+        - PD > 17.0%: High Risk -> DECLINE (Tier D)
         """
-        if pd_score < 0.035:
-            return "Tier A", "AUTO_APPROVE"
-        elif pd_score < 0.080:
-            return "Tier B", "STANDARD_APPROVE"
-        elif pd_score < 0.150:
-            return "Tier C", "MANUAL_REVIEW"
+        if pd_score <= 0.05:
+            return "Tier A", "APPROVE"
+        elif pd_score <= 0.150:
+            return "Tier B", "APPROVE"
+        elif 0.150 < pd_score <= 0.170:
+            return "Tier C", "WAITING / COMMITTEE REVIEW"
         else:
-            return "Tier D", "REJECT"
+            return "Tier D", "DECLINE"
 
     def predict_single(self, client_series: pd.Series) -> Dict[str, Any]:
         """Runs full inference and feature attribution for a single loan application record."""
