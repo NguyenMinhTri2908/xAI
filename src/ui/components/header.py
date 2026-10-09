@@ -36,314 +36,284 @@ def breadcrumb_bar() -> rx.Component:
 
 
 def client_profile_card() -> rx.Component:
-    """Card 1 (Trái): Profile thông tin nhân thân."""
-    return rx.box(
+    """Card 1 (Trái): Thông tin cá nhân / Profile khách hàng."""
+    return rx.card(
         rx.vstack(
-            # Hàng Avatar + Tên + Mã ID + Badges[cite: 1]
-            rx.hstack(
-                rx.avatar(
-                    fallback=rx.cond(
-                        UnderwritingState.selected_client_raw.get("NAME", "") != "",
-                        UnderwritingState.client_initials,
-                        "NT",
-                    ),
-                    size="4",
-                    radius="full",
-                    color_scheme="gray",
-                    variant="solid",
-                ),
-                rx.vstack(
-                    rx.hstack(
-                        rx.heading(
-                            rx.cond(
-                                UnderwritingState.selected_client_raw.get("NAME", "") != "",
-                                UnderwritingState.selected_client_raw.get("NAME"),
-                                "Nguyen Minh Tuan",
-                            ),
-                            size="3",
-                            weight="bold",
-                            color="white",
-                        ),
-                        rx.badge(
-                            rx.cond(
-                                UnderwritingState.selected_client_id != "",
-                                f"#{UnderwritingState.selected_client_id}",
-                                "#LN-2026-8891",
-                            ),
-                            variant="surface",
-                            color_scheme="gray",
-                            size="1",
-                        ),
-                        spacing="2",
-                        align="center",
-                    ),
-                    rx.hstack(
-                        rx.badge(
-                            rx.cond(
-                                UnderwritingState.current_tier != "N/A",
-                                f"Low-Medium Risk · {UnderwritingState.current_tier}",
-                                "Low-Medium Risk · Tier B2",
-                            ),
-                            color_scheme="green",
-                            variant="surface",
-                            size="1",
-                            radius="full",
-                        ),
-                        rx.badge(
-                            "High Confidence · 91%",
-                            color_scheme="gray",
-                            variant="surface",
-                            size="1",
-                            radius="full",
-                        ),
-                        spacing="2",
-                    ),
-                    spacing="1",
-                    align_items="flex-start",
-                ),
-                spacing="3",
-                align="center",
-                width="100%",
-            ),
-            rx.divider(border_color="#1E293B", margin_y="2"),
-            # Grid 2x2: AGE, OCCUPATION, EXPERIENCE, RESIDENCE[cite: 1]
-            rx.grid(
-                rx.vstack(
-                    rx.text("AGE", size="1", color="#64748B", weight="bold"),
-                    rx.text(
-                        rx.cond(
-                            UnderwritingState.selected_client_raw.get("AGE", "") != "",
-                            UnderwritingState.selected_client_raw.get("AGE"),
-                            "28 years old",
-                        ),
-                        size="2",
-                        weight="bold",
-                        color="#F8FAFC",
-                    ),
-                    spacing="0",
-                    align_items="flex-start",
-                ),
-                rx.vstack(
-                    rx.text("OCCUPATION", size="1", color="#64748B", weight="bold"),
-                    rx.text(
-                        rx.cond(
-                            UnderwritingState.selected_client_raw.get("OCCUPATION", "") != "",
-                            UnderwritingState.selected_client_raw.get("OCCUPATION"),
-                            "SME Business Owner",
-                        ),
-                        size="2",
-                        weight="bold",
-                        color="#F8FAFC",
-                    ),
-                    spacing="0",
-                    align_items="flex-start",
-                ),
-                rx.vstack(
-                    rx.text("EXPERIENCE / TENURE", size="1", color="#64748B", weight="bold"),
-                    rx.text(
-                        rx.cond(
-                            UnderwritingState.selected_client_raw.get("EXPERIENCE", "") != "",
-                            UnderwritingState.selected_client_raw.get("EXPERIENCE"),
-                            "3.5 years",
-                        ),
-                        size="2",
-                        weight="bold",
-                        color="#F8FAFC",
-                    ),
-                    spacing="0",
-                    align_items="flex-start",
-                ),
-                rx.vstack(
-                    rx.text("RESIDENCE", size="1", color="#64748B", weight="bold"),
-                    rx.text(
-                        rx.cond(
-                            UnderwritingState.selected_client_raw.get("RESIDENCE", "") != "",
-                            UnderwritingState.selected_client_raw.get("RESIDENCE"),
-                            "Homeowner (4 years)",
-                        ),
-                        size="2",
-                        weight="bold",
-                        color="#F8FAFC",
-                    ),
-                    spacing="0",
-                    align_items="flex-start",
-                ),
-                columns="2",
-                spacing="3",
-                width="100%",
-            ),
-            spacing="2",
-            width="100%",
-        ),
-        background="#161B22",
-        border="1px solid #21262D",
-        border_radius="10px",
-        padding="4",
-        width="34%",
-    )
-
-
-def loan_terms_card() -> rx.Component:
-    """Card 2 (Giữa): LOAN TERMS[cite: 1]."""
-    return rx.box(
-        rx.vstack(
-            rx.text("LOAN TERMS", size="1", color="#64748B", weight="bold"),
-            rx.grid(
-                rx.vstack(
-                    rx.text("REQUESTED AMOUNT", size="1", color="#94A3B8", weight="bold"),
-                    rx.text(
-                        rx.cond(
-                            UnderwritingState.selected_client_raw.get("Credit", "") != "",
-                            UnderwritingState.selected_client_raw.get("Credit"),
-                            "$25,000",
-                        ),
-                        size="5",
-                        weight="bold",
-                        color="#F8FAFC",
-                    ),
-                    spacing="0",
-                    align_items="flex-start",
-                ),
-                rx.vstack(
-                    rx.text("LOAN TERM", size="1", color="#94A3B8", weight="bold"),
-                    rx.text(
-                        rx.cond(
-                            UnderwritingState.selected_client_raw.get("TERM", "") != "",
-                            UnderwritingState.selected_client_raw.get("TERM"),
-                            "24 months",
-                        ),
-                        size="5",
-                        weight="bold",
-                        color="#F8FAFC",
-                    ),
-                    spacing="0",
-                    align_items="flex-start",
-                ),
-                rx.vstack(
-                    rx.text("EST. MONTHLY PAYMENT", size="1", color="#94A3B8", weight="bold"),
-                    rx.text(
-                        rx.cond(
-                            UnderwritingState.selected_client_raw.get("Annuity", "") != "",
-                            UnderwritingState.selected_client_raw.get("Annuity"),
-                            "~$1.042 / month",
-                        ),
-                        size="3",
-                        weight="bold",
-                        color="#F8FAFC",
-                    ),
-                    spacing="0",
-                    align_items="flex-start",
-                ),
-                rx.vstack(
-                    rx.text("LOAN PURPOSE", size="1", color="#94A3B8", weight="bold"),
-                    rx.hstack(
-                        rx.icon("building", size=14, color="#94A3B8"),
-                        rx.text(
-                            rx.cond(
-                                UnderwritingState.selected_client_raw.get("PURPOSE", "") != "",
-                                UnderwritingState.selected_client_raw.get("PURPOSE"),
-                                "SME Business Expansion",
-                            ),
-                            size="2",
-                            weight="bold",
-                            color="#F8FAFC",
-                        ),
-                        spacing="1",
-                        align="center",
-                    ),
-                    spacing="0",
-                    align_items="flex-start",
-                ),
-                columns="2",
-                spacing="3",
-                width="100%",
-            ),
-            spacing="2",
-            width="100%",
-        ),
-        background="#161B22",
-        border="1px solid #21262D",
-        border_radius="10px",
-        padding="4",
-        width="34%",
-    )
-
-
-def ai_recommendation_card() -> rx.Component:
-    """Card 3 (Phải): AI RECOMMENDATION ENGINE + SUGGESTED ACTION[cite: 1]."""
-    return rx.box(
-        rx.vstack(
+            # Header
             rx.hstack(
                 rx.hstack(
-                    rx.icon("cpu", size=15, color="#F8FAFC"),
+                    rx.icon("user", size=16, color="#9CA3AF"),
                     rx.text(
-                        "AI RECOMMENDATION ENGINE",
-                        size="1",
-                        weight="bold",
-                        color="#94A3B8",
+                        rx.cond(
+                            UnderwritingState.selected_client_id != "",
+                            f"ID: #{UnderwritingState.selected_client_id}",
+                            "ID: N/A",
+                        ),
+                        size="3",
+                        font_weight="600",
+                        color="#9CA3AF",
                     ),
                     spacing="2",
                     align="center",
                 ),
-                rx.badge("91% Confidence", color_scheme="gray", variant="surface", size="1", radius="full"),
-                justify="between",
                 width="100%",
                 align="center",
             ),
-            rx.hstack(
-                rx.text(
-                    rx.cond(
-                        UnderwritingState.current_score_percent > 0,
-                        f"PD: {UnderwritingState.current_score_percent}%",
-                        "PD: 4.8%",
-                    ),
-                    size="5",
-                    weight="bold",
-                    color="#10B981",
-                ),
-                align="center",
-            ),
-            rx.text("12-Month Probability of Default", size="1", color="#64748B"),
-            # Hộp Suggested Action viền cam đậm giống thiết kế[cite: 1]
-            rx.box(
+            rx.divider(border_color="#1E293B", margin_y="1"),
+            # Grid thông tin cá nhân
+            rx.grid(
                 rx.vstack(
-                    rx.text("SUGGESTED ACTION", size="1", weight="bold", color="#F59E0B"),
-                    rx.heading(
-                        rx.cond(
-                            UnderwritingState.current_decision != "PENDING",
-                            UnderwritingState.current_decision,
-                            "Conditional Approval",
-                        ),
-                        size="3",
+                    rx.text("NAME", size="1", color="#9CA3AF", weight="medium"),
+                    rx.text(
+                        "Client Name",
+                        size="4",
                         weight="bold",
-                        color="#FCD34D",
+                        color="#FFFFFF",
                     ),
-                    rx.text("Cap at $20,000 or reduce tenor", size="1", color="#D97706"),
                     spacing="1",
                     align_items="flex-start",
                 ),
-                background="#1C150A",
-                border="1px solid #78350F",
-                border_radius="8px",
-                padding="3",
+                rx.vstack(
+                    rx.text("APPLICANT AGE", size="1", color="#9CA3AF", weight="medium"),
+                    rx.text(
+                        UnderwritingState.client_age,
+                        size="4",
+                        weight="bold",
+                        color="#FFFFFF",
+                    ),
+                    spacing="1",
+                    align_items="flex-start",
+                ),
+                rx.vstack(
+                    rx.text("EMPLOYMENT TENURE", size="1", color="#9CA3AF", weight="medium"),
+                    rx.text(
+                        UnderwritingState.client_experience,
+                        size="4",
+                        weight="bold",
+                        color="#FFFFFF",
+                    ),
+                    spacing="1",
+                    align_items="flex-start",
+                ),
+                columns="2",
+                spacing="3",
                 width="100%",
             ),
-            spacing="2",
+            spacing="3",
             width="100%",
         ),
-        background="#161B22",
-        border="1px solid #21262D",
+        background="#111827",
+        border="1px solid #1F2937",
         border_radius="10px",
-        padding="4",
-        width="32%",
+        padding="5",
+        flex="1",
+        width="100%",
     )
+
+
+def loan_terms_card() -> rx.Component:
+    """Card 2 (Giữa): Thông tin khoản vay / Điều kiện đề xuất."""
+    return rx.card(
+        rx.vstack(
+            # Header
+            rx.hstack(
+                rx.hstack(
+                    rx.icon("credit-card", size=16, color="#9CA3AF"),
+                    rx.text(
+                        "Loan Details",
+                        size="3",
+                        font_weight="600",
+                        color="#9CA3AF",
+                    ),
+                    spacing="2",
+                    align="center",
+                ),
+                rx.spacer(),
+                rx.badge(
+                    "Active Terms",
+                    variant="surface",
+                    color_scheme="gray",
+                    size="1",
+                ),
+                width="100%",
+                align="center",
+            ),
+            rx.divider(border_color="#1E293B", margin_y="1"),
+            # 2x2 Grid
+            rx.grid(
+                rx.vstack(
+                    rx.text("REQUESTED AMOUNT", size="1", color="#9CA3AF", weight="medium"),
+                    rx.text(
+                        UnderwritingState.client_credit,
+                        size="4",
+                        weight="bold",
+                        color="#FFFFFF",
+                    ),
+                    spacing="1",
+                    align_items="flex-start",
+                ),
+                rx.vstack(
+                    rx.text("LOAN TERM", size="1", color="#9CA3AF", weight="medium"),
+                    rx.text(
+                        UnderwritingState.client_term,
+                        size="4",
+                        weight="bold",
+                        color="#FFFFFF",
+                    ),
+                    spacing="1",
+                    align_items="flex-start",
+                ),
+                rx.vstack(
+                    rx.text("EST. MONTHLY PAYMENT", size="1", color="#9CA3AF", weight="medium"),
+                    rx.text(
+                        UnderwritingState.client_annuity,
+                        size="4",
+                        weight="bold",
+                        color="#FFFFFF",
+                    ),
+                    spacing="1",
+                    align_items="flex-start",
+                ),
+                rx.vstack(
+                    rx.text("DEBT-TO-INCOME (DTI)", size="1", color="#9CA3AF", weight="medium"),
+                    rx.text(
+                        UnderwritingState.client_dti,
+                        size="4",
+                        weight="bold",
+                        color="#FFFFFF",
+                    ),
+                    spacing="1",
+                    align_items="flex-start",
+                ),
+                columns="2",
+                spacing="3",
+                width="100%",
+            ),
+            spacing="3",
+            width="100%",
+        ),
+        background="#111827",
+        border="1px solid #1F2937",
+        border_radius="10px",
+        padding="5",
+        flex="1",
+        width="100%",
+    )
+
+
+def ai_recommendation_card() -> rx.Component:
+    """Card 3 (Phải): Đánh giá & Khuyến nghị mô hình AI."""
+    return rx.card(
+        rx.vstack(
+            # Header
+            rx.hstack(
+                rx.hstack(
+                    rx.icon("sparkles", size=16, color="#9CA3AF"),
+                    rx.text(
+                        "AI Recommendation",
+                        size="3",
+                        font_weight="600",
+                        color="#9CA3AF",
+                    ),
+                    spacing="2",
+                    align="center",
+                ),
+                rx.spacer(),
+                rx.badge(
+                    rx.cond(
+                        UnderwritingState.current_tier != "None",
+                        f"Tier {UnderwritingState.current_tier}",
+                        "Tier N/A",
+                    ),
+                    color_scheme="gray",
+                    variant="surface",
+                    size="1",
+                ),
+                width="100%",
+                align="center",
+            ),
+            rx.divider(border_color="#1E293B", margin_y="1"),
+            # Khôi phục layout 2 cột cũ với chuẩn typography và padding mới
+            rx.grid(
+                rx.vstack(
+                    rx.text("PROBABILITY OF DEFAULT", size="1", color="#9CA3AF", weight="medium"),
+                    rx.text(
+                        UnderwritingState.pd_display,
+                        size="4",
+                        weight="bold",
+                        color=UnderwritingState.decision_color,
+                    ),
+                    rx.text("Threshold: 16.0% (±1.0%)", size="1", color="#64748B", weight="medium"),
+                    spacing="1",
+                    align_items="flex-start",
+                ),
+                rx.vstack(
+                    rx.text("SUGGESTED ACTION", size="1", color="#9CA3AF", weight="medium"),
+                    rx.box(
+                        rx.hstack(
+                            rx.icon(
+                                rx.cond(
+                                    UnderwritingState.decision_color == "#10B981",
+                                    "check-circle-2",
+                                    rx.cond(
+                                        UnderwritingState.decision_color == "#F59E0B",
+                                        "clock",
+                                        "alert-triangle",
+                                    ),
+                                ),
+                                size=14,
+                                color=UnderwritingState.decision_color,
+                            ),
+                            rx.text(
+                                UnderwritingState.current_decision,
+                                size="2",
+                                weight="bold",
+                                color=UnderwritingState.decision_color,
+                            ),
+                            spacing="2",
+                            align="center",
+                        ),
+                        background=UnderwritingState.decision_bg_color,
+                        border=f"1px solid {UnderwritingState.decision_color}",
+                        border_radius="6px",
+                        padding_x="2.5",
+                        padding_y="1",
+                        display="inline-flex",
+                    ),
+                    rx.text(
+                        rx.cond(
+                            UnderwritingState.decision_color == "#F59E0B",
+                            "Requires committee evaluation",
+                            "Policy benchmark aligned",
+                        ),
+                        size="1",
+                        color="#64748B",
+                    ),
+                    spacing="1",
+                    align_items="flex-start",
+                ),
+                columns="2",
+                spacing="3",
+                width="100%",
+            ),
+            spacing="3",
+            width="100%",
+        ),
+        background="#111827",
+        border="1px solid #1F2937",
+        border_radius="10px",
+        padding="5",
+        flex="1",
+        width="100%",
+    )
+
 
 
 def action_bar_view() -> rx.Component:
     """Hàng 4 nút quyết định phê duyệt bên dưới[cite: 1]."""
     return rx.hstack(
         rx.button(
-            rx.icon("check-circle", size=16),
+            rx.icon("circle-check", size=16),
             "Approve",
             background="#059669",
             color="white",
@@ -352,7 +322,7 @@ def action_bar_view() -> rx.Component:
             cursor="pointer",
         ),
         rx.button(
-            rx.icon("x-circle", size=16),
+            rx.icon("circle-x", size=16),
             "Decline Loan",
             background="#DC2626",
             color="white",
@@ -396,7 +366,7 @@ def header_view() -> rx.Component:
                     client_profile_card(),
                     loan_terms_card(),
                     ai_recommendation_card(),
-                    spacing="3",
+                    spacing="4",
                     width="100%",
                     align_items="stretch",
                 ),

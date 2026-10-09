@@ -1,0 +1,3566 @@
+{
+    "AMT_INCOME_TOTAL": {
+        "table": "application",
+        "description": "Total annual income of the applicant"
+    },
+    "AMT_CREDIT": {
+        "table": "application",
+        "description": "Total credit amount requested"
+    },
+    "AMT_ANNUITY": {
+        "table": "application",
+        "description": "Monthly loan annuity payment (principal and interest)"
+    },
+    "AMT_GOODS_PRICE": {
+        "table": "application",
+        "description": "Price of the goods/services for consumer loans"
+    },
+    "NAME_INCOME_TYPE": {
+        "table": "application",
+        "description": "Primary income source (Working, Commercial associate, Pensioner, etc.)"
+    },
+    "NAME_EDUCATION_TYPE": {
+        "table": "application",
+        "description": "Highest level of education completed"
+    },
+    "DAYS_BIRTH": {
+        "table": "application",
+        "description": "Client age in days relative to current application (negative value)"
+    },
+    "DAYS_EMPLOYED": {
+        "table": "application",
+        "description": "Current employment tenure in days (negative value)"
+    },
+    "OCCUPATION_TYPE": {
+        "table": "application",
+        "description": "Specific job title or occupation of the client"
+    },
+    "ORGANIZATION_TYPE": {
+        "table": "application",
+        "description": "Type of employer organization or industry"
+    },
+    "EXT_SOURCE_1": {
+        "table": "application",
+        "description": "Normalized credit score from external data source 1"
+    },
+    "EXT_SOURCE_2": {
+        "table": "application",
+        "description": "Normalized credit score from external data source 2"
+    },
+    "EXT_SOURCE_3": {
+        "table": "application",
+        "description": "Normalized credit score from external data source 3"
+    },
+    "CREDIT_TO_INCOME": {
+        "table": "application",
+        "description": "Debt-to-Income (DTI) ratio: loan credit divided by annual income"
+    },
+    "ANNUITY_TO_INCOME": {
+        "table": "application",
+        "description": "Payment-to-Income (PTI) ratio: monthly annuity divided by annual income"
+    },
+    "CREDIT_TO_ANNUITY": {
+        "table": "application",
+        "description": "Estimated loan duration in months (credit amount divided by annuity)"
+    },
+    "CREDIT_TO_GOODS_RATIO": {
+        "table": "application",
+        "description": "Loan-to-Value (LTV) ratio: credit amount divided by goods price"
+    },
+    "GOODS_CREDIT_DIFF": {
+        "table": "application",
+        "description": "Variance between goods price and financed credit amount"
+    },
+    "ANNUITY_TO_GOODS_RATIO": {
+        "table": "application",
+        "description": "Ratio of loan annuity to total goods price"
+    },
+    "AGE_YEARS": {
+        "table": "application",
+        "description": "Exact client age in years"
+    },
+    "EMPLOYED_YEARS": {
+        "table": "application",
+        "description": "Years of continuous tenure at current employment"
+    },
+    "EMPLOYED_TO_AGE_RATIO": {
+        "table": "application",
+        "description": "Proportion of client adult lifetime spent in employment"
+    },
+    "INCOME_PER_EMPLOYED_YEAR": {
+        "table": "application",
+        "description": "Annual income normalized by employment tenure years"
+    },
+    "EXT_SOURCE_MEAN": {
+        "table": "application",
+        "description": "Mean value across all external credit scoring sources"
+    },
+    "EXT_SOURCE_STD": {
+        "table": "application",
+        "description": "Standard deviation across external credit scoring sources"
+    },
+    "EXT_SOURCE_PROD": {
+        "table": "application",
+        "description": "Product interaction of external credit scoring sources"
+    },
+    "INCOME_RATIO_BY_OCCUPATION": {
+        "table": "application",
+        "description": "Income ratio relative to occupation peer benchmark average"
+    },
+    "INCOME_DIFF_BY_OCCUPATION": {
+        "table": "application",
+        "description": "Income difference relative to occupation peer benchmark average"
+    },
+    "INCOME_RATIO_BY_EDUCATION": {
+        "table": "application",
+        "description": "Income ratio relative to education peer benchmark average"
+    },
+    "INCOME_DIFF_BY_EDUCATION": {
+        "table": "application",
+        "description": "Income difference relative to education peer benchmark average"
+    },
+    "INCOME_RATIO_BY_INCOMETYPE": {
+        "table": "application",
+        "description": "Income ratio relative to income type peer benchmark average"
+    },
+    "INCOME_DIFF_BY_INCOMETYPE": {
+        "table": "application",
+        "description": "Income difference relative to income type peer benchmark average"
+    },
+    "BUREAU_DAYS_CREDIT_MIN": {
+        "table": "bureau",
+        "description": "Days since oldest credit bureau loan application"
+    },
+    "BUREAU_DAYS_CREDIT_MAX": {
+        "table": "bureau",
+        "description": "Days since most recent credit bureau loan application"
+    },
+    "BUREAU_DAYS_CREDIT_MEAN": {
+        "table": "bureau",
+        "description": "Average days since credit bureau loan applications"
+    },
+    "BUREAU_DAYS_CREDIT_VAR": {
+        "table": "bureau",
+        "description": "Variance of credit bureau application recency"
+    },
+    "BUREAU_DAYS_CREDIT_UPDATE_MAX": {
+        "table": "bureau",
+        "description": "Recency in days of the latest bureau record update"
+    },
+    "BUREAU_DAYS_CREDIT_UPDATE_MEAN": {
+        "table": "bureau",
+        "description": "Average days since bureau records were updated"
+    },
+    "BUREAU_DAYS_CREDIT_ENDDATE_CLEAN_MIN": {
+        "table": "bureau",
+        "description": "Earliest scheduled loan maturity date across bureau contracts"
+    },
+    "BUREAU_DAYS_CREDIT_ENDDATE_CLEAN_MAX": {
+        "table": "bureau",
+        "description": "Latest scheduled loan maturity date across bureau contracts"
+    },
+    "BUREAU_DAYS_CREDIT_ENDDATE_CLEAN_MEAN": {
+        "table": "bureau",
+        "description": "Average scheduled loan maturity date across bureau contracts"
+    },
+    "BUREAU_DAYS_ENDDATE_FACT_CLEAN_MIN": {
+        "table": "bureau",
+        "description": "Earliest actual loan closure date across bureau contracts"
+    },
+    "BUREAU_DAYS_ENDDATE_FACT_CLEAN_MAX": {
+        "table": "bureau",
+        "description": "Most recent actual loan closure date across bureau contracts"
+    },
+    "BUREAU_DAYS_ENDDATE_FACT_CLEAN_MEAN": {
+        "table": "bureau",
+        "description": "Average actual loan closure date across bureau contracts"
+    },
+    "BUREAU_CREDIT_YEARS_MAX": {
+        "table": "bureau",
+        "description": "Maximum credit history length in years at external bureau"
+    },
+    "BUREAU_CREDIT_YEARS_MEAN": {
+        "table": "bureau",
+        "description": "Average credit history length in years at external bureau"
+    },
+    "BUREAU_LOAN_DURATION_DAYS_MAX": {
+        "table": "bureau",
+        "description": "Maximum contract duration in days among bureau loans"
+    },
+    "BUREAU_LOAN_DURATION_DAYS_MEAN": {
+        "table": "bureau",
+        "description": "Average contract duration in days among bureau loans"
+    },
+    "BUREAU_SETTLEMENT_DIFF_DAYS_MAX": {
+        "table": "bureau",
+        "description": "Maximum variance between actual payoff and contractual maturity date"
+    },
+    "BUREAU_SETTLEMENT_DIFF_DAYS_MEAN": {
+        "table": "bureau",
+        "description": "Average variance between actual payoff and contractual maturity date"
+    },
+    "BUREAU_AMT_CREDIT_SUM_SUM": {
+        "table": "bureau",
+        "description": "Total historical credit limit sanctioned across all bureau loans"
+    },
+    "BUREAU_AMT_CREDIT_SUM_MEAN": {
+        "table": "bureau",
+        "description": "Average credit limit sanctioned per bureau loan"
+    },
+    "BUREAU_AMT_CREDIT_SUM_MAX": {
+        "table": "bureau",
+        "description": "Highest single credit limit sanctioned across bureau loans"
+    },
+    "BUREAU_AMT_CREDIT_SUM_DEBT_SUM": {
+        "table": "bureau",
+        "description": "Total current outstanding debt across all external bureau loans"
+    },
+    "BUREAU_AMT_CREDIT_SUM_DEBT_MEAN": {
+        "table": "bureau",
+        "description": "Average outstanding debt balance per bureau loan"
+    },
+    "BUREAU_AMT_CREDIT_SUM_DEBT_MAX": {
+        "table": "bureau",
+        "description": "Maximum outstanding debt balance on a single bureau loan"
+    },
+    "BUREAU_AMT_CREDIT_SUM_LIMIT_SUM": {
+        "table": "bureau",
+        "description": "Total available revolving credit limit across bureau accounts"
+    },
+    "BUREAU_AMT_CREDIT_SUM_LIMIT_MEAN": {
+        "table": "bureau",
+        "description": "Average available revolving credit limit across bureau accounts"
+    },
+    "BUREAU_AMT_CREDIT_SUM_LIMIT_MAX": {
+        "table": "bureau",
+        "description": "Maximum available revolving credit limit across bureau accounts"
+    },
+    "BUREAU_AMT_CREDIT_SUM_OVERDUE_SUM": {
+        "table": "bureau",
+        "description": "Total currently overdue debt amount across bureau loans"
+    },
+    "BUREAU_AMT_CREDIT_SUM_OVERDUE_MEAN": {
+        "table": "bureau",
+        "description": "Average currently overdue debt amount per bureau loan"
+    },
+    "BUREAU_AMT_CREDIT_SUM_OVERDUE_MAX": {
+        "table": "bureau",
+        "description": "Maximum currently overdue debt balance on a single bureau loan"
+    },
+    "BUREAU_AMT_CREDIT_MAX_OVERDUE_CLEAN_MAX": {
+        "table": "bureau",
+        "description": "Historical peak overdue balance recorded across bureau loans"
+    },
+    "BUREAU_AMT_CREDIT_MAX_OVERDUE_CLEAN_MEAN": {
+        "table": "bureau",
+        "description": "Average historical peak overdue balance across bureau loans"
+    },
+    "BUREAU_CREDIT_PAID_AMOUNT_SUM": {
+        "table": "bureau",
+        "description": "Total principal amount paid off across bureau loans"
+    },
+    "BUREAU_CREDIT_PAID_AMOUNT_MEAN": {
+        "table": "bureau",
+        "description": "Average principal amount paid off per bureau loan"
+    },
+    "BUREAU_CREDIT_PAID_AMOUNT_MAX": {
+        "table": "bureau",
+        "description": "Maximum principal amount paid off on a single bureau loan"
+    },
+    "BUREAU_CREDIT_DAY_OVERDUE_MAX": {
+        "table": "bureau",
+        "description": "Maximum days past due (DPD) currently active at bureau"
+    },
+    "BUREAU_CREDIT_DAY_OVERDUE_MEAN": {
+        "table": "bureau",
+        "description": "Average days past due (DPD) currently active across bureau loans"
+    },
+    "BUREAU_DEBT_RATIO_MAX": {
+        "table": "bureau",
+        "description": "Peak debt utilization ratio (balance to credit limit) on a bureau loan"
+    },
+    "BUREAU_DEBT_RATIO_MEAN": {
+        "table": "bureau",
+        "description": "Average debt utilization ratio across external bureau loans"
+    },
+    "BUREAU_OVERDUE_TO_DEBT_RATIO_MAX": {
+        "table": "bureau",
+        "description": "Highest ratio of overdue balance to total outstanding debt"
+    },
+    "BUREAU_OVERDUE_TO_DEBT_RATIO_MEAN": {
+        "table": "bureau",
+        "description": "Average ratio of overdue balance to total outstanding debt"
+    },
+    "BUREAU_PAID_RATIO_MAX": {
+        "table": "bureau",
+        "description": "Highest principal repayment ratio achieved on a bureau loan"
+    },
+    "BUREAU_PAID_RATIO_MEAN": {
+        "table": "bureau",
+        "description": "Average principal repayment ratio achieved across bureau loans"
+    },
+    "BUREAU_IS_CLOSED_SUM": {
+        "table": "bureau",
+        "description": "Total count of fully settled/closed loans in bureau history"
+    },
+    "BUREAU_IS_CLOSED_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of closed loans out of total bureau loans"
+    },
+    "BUREAU_IS_ACTIVE_SUM": {
+        "table": "bureau",
+        "description": "Total count of currently active/open loans in bureau records"
+    },
+    "BUREAU_IS_ACTIVE_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of active loans out of total bureau loans"
+    },
+    "BUREAU_IS_SOLD_SUM": {
+        "table": "bureau",
+        "description": "Total count of written-off loans sold to third-party collection agencies"
+    },
+    "BUREAU_IS_SOLD_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of loans sold to third-party collection agencies"
+    },
+    "BUREAU_IS_BAD_OR_SOLD_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of bureau loans categorized as written-off or sold"
+    },
+    "BUREAU_IS_RECENT_1Y_SUM": {
+        "table": "bureau",
+        "description": "Number of bureau loans opened within the past 12 months"
+    },
+    "BUREAU_IS_RECENT_1Y_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of bureau loans opened within the past 12 months"
+    },
+    "BUREAU_IS_RECENT_6M_SUM": {
+        "table": "bureau",
+        "description": "Number of bureau loans opened within the past 6 months"
+    },
+    "BUREAU_IS_RECENT_6M_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of bureau loans opened within the past 6 months"
+    },
+    "BUREAU_IS_OVERDUE_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of bureau loans currently carrying an overdue balance"
+    },
+    "BUREAU_DPD_GR2_SUM": {
+        "table": "bureau",
+        "description": "Total count of loans classified in Delinquency Group 2 (10–90 DPD)"
+    },
+    "BUREAU_DPD_GR2_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of loans classified in Delinquency Group 2 (10–90 DPD)"
+    },
+    "BUREAU_DPD_GR3_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of loans classified in Delinquency Group 3 (91–180 DPD Substandard)"
+    },
+    "BUREAU_DPD_GR4_SUM": {
+        "table": "bureau",
+        "description": "Total count of loans classified in Delinquency Group 4 (181–360 DPD Doubtful)"
+    },
+    "BUREAU_DPD_GR5_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of loans classified in Delinquency Group 5 (>360 DPD Loss)"
+    },
+    "BUREAU_ENDDATE_ANOM_SUM": {
+        "table": "bureau",
+        "description": "Count of bureau records with anomalous or placeholder maturity dates"
+    },
+    "BUREAU_ENDDATE_ANOM_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of bureau records with anomalous maturity dates"
+    },
+    "BUREAU_IS_FUTURE_OBLIGATION_SUM": {
+        "table": "bureau",
+        "description": "Count of bureau loans with ongoing contractual repayment obligations"
+    },
+    "BUREAU_IS_FUTURE_OBLIGATION_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of bureau loans with ongoing contractual obligations"
+    },
+    "BUREAU_IS_LONG_TERM_SUM": {
+        "table": "bureau",
+        "description": "Count of long-term bureau contracts (maturity tenor >1 year)"
+    },
+    "BUREAU_IS_LONG_TERM_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of long-term bureau contracts (>1 year)"
+    },
+    "BUREAU_IS_EARLY_SETTLED_SUM": {
+        "table": "bureau",
+        "description": "Count of bureau loans settled prior to original contractual maturity"
+    },
+    "BUREAU_IS_EARLY_SETTLED_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of bureau loans settled ahead of schedule"
+    },
+    "BUREAU_IS_LATE_SETTLED_SUM": {
+        "table": "bureau",
+        "description": "Count of bureau loans settled past original contractual maturity"
+    },
+    "BUREAU_IS_LATE_SETTLED_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of bureau loans settled past original contractual maturity"
+    },
+    "BUREAU_MAX_OVERDUE_IS_NA_SUM": {
+        "table": "bureau",
+        "description": "Count of bureau records missing historical overdue track records"
+    },
+    "BUREAU_MAX_OVERDUE_IS_NA_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of bureau records missing historical overdue data"
+    },
+    "BUREAU_HAS_MAX_OVERDUE_SUM": {
+        "table": "bureau",
+        "description": "Count of bureau loans with at least one historical overdue incident"
+    },
+    "BUREAU_HAS_MAX_OVERDUE_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of bureau loans with historical overdue incidents"
+    },
+    "BUREAU_IS_PROLONGED_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of bureau loans that underwent tenor extensions"
+    },
+    "BUREAU_IS_MULTIPLE_PROLONGED_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of bureau loans extended multiple times"
+    },
+    "BUREAU_CREDIT_SUM_IS_ZERO_SUM": {
+        "table": "bureau",
+        "description": "Count of bureau contracts with zero approved credit limit"
+    },
+    "BUREAU_CREDIT_SUM_IS_ZERO_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of bureau contracts with zero approved credit limit"
+    },
+    "BUREAU_DEBT_IS_NA_SUM": {
+        "table": "bureau",
+        "description": "Count of bureau records missing outstanding debt data"
+    },
+    "BUREAU_DEBT_IS_NA_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of bureau records missing outstanding debt data"
+    },
+    "BUREAU_IS_DEBT_FREE_SUM": {
+        "table": "bureau",
+        "description": "Count of bureau contracts with zero outstanding debt balance"
+    },
+    "BUREAU_IS_DEBT_FREE_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of bureau contracts with zero outstanding debt balance"
+    },
+    "BUREAU_LIMIT_IS_NA_SUM": {
+        "table": "bureau",
+        "description": "Count of revolving credit records missing limit amounts"
+    },
+    "BUREAU_LIMIT_IS_NA_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of revolving credit records missing limit amounts"
+    },
+    "BUREAU_IS_OVER_LIMIT_SUM": {
+        "table": "bureau",
+        "description": "Count of bureau revolving accounts exceeding approved credit limits"
+    },
+    "BUREAU_IS_OVER_LIMIT_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of bureau revolving accounts exceeding approved credit limits"
+    },
+    "BUREAU_HAS_AVAILABLE_LIMIT_SUM": {
+        "table": "bureau",
+        "description": "Count of bureau card accounts with available positive credit limits"
+    },
+    "BUREAU_HAS_AVAILABLE_LIMIT_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of bureau card accounts with available positive limits"
+    },
+    "BUREAU_HAS_SUM_OVERDUE_SUM": {
+        "table": "bureau",
+        "description": "Count of bureau loans currently carrying delinquent balances"
+    },
+    "BUREAU_HAS_SUM_OVERDUE_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of bureau loans currently carrying delinquent balances"
+    },
+    "BUREAU_TYPE_Car loan_SUM": {
+        "table": "bureau",
+        "description": "Total auto loan contracts registered at credit bureau"
+    },
+    "BUREAU_TYPE_Car loan_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of auto loans in bureau portfolio"
+    },
+    "BUREAU_TYPE_Consumer credit_SUM": {
+        "table": "bureau",
+        "description": "Total consumer installment loans registered at credit bureau"
+    },
+    "BUREAU_TYPE_Consumer credit_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of consumer installment loans in bureau portfolio"
+    },
+    "BUREAU_TYPE_Credit card_SUM": {
+        "table": "bureau",
+        "description": "Total revolving credit card accounts registered at credit bureau"
+    },
+    "BUREAU_TYPE_Credit card_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of revolving credit cards in bureau portfolio"
+    },
+    "BUREAU_TYPE_Microloan_SUM": {
+        "table": "bureau",
+        "description": "Total microfinance/payday loans registered at credit bureau"
+    },
+    "BUREAU_TYPE_Microloan_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of microfinance loans in bureau portfolio"
+    },
+    "BUREAU_TYPE_Mortgage_SUM": {
+        "table": "bureau",
+        "description": "Total real estate mortgage contracts registered at credit bureau"
+    },
+    "BUREAU_TYPE_Mortgage_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of real estate mortgage contracts in bureau portfolio"
+    },
+    "BUREAU_UPDATED_RECENT_30D_SUM": {
+        "table": "bureau",
+        "description": "Count of bureau contracts updated within the last 30 days"
+    },
+    "BUREAU_UPDATED_RECENT_30D_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of bureau contracts updated within the last 30 days"
+    },
+    "BUREAU_UPDATED_RECENT_90D_SUM": {
+        "table": "bureau",
+        "description": "Count of bureau contracts updated within the last 90 days"
+    },
+    "BUREAU_UPDATED_RECENT_90D_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of bureau contracts updated within the last 90 days"
+    },
+    "BUREAU_TOTAL_LOAN_COUNT": {
+        "table": "bureau",
+        "description": "Total number of external loan accounts recorded in bureau history"
+    },
+    "BUREAU_ACTIVE_DAYS_CREDIT_MIN": {
+        "table": "bureau",
+        "description": "Days since oldest application among currently active bureau loans"
+    },
+    "BUREAU_ACTIVE_DAYS_CREDIT_MAX": {
+        "table": "bureau",
+        "description": "Days since newest application among currently active bureau loans"
+    },
+    "BUREAU_ACTIVE_DAYS_CREDIT_MEAN": {
+        "table": "bureau",
+        "description": "Average application recency in days for active bureau loans"
+    },
+    "BUREAU_ACTIVE_DAYS_CREDIT_VAR": {
+        "table": "bureau",
+        "description": "Variance of application dates across active bureau loans"
+    },
+    "BUREAU_ACTIVE_DAYS_CREDIT_UPDATE_MAX": {
+        "table": "bureau",
+        "description": "Recency in days of the latest update among active bureau loans"
+    },
+    "BUREAU_ACTIVE_DAYS_CREDIT_UPDATE_MEAN": {
+        "table": "bureau",
+        "description": "Average days since update across active bureau loans"
+    },
+    "BUREAU_ACTIVE_DAYS_CREDIT_ENDDATE_CLEAN_MIN": {
+        "table": "bureau",
+        "description": "Earliest scheduled maturity date among active bureau loans"
+    },
+    "BUREAU_ACTIVE_DAYS_CREDIT_ENDDATE_CLEAN_MAX": {
+        "table": "bureau",
+        "description": "Latest scheduled maturity date among active bureau loans"
+    },
+    "BUREAU_ACTIVE_DAYS_CREDIT_ENDDATE_CLEAN_MEAN": {
+        "table": "bureau",
+        "description": "Average scheduled maturity date among active bureau loans"
+    },
+    "BUREAU_ACTIVE_DAYS_ENDDATE_FACT_CLEAN_MIN": {
+        "table": "bureau",
+        "description": "Earliest closure date reported under active bureau records"
+    },
+    "BUREAU_ACTIVE_DAYS_ENDDATE_FACT_CLEAN_MAX": {
+        "table": "bureau",
+        "description": "Latest closure date reported under active bureau records"
+    },
+    "BUREAU_ACTIVE_CREDIT_YEARS_MAX": {
+        "table": "bureau",
+        "description": "Maximum tenure in years among currently active bureau loans"
+    },
+    "BUREAU_ACTIVE_CREDIT_YEARS_MEAN": {
+        "table": "bureau",
+        "description": "Average tenure in years among currently active bureau loans"
+    },
+    "BUREAU_ACTIVE_LOAN_DURATION_DAYS_MAX": {
+        "table": "bureau",
+        "description": "Maximum contract duration in days among active bureau loans"
+    },
+    "BUREAU_ACTIVE_LOAN_DURATION_DAYS_MEAN": {
+        "table": "bureau",
+        "description": "Average contract duration in days among active bureau loans"
+    },
+    "BUREAU_ACTIVE_SETTLEMENT_DIFF_DAYS_MAX": {
+        "table": "bureau",
+        "description": "Maximum settlement day variance among active bureau contracts"
+    },
+    "BUREAU_ACTIVE_SETTLEMENT_DIFF_DAYS_MEAN": {
+        "table": "bureau",
+        "description": "Average settlement day variance among active bureau contracts"
+    },
+    "BUREAU_ACTIVE_AMT_CREDIT_SUM_SUM": {
+        "table": "bureau",
+        "description": "Total aggregate sanctioned credit limit across active bureau loans"
+    },
+    "BUREAU_ACTIVE_AMT_CREDIT_SUM_MEAN": {
+        "table": "bureau",
+        "description": "Average sanctioned credit limit per active bureau loan"
+    },
+    "BUREAU_ACTIVE_AMT_CREDIT_SUM_MAX": {
+        "table": "bureau",
+        "description": "Largest sanctioned credit limit among active bureau loans"
+    },
+    "BUREAU_ACTIVE_AMT_CREDIT_SUM_DEBT_SUM": {
+        "table": "bureau",
+        "description": "Total active outstanding debt currently owed across bureau loans"
+    },
+    "BUREAU_ACTIVE_AMT_CREDIT_SUM_DEBT_MEAN": {
+        "table": "bureau",
+        "description": "Average outstanding debt balance per active bureau loan"
+    },
+    "BUREAU_ACTIVE_AMT_CREDIT_SUM_DEBT_MAX": {
+        "table": "bureau",
+        "description": "Maximum outstanding debt balance on an active bureau loan"
+    },
+    "BUREAU_ACTIVE_AMT_CREDIT_SUM_LIMIT_SUM": {
+        "table": "bureau",
+        "description": "Total available revolving limit across active bureau accounts"
+    },
+    "BUREAU_ACTIVE_AMT_CREDIT_SUM_LIMIT_MEAN": {
+        "table": "bureau",
+        "description": "Average available revolving limit across active bureau accounts"
+    },
+    "BUREAU_ACTIVE_AMT_CREDIT_SUM_LIMIT_MAX": {
+        "table": "bureau",
+        "description": "Maximum available revolving limit on an active bureau account"
+    },
+    "BUREAU_ACTIVE_AMT_CREDIT_SUM_OVERDUE_SUM": {
+        "table": "bureau",
+        "description": "Total currently overdue debt across all active bureau loans"
+    },
+    "BUREAU_ACTIVE_AMT_CREDIT_SUM_OVERDUE_MEAN": {
+        "table": "bureau",
+        "description": "Average overdue balance across active bureau loans"
+    },
+    "BUREAU_ACTIVE_AMT_CREDIT_SUM_OVERDUE_MAX": {
+        "table": "bureau",
+        "description": "Maximum overdue balance on a single active bureau loan"
+    },
+    "BUREAU_ACTIVE_AMT_CREDIT_MAX_OVERDUE_CLEAN_MAX": {
+        "table": "bureau",
+        "description": "Historical peak overdue balance among active bureau loans"
+    },
+    "BUREAU_ACTIVE_AMT_CREDIT_MAX_OVERDUE_CLEAN_MEAN": {
+        "table": "bureau",
+        "description": "Average peak overdue balance among active bureau loans"
+    },
+    "BUREAU_ACTIVE_CREDIT_PAID_AMOUNT_SUM": {
+        "table": "bureau",
+        "description": "Total principal amount amortized so far across active bureau loans"
+    },
+    "BUREAU_ACTIVE_CREDIT_PAID_AMOUNT_MEAN": {
+        "table": "bureau",
+        "description": "Average principal amount amortized per active bureau loan"
+    },
+    "BUREAU_ACTIVE_CREDIT_PAID_AMOUNT_MAX": {
+        "table": "bureau",
+        "description": "Maximum principal amount amortized on an active bureau loan"
+    },
+    "BUREAU_ACTIVE_CREDIT_DAY_OVERDUE_MAX": {
+        "table": "bureau",
+        "description": "Maximum current days past due (DPD) on active bureau loans"
+    },
+    "BUREAU_ACTIVE_CREDIT_DAY_OVERDUE_MEAN": {
+        "table": "bureau",
+        "description": "Average current days past due (DPD) across active bureau loans"
+    },
+    "BUREAU_ACTIVE_CNT_CREDIT_PROLONG_SUM": {
+        "table": "bureau",
+        "description": "Total extension requests made across active bureau loans"
+    },
+    "BUREAU_ACTIVE_DEBT_RATIO_MAX": {
+        "table": "bureau",
+        "description": "Maximum debt utilization ratio among active bureau loans"
+    },
+    "BUREAU_ACTIVE_DEBT_RATIO_MEAN": {
+        "table": "bureau",
+        "description": "Average debt utilization ratio across active bureau loans"
+    },
+    "BUREAU_ACTIVE_OVERDUE_TO_DEBT_RATIO_MAX": {
+        "table": "bureau",
+        "description": "Peak ratio of overdue amount to total debt among active bureau loans"
+    },
+    "BUREAU_ACTIVE_OVERDUE_TO_DEBT_RATIO_MEAN": {
+        "table": "bureau",
+        "description": "Average ratio of overdue amount to total debt among active loans"
+    },
+    "BUREAU_ACTIVE_PAID_RATIO_MAX": {
+        "table": "bureau",
+        "description": "Maximum principal repayment percentage among active bureau loans"
+    },
+    "BUREAU_ACTIVE_PAID_RATIO_MEAN": {
+        "table": "bureau",
+        "description": "Average principal repayment percentage across active bureau loans"
+    },
+    "BUREAU_ACTIVE_IS_ACTIVE_SUM": {
+        "table": "bureau",
+        "description": "Total count of active loans confirmed by bureau records"
+    },
+    "BUREAU_ACTIVE_IS_RECENT_1Y_SUM": {
+        "table": "bureau",
+        "description": "Count of active bureau loans opened within the last 12 months"
+    },
+    "BUREAU_ACTIVE_IS_RECENT_1Y_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of active bureau loans opened within the last 12 months"
+    },
+    "BUREAU_ACTIVE_IS_RECENT_6M_SUM": {
+        "table": "bureau",
+        "description": "Count of active bureau loans opened within the last 6 months"
+    },
+    "BUREAU_ACTIVE_IS_RECENT_6M_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of active bureau loans opened within the last 6 months"
+    },
+    "BUREAU_ACTIVE_IS_OVERDUE_MEAN": {
+        "table": "bureau",
+        "description": "Delinquency rate among currently active bureau loans"
+    },
+    "BUREAU_ACTIVE_DPD_GR2_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of active bureau loans in Delinquency Group 2 (10–90 DPD)"
+    },
+    "BUREAU_ACTIVE_DPD_GR3_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of active bureau loans in Delinquency Group 3 (91–180 DPD)"
+    },
+    "BUREAU_ACTIVE_DPD_GR4_SUM": {
+        "table": "bureau",
+        "description": "Count of active bureau loans in Delinquency Group 4 (181–360 DPD)"
+    },
+    "BUREAU_ACTIVE_DPD_GR4_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of active bureau loans in Delinquency Group 4 (181–360 DPD)"
+    },
+    "BUREAU_ACTIVE_DPD_GR5_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of active bureau loans in Delinquency Group 5 (>360 DPD)"
+    },
+    "BUREAU_ACTIVE_ENDDATE_ANOM_SUM": {
+        "table": "bureau",
+        "description": "Count of active bureau contracts with anomalous maturity dates"
+    },
+    "BUREAU_ACTIVE_ENDDATE_ANOM_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of active bureau contracts with anomalous maturity dates"
+    },
+    "BUREAU_ACTIVE_IS_FUTURE_OBLIGATION_SUM": {
+        "table": "bureau",
+        "description": "Count of active bureau contracts with outstanding repayment horizons"
+    },
+    "BUREAU_ACTIVE_IS_FUTURE_OBLIGATION_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of active bureau loans with future repayment horizons"
+    },
+    "BUREAU_ACTIVE_IS_LONG_TERM_SUM": {
+        "table": "bureau",
+        "description": "Count of active long-term bureau contracts (>1 year)"
+    },
+    "BUREAU_ACTIVE_IS_LONG_TERM_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of active long-term bureau contracts (>1 year)"
+    },
+    "BUREAU_ACTIVE_IS_EARLY_SETTLED_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of active-tagged bureau records settled ahead of maturity"
+    },
+    "BUREAU_ACTIVE_IS_LATE_SETTLED_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of active-tagged bureau records overdue past maturity"
+    },
+    "BUREAU_ACTIVE_MAX_OVERDUE_IS_NA_SUM": {
+        "table": "bureau",
+        "description": "Count of active bureau loans missing historical overdue tracking"
+    },
+    "BUREAU_ACTIVE_MAX_OVERDUE_IS_NA_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of active bureau loans missing historical overdue tracking"
+    },
+    "BUREAU_ACTIVE_HAS_MAX_OVERDUE_SUM": {
+        "table": "bureau",
+        "description": "Count of active bureau loans with at least one historical overdue incident"
+    },
+    "BUREAU_ACTIVE_HAS_MAX_OVERDUE_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of active bureau loans with historical overdue incidents"
+    },
+    "BUREAU_ACTIVE_IS_PROLONGED_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of active bureau loans that underwent tenor extensions"
+    },
+    "BUREAU_ACTIVE_IS_MULTIPLE_PROLONGED_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of active bureau loans extended multiple times"
+    },
+    "BUREAU_ACTIVE_CREDIT_SUM_IS_ZERO_SUM": {
+        "table": "bureau",
+        "description": "Count of active bureau loans with zero approved limit"
+    },
+    "BUREAU_ACTIVE_CREDIT_SUM_IS_ZERO_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of active bureau loans with zero approved limit"
+    },
+    "BUREAU_ACTIVE_DEBT_IS_NA_SUM": {
+        "table": "bureau",
+        "description": "Count of active bureau contracts missing outstanding debt values"
+    },
+    "BUREAU_ACTIVE_DEBT_IS_NA_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of active bureau contracts missing outstanding debt values"
+    },
+    "BUREAU_ACTIVE_IS_DEBT_FREE_SUM": {
+        "table": "bureau",
+        "description": "Count of active bureau accounts currently bearing zero debt"
+    },
+    "BUREAU_ACTIVE_IS_DEBT_FREE_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of active bureau accounts currently bearing zero debt"
+    },
+    "BUREAU_ACTIVE_LIMIT_IS_NA_SUM": {
+        "table": "bureau",
+        "description": "Count of active revolving bureau accounts missing credit limit data"
+    },
+    "BUREAU_ACTIVE_LIMIT_IS_NA_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of active revolving bureau accounts missing credit limit data"
+    },
+    "BUREAU_ACTIVE_IS_OVER_LIMIT_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of active revolving bureau accounts over credit limits"
+    },
+    "BUREAU_ACTIVE_HAS_AVAILABLE_LIMIT_SUM": {
+        "table": "bureau",
+        "description": "Count of active revolving accounts with usable credit limit"
+    },
+    "BUREAU_ACTIVE_HAS_AVAILABLE_LIMIT_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of active revolving accounts with usable credit limit"
+    },
+    "BUREAU_ACTIVE_TYPE_Car loan_SUM": {
+        "table": "bureau",
+        "description": "Number of active auto loans at credit bureau"
+    },
+    "BUREAU_ACTIVE_TYPE_Car loan_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of active bureau portfolio represented by auto loans"
+    },
+    "BUREAU_ACTIVE_TYPE_Consumer credit_SUM": {
+        "table": "bureau",
+        "description": "Number of active consumer installment loans at bureau"
+    },
+    "BUREAU_ACTIVE_TYPE_Consumer credit_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of active bureau portfolio in consumer loans"
+    },
+    "BUREAU_ACTIVE_TYPE_Credit card_SUM": {
+        "table": "bureau",
+        "description": "Number of active revolving credit cards at bureau"
+    },
+    "BUREAU_ACTIVE_TYPE_Credit card_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of active bureau portfolio in credit cards"
+    },
+    "BUREAU_ACTIVE_TYPE_Microloan_SUM": {
+        "table": "bureau",
+        "description": "Number of active microfinance/payday loans at bureau"
+    },
+    "BUREAU_ACTIVE_TYPE_Microloan_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of active bureau portfolio in microfinance loans"
+    },
+    "BUREAU_ACTIVE_TYPE_Mortgage_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of active bureau portfolio in mortgage loans"
+    },
+    "BUREAU_ACTIVE_TYPE_Other_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of other loan categories in active bureau portfolio"
+    },
+    "BUREAU_ACTIVE_UPDATED_RECENT_30D_SUM": {
+        "table": "bureau",
+        "description": "Count of active bureau loans updated within the past 30 days"
+    },
+    "BUREAU_ACTIVE_UPDATED_RECENT_30D_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of active bureau loans updated within the past 30 days"
+    },
+    "BUREAU_ACTIVE_UPDATED_RECENT_90D_SUM": {
+        "table": "bureau",
+        "description": "Count of active bureau loans updated within the past 90 days"
+    },
+    "BUREAU_ACTIVE_UPDATED_RECENT_90D_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of active bureau loans updated within the past 90 days"
+    },
+    "BUREAU_CLOSED_DAYS_CREDIT_MIN": {
+        "table": "bureau",
+        "description": "Days since application for the oldest closed bureau loan"
+    },
+    "BUREAU_CLOSED_DAYS_CREDIT_MAX": {
+        "table": "bureau",
+        "description": "Days since application for the most recent closed bureau loan"
+    },
+    "BUREAU_CLOSED_DAYS_CREDIT_MEAN": {
+        "table": "bureau",
+        "description": "Average application recency in days for closed bureau loans"
+    },
+    "BUREAU_CLOSED_DAYS_CREDIT_VAR": {
+        "table": "bureau",
+        "description": "Variance of application dates across closed bureau loans"
+    },
+    "BUREAU_CLOSED_DAYS_CREDIT_UPDATE_MAX": {
+        "table": "bureau",
+        "description": "Recency in days of latest update among closed bureau records"
+    },
+    "BUREAU_CLOSED_DAYS_CREDIT_UPDATE_MEAN": {
+        "table": "bureau",
+        "description": "Average days since update across closed bureau records"
+    },
+    "BUREAU_CLOSED_DAYS_CREDIT_ENDDATE_CLEAN_MIN": {
+        "table": "bureau",
+        "description": "Earliest contractual maturity date among closed bureau loans"
+    },
+    "BUREAU_CLOSED_DAYS_CREDIT_ENDDATE_CLEAN_MAX": {
+        "table": "bureau",
+        "description": "Latest contractual maturity date among closed bureau loans"
+    },
+    "BUREAU_CLOSED_DAYS_CREDIT_ENDDATE_CLEAN_MEAN": {
+        "table": "bureau",
+        "description": "Average contractual maturity date among closed bureau loans"
+    },
+    "BUREAU_CLOSED_DAYS_ENDDATE_FACT_CLEAN_MIN": {
+        "table": "bureau",
+        "description": "Earliest actual payoff date among closed bureau loans"
+    },
+    "BUREAU_CLOSED_DAYS_ENDDATE_FACT_CLEAN_MAX": {
+        "table": "bureau",
+        "description": "Most recent actual payoff date among closed bureau loans"
+    },
+    "BUREAU_CLOSED_DAYS_ENDDATE_FACT_CLEAN_MEAN": {
+        "table": "bureau",
+        "description": "Average actual payoff date among closed bureau loans"
+    },
+    "BUREAU_CLOSED_CREDIT_YEARS_MAX": {
+        "table": "bureau",
+        "description": "Longest active history in years of a closed bureau loan"
+    },
+    "BUREAU_CLOSED_CREDIT_YEARS_MEAN": {
+        "table": "bureau",
+        "description": "Average active history in years across closed bureau loans"
+    },
+    "BUREAU_CLOSED_LOAN_DURATION_DAYS_MAX": {
+        "table": "bureau",
+        "description": "Longest contractual duration in days among closed bureau loans"
+    },
+    "BUREAU_CLOSED_LOAN_DURATION_DAYS_MEAN": {
+        "table": "bureau",
+        "description": "Average contractual duration in days among closed bureau loans"
+    },
+    "BUREAU_CLOSED_SETTLEMENT_DIFF_DAYS_MAX": {
+        "table": "bureau",
+        "description": "Maximum days difference between actual payoff and contractual end date"
+    },
+    "BUREAU_CLOSED_SETTLEMENT_DIFF_DAYS_MEAN": {
+        "table": "bureau",
+        "description": "Average days difference between actual payoff and contractual end date"
+    },
+    "BUREAU_CLOSED_AMT_CREDIT_SUM_SUM": {
+        "table": "bureau",
+        "description": "Total aggregate sanctioned limit of all settled bureau loans"
+    },
+    "BUREAU_CLOSED_AMT_CREDIT_SUM_MEAN": {
+        "table": "bureau",
+        "description": "Average credit limit across settled bureau loans"
+    },
+    "BUREAU_CLOSED_AMT_CREDIT_SUM_MAX": {
+        "table": "bureau",
+        "description": "Highest credit limit among settled bureau loans"
+    },
+    "BUREAU_CLOSED_AMT_CREDIT_SUM_DEBT_SUM": {
+        "table": "bureau",
+        "description": "Total remaining debt balance recorded on closed bureau records"
+    },
+    "BUREAU_CLOSED_AMT_CREDIT_SUM_DEBT_MEAN": {
+        "table": "bureau",
+        "description": "Average residual balance on closed bureau records"
+    },
+    "BUREAU_CLOSED_AMT_CREDIT_SUM_DEBT_MAX": {
+        "table": "bureau",
+        "description": "Maximum residual balance on a closed bureau record"
+    },
+    "BUREAU_CLOSED_AMT_CREDIT_SUM_LIMIT_SUM": {
+        "table": "bureau",
+        "description": "Total credit limit of closed revolving accounts"
+    },
+    "BUREAU_CLOSED_AMT_CREDIT_SUM_LIMIT_MEAN": {
+        "table": "bureau",
+        "description": "Average credit limit of closed revolving accounts"
+    },
+    "BUREAU_CLOSED_AMT_CREDIT_SUM_LIMIT_MAX": {
+        "table": "bureau",
+        "description": "Maximum credit limit of a closed revolving account"
+    },
+    "BUREAU_CLOSED_AMT_CREDIT_SUM_OVERDUE_SUM": {
+        "table": "bureau",
+        "description": "Total residual overdue debt on closed bureau records"
+    },
+    "BUREAU_CLOSED_AMT_CREDIT_MAX_OVERDUE_CLEAN_MAX": {
+        "table": "bureau",
+        "description": "Historical peak overdue balance among closed bureau loans"
+    },
+    "BUREAU_CLOSED_AMT_CREDIT_MAX_OVERDUE_CLEAN_MEAN": {
+        "table": "bureau",
+        "description": "Average peak overdue balance among closed bureau loans"
+    },
+    "BUREAU_CLOSED_CREDIT_PAID_AMOUNT_SUM": {
+        "table": "bureau",
+        "description": "Total principal successfully paid off across closed bureau loans"
+    },
+    "BUREAU_CLOSED_CREDIT_PAID_AMOUNT_MEAN": {
+        "table": "bureau",
+        "description": "Average principal successfully paid off per closed bureau loan"
+    },
+    "BUREAU_CLOSED_CREDIT_PAID_AMOUNT_MAX": {
+        "table": "bureau",
+        "description": "Maximum principal successfully paid off on a single closed bureau loan"
+    },
+    "BUREAU_CLOSED_CNT_CREDIT_PROLONG_SUM": {
+        "table": "bureau",
+        "description": "Total extension requests made across closed bureau loans"
+    },
+    "BUREAU_CLOSED_DEBT_RATIO_MAX": {
+        "table": "bureau",
+        "description": "Maximum debt utilization ratio recorded on closed bureau loans"
+    },
+    "BUREAU_CLOSED_DEBT_RATIO_MEAN": {
+        "table": "bureau",
+        "description": "Average debt utilization ratio recorded on closed bureau loans"
+    },
+    "BUREAU_CLOSED_OVERDUE_TO_DEBT_RATIO_MAX": {
+        "table": "bureau",
+        "description": "Highest ratio of overdue balance to debt on closed bureau accounts"
+    },
+    "BUREAU_CLOSED_PAID_RATIO_MAX": {
+        "table": "bureau",
+        "description": "Peak principal recovery percentage achieved on a closed loan"
+    },
+    "BUREAU_CLOSED_PAID_RATIO_MEAN": {
+        "table": "bureau",
+        "description": "Average principal recovery percentage achieved on closed loans"
+    },
+    "BUREAU_CLOSED_IS_CLOSED_SUM": {
+        "table": "bureau",
+        "description": "Total count of fully paid and closed external bureau accounts"
+    },
+    "BUREAU_CLOSED_IS_RECENT_1Y_SUM": {
+        "table": "bureau",
+        "description": "Number of bureau loans successfully closed within the last 12 months"
+    },
+    "BUREAU_CLOSED_IS_RECENT_1Y_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of bureau loans closed within the last 12 months"
+    },
+    "BUREAU_CLOSED_IS_RECENT_6M_SUM": {
+        "table": "bureau",
+        "description": "Number of bureau loans successfully closed within the last 6 months"
+    },
+    "BUREAU_CLOSED_IS_RECENT_6M_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of bureau loans closed within the last 6 months"
+    },
+    "BUREAU_CLOSED_ENDDATE_ANOM_SUM": {
+        "table": "bureau",
+        "description": "Count of closed bureau records with anomalous contractual end dates"
+    },
+    "BUREAU_CLOSED_ENDDATE_ANOM_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of closed bureau records with anomalous contractual end dates"
+    },
+    "BUREAU_CLOSED_IS_FUTURE_OBLIGATION_SUM": {
+        "table": "bureau",
+        "description": "Count of closed contracts where contractual end date was in the future"
+    },
+    "BUREAU_CLOSED_IS_FUTURE_OBLIGATION_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of closed contracts settled before future maturity date"
+    },
+    "BUREAU_CLOSED_IS_LONG_TERM_SUM": {
+        "table": "bureau",
+        "description": "Count of long-term bureau contracts successfully settled"
+    },
+    "BUREAU_CLOSED_IS_LONG_TERM_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of closed loans that were long-term (>1 year)"
+    },
+    "BUREAU_CLOSED_IS_EARLY_SETTLED_SUM": {
+        "table": "bureau",
+        "description": "Total count of bureau loans prepaid and closed early"
+    },
+    "BUREAU_CLOSED_IS_EARLY_SETTLED_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of closed loans that were prepaid early"
+    },
+    "BUREAU_CLOSED_IS_LATE_SETTLED_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of closed loans settled past contractual maturity"
+    },
+    "BUREAU_CLOSED_MAX_OVERDUE_IS_NA_SUM": {
+        "table": "bureau",
+        "description": "Count of closed bureau records missing overdue history"
+    },
+    "BUREAU_CLOSED_MAX_OVERDUE_IS_NA_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of closed bureau records missing overdue history"
+    },
+    "BUREAU_CLOSED_HAS_MAX_OVERDUE_SUM": {
+        "table": "bureau",
+        "description": "Count of closed bureau loans that had historical overdue balances"
+    },
+    "BUREAU_CLOSED_HAS_MAX_OVERDUE_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of closed bureau loans that had historical overdue balances"
+    },
+    "BUREAU_CLOSED_IS_PROLONGED_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of closed bureau loans that had tenor extensions"
+    },
+    "BUREAU_CLOSED_IS_MULTIPLE_PROLONGED_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of closed bureau loans extended multiple times"
+    },
+    "BUREAU_CLOSED_CREDIT_SUM_IS_ZERO_SUM": {
+        "table": "bureau",
+        "description": "Count of closed bureau contracts with zero approved credit limit"
+    },
+    "BUREAU_CLOSED_CREDIT_SUM_IS_ZERO_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of closed bureau contracts with zero approved limit"
+    },
+    "BUREAU_CLOSED_DEBT_IS_NA_SUM": {
+        "table": "bureau",
+        "description": "Count of closed records missing debt information"
+    },
+    "BUREAU_CLOSED_DEBT_IS_NA_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of closed records missing debt information"
+    },
+    "BUREAU_CLOSED_IS_DEBT_FREE_SUM": {
+        "table": "bureau",
+        "description": "Total closed loans verified to have zero outstanding balance"
+    },
+    "BUREAU_CLOSED_IS_DEBT_FREE_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of closed loans verified to have zero outstanding balance"
+    },
+    "BUREAU_CLOSED_LIMIT_IS_NA_SUM": {
+        "table": "bureau",
+        "description": "Count of closed revolving accounts missing limit data"
+    },
+    "BUREAU_CLOSED_LIMIT_IS_NA_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of closed revolving accounts missing limit data"
+    },
+    "BUREAU_CLOSED_HAS_AVAILABLE_LIMIT_SUM": {
+        "table": "bureau",
+        "description": "Count of closed revolving accounts that had available limit"
+    },
+    "BUREAU_CLOSED_HAS_AVAILABLE_LIMIT_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of closed revolving accounts that had available limit"
+    },
+    "BUREAU_CLOSED_HAS_SUM_OVERDUE_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of closed loans that carried overdue debt at closing"
+    },
+    "BUREAU_CLOSED_TYPE_Car loan_SUM": {
+        "table": "bureau",
+        "description": "Total closed auto loans at credit bureau"
+    },
+    "BUREAU_CLOSED_TYPE_Car loan_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of closed bureau portfolio represented by auto loans"
+    },
+    "BUREAU_CLOSED_TYPE_Consumer credit_SUM": {
+        "table": "bureau",
+        "description": "Total closed consumer installment loans at bureau"
+    },
+    "BUREAU_CLOSED_TYPE_Consumer credit_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of closed bureau portfolio in consumer loans"
+    },
+    "BUREAU_CLOSED_TYPE_Credit card_SUM": {
+        "table": "bureau",
+        "description": "Total closed credit card accounts at bureau"
+    },
+    "BUREAU_CLOSED_TYPE_Credit card_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of closed bureau portfolio in credit cards"
+    },
+    "BUREAU_CLOSED_TYPE_Microloan_SUM": {
+        "table": "bureau",
+        "description": "Total closed microfinance/payday loans at bureau"
+    },
+    "BUREAU_CLOSED_TYPE_Microloan_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of closed bureau portfolio in microfinance loans"
+    },
+    "BUREAU_CLOSED_TYPE_Mortgage_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of closed bureau portfolio in mortgages"
+    },
+    "BUREAU_CLOSED_TYPE_Other_SUM": {
+        "table": "bureau",
+        "description": "Total closed other category loans at bureau"
+    },
+    "BUREAU_CLOSED_TYPE_Other_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of other loan types in closed bureau portfolio"
+    },
+    "BUREAU_CLOSED_UPDATED_RECENT_30D_SUM": {
+        "table": "bureau",
+        "description": "Count of closed bureau loans updated within the past 30 days"
+    },
+    "BUREAU_CLOSED_UPDATED_RECENT_30D_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of closed bureau loans updated within the past 30 days"
+    },
+    "BUREAU_CLOSED_UPDATED_RECENT_90D_SUM": {
+        "table": "bureau",
+        "description": "Count of closed bureau loans updated within the past 90 days"
+    },
+    "BUREAU_CLOSED_UPDATED_RECENT_90D_MEAN": {
+        "table": "bureau",
+        "description": "Proportion of closed bureau loans updated within the past 90 days"
+    },
+    "MONTHS_BALANCE_MIN_MEAN": {
+        "table": "bureau_balance",
+        "description": "Average historical tracking window length in months at bureau"
+    },
+    "MONTHS_BALANCE_MIN_MAX": {
+        "table": "bureau_balance",
+        "description": "Maximum historical tracking window length in months across bureau loans"
+    },
+    "MONTHS_BALANCE_SIZE_MEAN": {
+        "table": "bureau_balance",
+        "description": "Average count of monthly statement snapshots per bureau loan"
+    },
+    "MONTHS_BALANCE_SIZE_MAX": {
+        "table": "bureau_balance",
+        "description": "Maximum count of monthly statement snapshots on a single bureau loan"
+    },
+    "BB_SEVERITY_SCORE_MAX_MEAN": {
+        "table": "bureau_balance",
+        "description": "Average peak delinquency severity score across bureau loans"
+    },
+    "BB_SEVERITY_SCORE_MAX_MAX": {
+        "table": "bureau_balance",
+        "description": "Highest single delinquency severity score reached in bureau history"
+    },
+    "BB_SEVERITY_SCORE_MEAN_MEAN": {
+        "table": "bureau_balance",
+        "description": "Grand mean of monthly delinquency severity scores across bureau loans"
+    },
+    "BB_SEVERITY_SCORE_MEAN_MAX": {
+        "table": "bureau_balance",
+        "description": "Highest average delinquency severity score of an individual bureau loan"
+    },
+    "BB_STATUS_0_SUM_SUM": {
+        "table": "bureau_balance",
+        "description": "Total monthly cycles with zero or 1–30 DPD (Status 0) across bureau loans"
+    },
+    "BB_STATUS_0_SUM_MAX": {
+        "table": "bureau_balance",
+        "description": "Maximum monthly cycles with Status 0 on a single bureau loan"
+    },
+    "BB_STATUS_0_SUM_MEAN": {
+        "table": "bureau_balance",
+        "description": "Average monthly cycles with Status 0 per bureau loan"
+    },
+    "BB_STATUS_0_MEAN_MEAN": {
+        "table": "bureau_balance",
+        "description": "Average proportion of on-time monthly payment cycles (Status 0)"
+    },
+    "BB_STATUS_0_MEAN_MAX": {
+        "table": "bureau_balance",
+        "description": "Maximum proportion of Status 0 cycles achieved on a single bureau loan"
+    },
+    "BB_STATUS_1_SUM_SUM": {
+        "table": "bureau_balance",
+        "description": "Total monthly cycles with 31–60 DPD (Status 1) across bureau loans"
+    },
+    "BB_STATUS_1_SUM_MAX": {
+        "table": "bureau_balance",
+        "description": "Maximum monthly cycles with 31–60 DPD on a single bureau loan"
+    },
+    "BB_STATUS_1_SUM_MEAN": {
+        "table": "bureau_balance",
+        "description": "Average monthly cycles with 31–60 DPD per bureau loan"
+    },
+    "BB_STATUS_1_MEAN_MEAN": {
+        "table": "bureau_balance",
+        "description": "Average proportion of monthly cycles with 31–60 DPD (Status 1)"
+    },
+    "BB_STATUS_1_MEAN_MAX": {
+        "table": "bureau_balance",
+        "description": "Maximum proportion of cycles with 31–60 DPD on a single bureau loan"
+    },
+    "BB_STATUS_2_SUM_SUM": {
+        "table": "bureau_balance",
+        "description": "Total monthly cycles with 61–90 DPD (Status 2) across bureau loans"
+    },
+    "BB_STATUS_2_SUM_MEAN": {
+        "table": "bureau_balance",
+        "description": "Average monthly cycles with 61–90 DPD per bureau loan"
+    },
+    "BB_STATUS_2_MEAN_MEAN": {
+        "table": "bureau_balance",
+        "description": "Average proportion of monthly cycles with 61–90 DPD (Status 2)"
+    },
+    "BB_STATUS_2_MEAN_MAX": {
+        "table": "bureau_balance",
+        "description": "Maximum proportion of cycles with 61–90 DPD on a single bureau loan"
+    },
+    "BB_STATUS_3_SUM_SUM": {
+        "table": "bureau_balance",
+        "description": "Total monthly cycles with 91–120 DPD (Status 3 Substandard) at bureau"
+    },
+    "BB_STATUS_3_SUM_MEAN": {
+        "table": "bureau_balance",
+        "description": "Average monthly cycles with 91–120 DPD per bureau loan"
+    },
+    "BB_STATUS_3_MEAN_MEAN": {
+        "table": "bureau_balance",
+        "description": "Average proportion of monthly cycles with 91–120 DPD (Status 3)"
+    },
+    "BB_STATUS_3_MEAN_MAX": {
+        "table": "bureau_balance",
+        "description": "Maximum proportion of cycles with 91–120 DPD on a single bureau loan"
+    },
+    "BB_STATUS_4_SUM_SUM": {
+        "table": "bureau_balance",
+        "description": "Total monthly cycles with 121–180 DPD (Status 4 Doubtful) at bureau"
+    },
+    "BB_STATUS_4_SUM_MEAN": {
+        "table": "bureau_balance",
+        "description": "Average monthly cycles with 121–180 DPD per bureau loan"
+    },
+    "BB_STATUS_4_MEAN_MEAN": {
+        "table": "bureau_balance",
+        "description": "Average proportion of monthly cycles with 121–180 DPD (Status 4)"
+    },
+    "BB_STATUS_4_MEAN_MAX": {
+        "table": "bureau_balance",
+        "description": "Maximum proportion of cycles with 121–180 DPD on a single bureau loan"
+    },
+    "BB_STATUS_5_SUM_SUM": {
+        "table": "bureau_balance",
+        "description": "Total monthly cycles with severe delinquency >180 DPD or write-off (Status 5)"
+    },
+    "BB_STATUS_5_SUM_MAX": {
+        "table": "bureau_balance",
+        "description": "Maximum monthly cycles with Status 5 on a single bureau loan"
+    },
+    "BB_STATUS_5_SUM_MEAN": {
+        "table": "bureau_balance",
+        "description": "Average monthly cycles with Status 5 per bureau loan"
+    },
+    "BB_STATUS_5_MEAN_MEAN": {
+        "table": "bureau_balance",
+        "description": "Average proportion of monthly cycles with severe default (Status 5)"
+    },
+    "BB_STATUS_5_MEAN_MAX": {
+        "table": "bureau_balance",
+        "description": "Maximum proportion of cycles with severe default on a single bureau loan"
+    },
+    "BB_STATUS_C_SUM_SUM": {
+        "table": "bureau_balance",
+        "description": "Total monthly statements reported in closed/settled status (Status C)"
+    },
+    "BB_STATUS_C_SUM_MAX": {
+        "table": "bureau_balance",
+        "description": "Maximum closed status statement cycles on a single bureau loan"
+    },
+    "BB_STATUS_C_SUM_MEAN": {
+        "table": "bureau_balance",
+        "description": "Average closed status statement cycles per bureau loan"
+    },
+    "BB_STATUS_C_MEAN_MEAN": {
+        "table": "bureau_balance",
+        "description": "Average proportion of monthly statements reported in closed status"
+    },
+    "BB_STATUS_C_MEAN_MAX": {
+        "table": "bureau_balance",
+        "description": "Maximum proportion of statements reported closed on a single bureau loan"
+    },
+    "BB_STATUS_X_SUM_SUM": {
+        "table": "bureau_balance",
+        "description": "Total monthly statements with unknown or unverified status (Status X)"
+    },
+    "BB_STATUS_X_SUM_MAX": {
+        "table": "bureau_balance",
+        "description": "Maximum unverified status statement cycles on a single bureau loan"
+    },
+    "BB_STATUS_X_SUM_MEAN": {
+        "table": "bureau_balance",
+        "description": "Average unverified status statement cycles per bureau loan"
+    },
+    "BB_STATUS_X_MEAN_MEAN": {
+        "table": "bureau_balance",
+        "description": "Average proportion of monthly statements with unknown status"
+    },
+    "BB_STATUS_X_MEAN_MAX": {
+        "table": "bureau_balance",
+        "description": "Maximum proportion of statements with unknown status on a single loan"
+    },
+    "BB_IS_OVERDUE_SUM_SUM": {
+        "table": "bureau_balance",
+        "description": "Cumulative total of delinquent months recorded across all bureau loans"
+    },
+    "BB_IS_OVERDUE_SUM_MAX": {
+        "table": "bureau_balance",
+        "description": "Maximum delinquent months recorded on a single bureau loan"
+    },
+    "BB_IS_OVERDUE_SUM_MEAN": {
+        "table": "bureau_balance",
+        "description": "Average delinquent months recorded per bureau loan"
+    },
+    "BB_IS_OVERDUE_MEAN_MEAN": {
+        "table": "bureau_balance",
+        "description": "Average overall delinquency rate across bureau monthly statements"
+    },
+    "BB_IS_OVERDUE_MEAN_MAX": {
+        "table": "bureau_balance",
+        "description": "Peak monthly delinquency rate recorded on an individual bureau loan"
+    },
+    "BB_IS_DPD_30PLUS_SUM_SUM": {
+        "table": "bureau_balance",
+        "description": "Total monthly cycles with delinquency exceeding 30 DPD at bureau"
+    },
+    "BB_IS_DPD_30PLUS_SUM_MAX": {
+        "table": "bureau_balance",
+        "description": "Maximum monthly cycles with >30 DPD on a single bureau loan"
+    },
+    "BB_IS_DPD_30PLUS_SUM_MEAN": {
+        "table": "bureau_balance",
+        "description": "Average monthly cycles with >30 DPD per bureau loan"
+    },
+    "BB_IS_DPD_30PLUS_MEAN_MEAN": {
+        "table": "bureau_balance",
+        "description": "Average proportion of statement cycles with delinquency >30 DPD"
+    },
+    "BB_IS_DPD_30PLUS_MEAN_MAX": {
+        "table": "bureau_balance",
+        "description": "Maximum proportion of statement cycles with >30 DPD on a single loan"
+    },
+    "BB_IS_NPL_90PLUS_SUM_SUM": {
+        "table": "bureau_balance",
+        "description": "Total non-performing loan (NPL) monthly cycles (>90 DPD) at bureau"
+    },
+    "BB_IS_NPL_90PLUS_SUM_MEAN": {
+        "table": "bureau_balance",
+        "description": "Average NPL monthly cycles (>90 DPD) per bureau loan"
+    },
+    "BB_IS_NPL_90PLUS_MEAN_MEAN": {
+        "table": "bureau_balance",
+        "description": "Average proportion of monthly cycles classified as NPL (>90 DPD)"
+    },
+    "BB_IS_NPL_90PLUS_MEAN_MAX": {
+        "table": "bureau_balance",
+        "description": "Peak proportion of monthly cycles classified as NPL on a single loan"
+    },
+    "BB_IN_RECENT_6M_SUM_SUM": {
+        "table": "bureau_balance",
+        "description": "Total active monthly statements recorded within the last 6 months"
+    },
+    "BB_IN_RECENT_6M_SUM_MAX": {
+        "table": "bureau_balance",
+        "description": "Maximum statements recorded in the last 6 months on a single loan"
+    },
+    "BB_IN_RECENT_6M_SUM_MEAN": {
+        "table": "bureau_balance",
+        "description": "Average statements recorded in the last 6 months per bureau loan"
+    },
+    "BB_IN_RECENT_12M_SUM_SUM": {
+        "table": "bureau_balance",
+        "description": "Total active monthly statements recorded within the last 12 months"
+    },
+    "BB_IN_RECENT_12M_SUM_MAX": {
+        "table": "bureau_balance",
+        "description": "Maximum statements recorded in the last 12 months on a single loan"
+    },
+    "BB_IN_RECENT_12M_SUM_MEAN": {
+        "table": "bureau_balance",
+        "description": "Average statements recorded in the last 12 months per bureau loan"
+    },
+    "BB_IN_RECENT_24M_SUM_SUM": {
+        "table": "bureau_balance",
+        "description": "Total active monthly statements recorded within the last 24 months"
+    },
+    "BB_IN_RECENT_24M_SUM_MAX": {
+        "table": "bureau_balance",
+        "description": "Maximum statements recorded in the last 24 months on a single loan"
+    },
+    "BB_IN_RECENT_24M_SUM_MEAN": {
+        "table": "bureau_balance",
+        "description": "Average statements recorded in the last 24 months per bureau loan"
+    },
+    "BB_MONTHS_SINCE_LAST_OVERDUE_MEAN": {
+        "table": "bureau_balance",
+        "description": "Average months elapsed since the most recent delinquency incident"
+    },
+    "BB_MONTHS_SINCE_LAST_OVERDUE_MAX": {
+        "table": "bureau_balance",
+        "description": "Maximum months elapsed since the most recent delinquency incident"
+    },
+    "BB_OVERDUE_SUM_RECENT_6M_SUM": {
+        "table": "bureau_balance",
+        "description": "Total delinquent monthly statements recorded in the past 6 months"
+    },
+    "BB_OVERDUE_SUM_RECENT_6M_MAX": {
+        "table": "bureau_balance",
+        "description": "Maximum delinquent monthly statements in the past 6 months on one loan"
+    },
+    "BB_OVERDUE_SUM_RECENT_6M_MEAN": {
+        "table": "bureau_balance",
+        "description": "Average delinquent monthly statements in the past 6 months per loan"
+    },
+    "BB_OVERDUE_TREND_RATIO_6M_MEAN": {
+        "table": "bureau_balance",
+        "description": "Ratio of 6-month recent delinquencies relative to lifetime overdue count"
+    },
+    "BB_OVERDUE_TREND_RATIO_6M_MAX": {
+        "table": "bureau_balance",
+        "description": "Peak ratio of recent 6-month delinquencies to total historical delinquencies"
+    },
+    "PREV_ACTUAL_CONTRACT_DURATION_MAX": {
+        "table": "previous_application",
+        "description": "Longest actual contract duration in days among past internal loans"
+    },
+    "PREV_ACTUAL_CONTRACT_DURATION_MEAN": {
+        "table": "previous_application",
+        "description": "Average actual contract duration in days among past internal loans"
+    },
+    "PREV_ACTUAL_CONTRACT_DURATION_MIN": {
+        "table": "previous_application",
+        "description": "Shortest actual contract duration in days among past internal loans"
+    },
+    "PREV_ACTUAL_CONTRACT_DURATION_SUM": {
+        "table": "previous_application",
+        "description": "Cumulative total actual duration days across all past internal loans"
+    },
+    "PREV_ACTUAL_CONTRACT_DURATION_VAR": {
+        "table": "previous_application",
+        "description": "Variance of actual contract duration days among past internal loans"
+    },
+    "PREV_AMT_ANNUITY_CLEAN_MAX": {
+        "table": "previous_application",
+        "description": "Highest monthly annuity payment among past internal applications"
+    },
+    "PREV_AMT_ANNUITY_CLEAN_MEAN": {
+        "table": "previous_application",
+        "description": "Average monthly annuity payment among past internal applications"
+    },
+    "PREV_AMT_ANNUITY_CLEAN_MIN": {
+        "table": "previous_application",
+        "description": "Lowest monthly annuity payment among past internal applications"
+    },
+    "PREV_AMT_ANNUITY_CLEAN_SUM": {
+        "table": "previous_application",
+        "description": "Total cumulative monthly annuity obligations from past internal loans"
+    },
+    "PREV_AMT_ANNUITY_CLEAN_VAR": {
+        "table": "previous_application",
+        "description": "Variance of monthly annuity amounts across past internal loans"
+    },
+    "PREV_AMT_ANNUITY_MAX": {
+        "table": "previous_application",
+        "description": "Maximum uncleaned nominal annuity on past internal loans"
+    },
+    "PREV_AMT_ANNUITY_MEAN": {
+        "table": "previous_application",
+        "description": "Average uncleaned nominal annuity on past internal loans"
+    },
+    "PREV_AMT_ANNUITY_MIN": {
+        "table": "previous_application",
+        "description": "Minimum uncleaned nominal annuity on past internal loans"
+    },
+    "PREV_AMT_ANNUITY_SUM": {
+        "table": "previous_application",
+        "description": "Sum of uncleaned nominal annuities on past internal loans"
+    },
+    "PREV_AMT_ANNUITY_VAR": {
+        "table": "previous_application",
+        "description": "Variance of uncleaned nominal annuities on past internal loans"
+    },
+    "PREV_AMT_APPLICATION_CLEAN_MAX": {
+        "table": "previous_application",
+        "description": "Highest initial credit amount requested on past internal applications"
+    },
+    "PREV_AMT_APPLICATION_CLEAN_MEAN": {
+        "table": "previous_application",
+        "description": "Average initial credit amount requested on past internal applications"
+    },
+    "PREV_AMT_APPLICATION_CLEAN_MIN": {
+        "table": "previous_application",
+        "description": "Lowest initial credit amount requested on past internal applications"
+    },
+    "PREV_AMT_APPLICATION_CLEAN_SUM": {
+        "table": "previous_application",
+        "description": "Total cumulative credit amounts requested across past applications"
+    },
+    "PREV_AMT_APPLICATION_CLEAN_VAR": {
+        "table": "previous_application",
+        "description": "Variance of requested credit amounts across past internal applications"
+    },
+    "PREV_AMT_APPLICATION_MAX": {
+        "table": "previous_application",
+        "description": "Maximum uncleaned requested credit amount on past applications"
+    },
+    "PREV_AMT_APPLICATION_MEAN": {
+        "table": "previous_application",
+        "description": "Average uncleaned requested credit amount on past applications"
+    },
+    "PREV_AMT_APPLICATION_SUM": {
+        "table": "previous_application",
+        "description": "Sum of uncleaned requested credit amounts on past applications"
+    },
+    "PREV_AMT_APPLICATION_VAR": {
+        "table": "previous_application",
+        "description": "Variance of uncleaned requested credit amounts on past applications"
+    },
+    "PREV_AMT_CREDIT_CLEAN_MAX": {
+        "table": "previous_application",
+        "description": "Highest credit amount officially approved on past internal loans"
+    },
+    "PREV_AMT_CREDIT_CLEAN_MEAN": {
+        "table": "previous_application",
+        "description": "Average credit amount officially approved on past internal loans"
+    },
+    "PREV_AMT_CREDIT_CLEAN_MIN": {
+        "table": "previous_application",
+        "description": "Lowest credit amount officially approved on past internal loans"
+    },
+    "PREV_AMT_CREDIT_CLEAN_SUM": {
+        "table": "previous_application",
+        "description": "Total cumulative credit amount approved across past internal loans"
+    },
+    "PREV_AMT_CREDIT_CLEAN_VAR": {
+        "table": "previous_application",
+        "description": "Variance of approved credit amounts across past internal loans"
+    },
+    "PREV_AMT_CREDIT_MEAN": {
+        "table": "previous_application",
+        "description": "Average uncleaned approved credit amount on past applications"
+    },
+    "PREV_AMT_CREDIT_SUM": {
+        "table": "previous_application",
+        "description": "Sum of uncleaned approved credit amounts on past applications"
+    },
+    "PREV_AMT_CREDIT_VAR": {
+        "table": "previous_application",
+        "description": "Variance of uncleaned approved credit amounts on past applications"
+    },
+    "PREV_AMT_DOWN_PAYMENT_CLEAN_MAX": {
+        "table": "previous_application",
+        "description": "Highest down payment paid by client on past internal loans"
+    },
+    "PREV_AMT_DOWN_PAYMENT_CLEAN_MEAN": {
+        "table": "previous_application",
+        "description": "Average down payment paid by client on past internal loans"
+    },
+    "PREV_AMT_DOWN_PAYMENT_CLEAN_MIN": {
+        "table": "previous_application",
+        "description": "Lowest down payment paid by client on past internal loans"
+    },
+    "PREV_AMT_DOWN_PAYMENT_CLEAN_SUM": {
+        "table": "previous_application",
+        "description": "Total cumulative down payments paid across past internal loans"
+    },
+    "PREV_AMT_DOWN_PAYMENT_CLEAN_VAR": {
+        "table": "previous_application",
+        "description": "Variance of down payment amounts across past internal loans"
+    },
+    "PREV_AMT_DOWN_PAYMENT_MAX": {
+        "table": "previous_application",
+        "description": "Maximum uncleaned nominal down payment on past internal loans"
+    },
+    "PREV_AMT_DOWN_PAYMENT_MEAN": {
+        "table": "previous_application",
+        "description": "Average uncleaned nominal down payment on past internal loans"
+    },
+    "PREV_AMT_DOWN_PAYMENT_MIN": {
+        "table": "previous_application",
+        "description": "Minimum uncleaned nominal down payment on past internal loans"
+    },
+    "PREV_AMT_DOWN_PAYMENT_SUM": {
+        "table": "previous_application",
+        "description": "Sum of uncleaned nominal down payments on past internal loans"
+    },
+    "PREV_AMT_DOWN_PAYMENT_VAR": {
+        "table": "previous_application",
+        "description": "Variance of uncleaned nominal down payments on past internal loans"
+    },
+    "PREV_AMT_GOODS_PRICE_CLEAN_MAX": {
+        "table": "previous_application",
+        "description": "Highest financed goods purchase price among past internal loans"
+    },
+    "PREV_AMT_GOODS_PRICE_CLEAN_MEAN": {
+        "table": "previous_application",
+        "description": "Average financed goods purchase price among past internal loans"
+    },
+    "PREV_AMT_GOODS_PRICE_CLEAN_MIN": {
+        "table": "previous_application",
+        "description": "Lowest financed goods purchase price among past internal loans"
+    },
+    "PREV_AMT_GOODS_PRICE_CLEAN_SUM": {
+        "table": "previous_application",
+        "description": "Total value of consumer goods financed across past internal loans"
+    },
+    "PREV_AMT_GOODS_PRICE_CLEAN_VAR": {
+        "table": "previous_application",
+        "description": "Variance of financed goods purchase prices across past internal loans"
+    },
+    "PREV_AMT_GOODS_PRICE_MAX": {
+        "table": "previous_application",
+        "description": "Maximum uncleaned nominal goods price on past internal loans"
+    },
+    "PREV_AMT_GOODS_PRICE_MEAN": {
+        "table": "previous_application",
+        "description": "Average uncleaned nominal goods price on past internal loans"
+    },
+    "PREV_AMT_GOODS_PRICE_MIN": {
+        "table": "previous_application",
+        "description": "Minimum uncleaned nominal goods price on past internal loans"
+    },
+    "PREV_AMT_GOODS_PRICE_SUM": {
+        "table": "previous_application",
+        "description": "Sum of uncleaned nominal goods prices on past internal loans"
+    },
+    "PREV_AMT_GOODS_PRICE_VAR": {
+        "table": "previous_application",
+        "description": "Variance of uncleaned nominal goods prices on past internal loans"
+    },
+    "PREV_ANNUITY_IS_NA_MEAN": {
+        "table": "previous_application",
+        "description": "Proportion of past internal applications missing annuity payment data"
+    },
+    "PREV_ANNUITY_IS_NA_SUM": {
+        "table": "previous_application",
+        "description": "Count of past internal applications missing annuity payment data"
+    },
+    "PREV_ANNUITY_TO_CREDIT_MAX": {
+        "table": "previous_application",
+        "description": "Highest annuity-to-credit ratio among past internal loans"
+    },
+    "PREV_ANNUITY_TO_CREDIT_MEAN": {
+        "table": "previous_application",
+        "description": "Average annuity-to-credit ratio among past internal loans"
+    },
+    "PREV_ANNUITY_TO_CREDIT_MIN": {
+        "table": "previous_application",
+        "description": "Lowest annuity-to-credit ratio among past internal loans"
+    },
+    "PREV_ANNUITY_TO_CREDIT_SUM": {
+        "table": "previous_application",
+        "description": "Sum of annuity-to-credit ratios across past internal loans"
+    },
+    "PREV_ANNUITY_TO_CREDIT_VAR": {
+        "table": "previous_application",
+        "description": "Variance of annuity-to-credit ratios across past internal loans"
+    },
+    "PREV_APP_CREDIT_DIFF_MAX": {
+        "table": "previous_application",
+        "description": "Largest underwriting credit cut (requested minus approved amount)"
+    },
+    "PREV_APP_CREDIT_DIFF_MEAN": {
+        "table": "previous_application",
+        "description": "Average credit cut amount enforced during internal underwriting"
+    },
+    "PREV_APP_CREDIT_DIFF_MIN": {
+        "table": "previous_application",
+        "description": "Smallest underwriting credit difference on past internal applications"
+    },
+    "PREV_APP_CREDIT_DIFF_SUM": {
+        "table": "previous_application",
+        "description": "Total cumulative credit reduced from initial client requests"
+    },
+    "PREV_APP_CREDIT_DIFF_VAR": {
+        "table": "previous_application",
+        "description": "Variance of credit reduction amounts on past applications"
+    },
+    "PREV_APP_CREDIT_PERC_MAX": {
+        "table": "previous_application",
+        "description": "Highest fulfillment ratio of requested credit to approved credit"
+    },
+    "PREV_APP_CREDIT_PERC_MEAN": {
+        "table": "previous_application",
+        "description": "Average fulfillment ratio of requested credit to approved credit"
+    },
+    "PREV_APP_CREDIT_PERC_MIN": {
+        "table": "previous_application",
+        "description": "Lowest fulfillment ratio of requested credit to approved credit"
+    },
+    "PREV_APP_CREDIT_PERC_SUM": {
+        "table": "previous_application",
+        "description": "Sum of credit fulfillment ratios across past internal applications"
+    },
+    "PREV_APP_CREDIT_PERC_VAR": {
+        "table": "previous_application",
+        "description": "Variance of credit fulfillment ratios across past internal applications"
+    },
+    "PREV_APP_IS_ZERO_MEAN": {
+        "table": "previous_application",
+        "description": "Proportion of past internal applications with zero requested amount"
+    },
+    "PREV_APP_IS_ZERO_SUM": {
+        "table": "previous_application",
+        "description": "Count of past internal applications with zero requested amount"
+    },
+    "PREV_CNT_PAYMENT_CLEAN_MAX": {
+        "table": "previous_application",
+        "description": "Longest approved payment tenor in months among past internal loans"
+    },
+    "PREV_CNT_PAYMENT_CLEAN_MEAN": {
+        "table": "previous_application",
+        "description": "Average approved payment tenor in months among past internal loans"
+    },
+    "PREV_CNT_PAYMENT_CLEAN_MIN": {
+        "table": "previous_application",
+        "description": "Shortest approved payment tenor in months among past internal loans"
+    },
+    "PREV_CNT_PAYMENT_CLEAN_SUM": {
+        "table": "previous_application",
+        "description": "Total cumulative payment months scheduled across past internal loans"
+    },
+    "PREV_CNT_PAYMENT_CLEAN_VAR": {
+        "table": "previous_application",
+        "description": "Variance of approved payment tenors across past internal loans"
+    },
+    "PREV_CNT_PAYMENT_MEAN": {
+        "table": "previous_application",
+        "description": "Average uncleaned payment tenor in months on past applications"
+    },
+    "PREV_CNT_PAYMENT_MIN": {
+        "table": "previous_application",
+        "description": "Minimum uncleaned payment tenor in months on past applications"
+    },
+    "PREV_CNT_PAYMENT_VAR": {
+        "table": "previous_application",
+        "description": "Variance of uncleaned payment tenors on past applications"
+    },
+    "PREV_COUNT": {
+        "table": "previous_application",
+        "description": "Total historical application count submitted to this institution"
+    },
+    "PREV_CREDIT_IS_ZERO_MEAN": {
+        "table": "previous_application",
+        "description": "Proportion of past applications resulting in zero approved credit"
+    },
+    "PREV_CREDIT_IS_ZERO_SUM": {
+        "table": "previous_application",
+        "description": "Count of past applications resulting in zero approved credit"
+    },
+    "PREV_DAYS_DECISION_MAX": {
+        "table": "previous_application",
+        "description": "Days since the most recent internal underwriting decision (negative)"
+    },
+    "PREV_DAYS_DECISION_MEAN": {
+        "table": "previous_application",
+        "description": "Average days since past internal underwriting decisions"
+    },
+    "PREV_DAYS_DECISION_MIN": {
+        "table": "previous_application",
+        "description": "Days since the earliest internal underwriting decision (negative)"
+    },
+    "PREV_DAYS_DECISION_SUM": {
+        "table": "previous_application",
+        "description": "Cumulative total days across past underwriting decision dates"
+    },
+    "PREV_DAYS_DECISION_VAR": {
+        "table": "previous_application",
+        "description": "Variance of decision date intervals on past internal applications"
+    },
+    "PREV_DAYS_DRAWING_TO_DUE_MAX": {
+        "table": "previous_application",
+        "description": "Maximum days from loan disbursement to first installment due date"
+    },
+    "PREV_DAYS_DRAWING_TO_DUE_MEAN": {
+        "table": "previous_application",
+        "description": "Average days from loan disbursement to first installment due date"
+    },
+    "PREV_DAYS_DRAWING_TO_DUE_MIN": {
+        "table": "previous_application",
+        "description": "Minimum days from loan disbursement to first installment due date"
+    },
+    "PREV_DAYS_DRAWING_TO_DUE_SUM": {
+        "table": "previous_application",
+        "description": "Total days from disbursement to first due date on past loans"
+    },
+    "PREV_DAYS_DRAWING_TO_DUE_VAR": {
+        "table": "previous_application",
+        "description": "Variance of disbursement-to-first-due intervals on past loans"
+    },
+    "PREV_DAYS_DUE_TO_TERMINATION_MAX": {
+        "table": "previous_application",
+        "description": "Maximum days from final scheduled due date to contract termination"
+    },
+    "PREV_DAYS_DUE_TO_TERMINATION_MEAN": {
+        "table": "previous_application",
+        "description": "Average days from final scheduled due date to contract termination"
+    },
+    "PREV_DAYS_DUE_TO_TERMINATION_MIN": {
+        "table": "previous_application",
+        "description": "Minimum days from final scheduled due date to contract termination"
+    },
+    "PREV_DAYS_DUE_TO_TERMINATION_SUM": {
+        "table": "previous_application",
+        "description": "Total days from final due date to termination across past loans"
+    },
+    "PREV_DAYS_DUE_TO_TERMINATION_VAR": {
+        "table": "previous_application",
+        "description": "Variance of days from final due date to termination across past loans"
+    },
+    "PREV_DAYS_EARLY_TERMINATION_MAX": {
+        "table": "previous_application",
+        "description": "Maximum days of early contract payoff achieved on past internal loans"
+    },
+    "PREV_DAYS_EARLY_TERMINATION_MEAN": {
+        "table": "previous_application",
+        "description": "Average days of early contract payoff achieved on past internal loans"
+    },
+    "PREV_DAYS_EARLY_TERMINATION_MIN": {
+        "table": "previous_application",
+        "description": "Minimum days of early contract payoff on past internal loans"
+    },
+    "PREV_DAYS_EARLY_TERMINATION_SUM": {
+        "table": "previous_application",
+        "description": "Total days saved through early loan payoff across past loans"
+    },
+    "PREV_DAYS_EARLY_TERMINATION_VAR": {
+        "table": "previous_application",
+        "description": "Variance of early payoff intervals across past internal loans"
+    },
+    "PREV_DAYS_FIRST_DRAWING_MAX": {
+        "table": "previous_application",
+        "description": "Days since the most recent first disbursement on past loans"
+    },
+    "PREV_DAYS_FIRST_DRAWING_MEAN": {
+        "table": "previous_application",
+        "description": "Average days since first disbursement on past internal loans"
+    },
+    "PREV_DAYS_FIRST_DRAWING_MIN": {
+        "table": "previous_application",
+        "description": "Days since the earliest first disbursement on past loans"
+    },
+    "PREV_DAYS_FIRST_DRAWING_SUM": {
+        "table": "previous_application",
+        "description": "Sum of days since first disbursement dates across past loans"
+    },
+    "PREV_DAYS_FIRST_DRAWING_VAR": {
+        "table": "previous_application",
+        "description": "Variance of first disbursement dates across past internal loans"
+    },
+    "PREV_DAYS_FIRST_DUE_MAX": {
+        "table": "previous_application",
+        "description": "Days since the most recent first installment due date"
+    },
+    "PREV_DAYS_FIRST_DUE_MEAN": {
+        "table": "previous_application",
+        "description": "Average days since first installment due date on past loans"
+    },
+    "PREV_DAYS_FIRST_DUE_MIN": {
+        "table": "previous_application",
+        "description": "Days since the earliest first installment due date"
+    },
+    "PREV_DAYS_FIRST_DUE_SUM": {
+        "table": "previous_application",
+        "description": "Sum of days since first installment due dates across past loans"
+    },
+    "PREV_DAYS_FIRST_DUE_VAR": {
+        "table": "previous_application",
+        "description": "Variance of first installment due dates across past loans"
+    },
+    "PREV_DAYS_LAST_DUE_1ST_VERSION_MAX": {
+        "table": "previous_application",
+        "description": "Days since most recent original contractual maturity date"
+    },
+    "PREV_DAYS_LAST_DUE_1ST_VERSION_MEAN": {
+        "table": "previous_application",
+        "description": "Average days since original contractual maturity date on past loans"
+    },
+    "PREV_DAYS_LAST_DUE_1ST_VERSION_MIN": {
+        "table": "previous_application",
+        "description": "Days since earliest original contractual maturity date"
+    },
+    "PREV_DAYS_LAST_DUE_1ST_VERSION_SUM": {
+        "table": "previous_application",
+        "description": "Sum of days since original contractual maturity dates on past loans"
+    },
+    "PREV_DAYS_LAST_DUE_1ST_VERSION_VAR": {
+        "table": "previous_application",
+        "description": "Variance of original contractual maturity dates on past loans"
+    },
+    "PREV_DAYS_LAST_DUE_MAX": {
+        "table": "previous_application",
+        "description": "Days since most recent actual final due date on past loans"
+    },
+    "PREV_DAYS_LAST_DUE_MEAN": {
+        "table": "previous_application",
+        "description": "Average days since actual final due date on past internal loans"
+    },
+    "PREV_DAYS_LAST_DUE_MIN": {
+        "table": "previous_application",
+        "description": "Days since earliest actual final due date on past loans"
+    },
+    "PREV_DAYS_LAST_DUE_SUM": {
+        "table": "previous_application",
+        "description": "Sum of days since actual final due dates across past loans"
+    },
+    "PREV_DAYS_LAST_DUE_VAR": {
+        "table": "previous_application",
+        "description": "Variance of actual final due dates across past loans"
+    },
+    "PREV_DAYS_TERMINATION_MAX": {
+        "table": "previous_application",
+        "description": "Days since the most recent actual contract termination date"
+    },
+    "PREV_DAYS_TERMINATION_MEAN": {
+        "table": "previous_application",
+        "description": "Average days since actual contract termination date on past loans"
+    },
+    "PREV_DAYS_TERMINATION_MIN": {
+        "table": "previous_application",
+        "description": "Days since the earliest actual contract termination date"
+    },
+    "PREV_DAYS_TERMINATION_SUM": {
+        "table": "previous_application",
+        "description": "Sum of days since actual contract termination dates across past loans"
+    },
+    "PREV_DAYS_TERMINATION_VAR": {
+        "table": "previous_application",
+        "description": "Variance of actual contract termination dates across past loans"
+    },
+    "PREV_DECISION_YEARS_MAX": {
+        "table": "previous_application",
+        "description": "Years elapsed since earliest internal credit decision"
+    },
+    "PREV_DECISION_YEARS_MEAN": {
+        "table": "previous_application",
+        "description": "Average years elapsed since internal credit decisions"
+    },
+    "PREV_DECISION_YEARS_MIN": {
+        "table": "previous_application",
+        "description": "Years elapsed since most recent internal credit decision"
+    },
+    "PREV_DECISION_YEARS_SUM": {
+        "table": "previous_application",
+        "description": "Cumulative total years of internal relationship history"
+    },
+    "PREV_DECISION_YEARS_VAR": {
+        "table": "previous_application",
+        "description": "Variance of elapsed years since past credit decisions"
+    },
+    "PREV_DOWN_PAYMENT_IS_NA_MEAN": {
+        "table": "previous_application",
+        "description": "Proportion of past applications missing down payment information"
+    },
+    "PREV_DOWN_PAYMENT_IS_NA_SUM": {
+        "table": "previous_application",
+        "description": "Count of past applications missing down payment information"
+    },
+    "PREV_DOWN_PAYMENT_TO_CREDIT_MAX": {
+        "table": "previous_application",
+        "description": "Highest down payment to credit ratio achieved on past loans"
+    },
+    "PREV_DOWN_PAYMENT_TO_CREDIT_MEAN": {
+        "table": "previous_application",
+        "description": "Average down payment to credit ratio on past internal loans"
+    },
+    "PREV_DOWN_PAYMENT_TO_CREDIT_MIN": {
+        "table": "previous_application",
+        "description": "Lowest down payment to credit ratio on past internal loans"
+    },
+    "PREV_DOWN_PAYMENT_TO_CREDIT_SUM": {
+        "table": "previous_application",
+        "description": "Sum of down payment to credit ratios across past loans"
+    },
+    "PREV_DOWN_PAYMENT_TO_CREDIT_VAR": {
+        "table": "previous_application",
+        "description": "Variance of down payment to credit ratios across past loans"
+    },
+    "PREV_FIRST_DRAWING_IS_NA_MEAN": {
+        "table": "previous_application",
+        "description": "Proportion of past approved loans where funds were never disbursed"
+    },
+    "PREV_FIRST_DRAWING_IS_NA_SUM": {
+        "table": "previous_application",
+        "description": "Count of past approved loans where funds were never disbursed"
+    },
+    "PREV_FIRST_DRAWING_YEARS_MAX": {
+        "table": "previous_application",
+        "description": "Years elapsed since earliest loan disbursement"
+    },
+    "PREV_FIRST_DRAWING_YEARS_MEAN": {
+        "table": "previous_application",
+        "description": "Average years elapsed since loan disbursements"
+    },
+    "PREV_FIRST_DRAWING_YEARS_MIN": {
+        "table": "previous_application",
+        "description": "Years elapsed since most recent loan disbursement"
+    },
+    "PREV_FIRST_DRAWING_YEARS_SUM": {
+        "table": "previous_application",
+        "description": "Sum of years elapsed since loan disbursements"
+    },
+    "PREV_FIRST_DRAWING_YEARS_VAR": {
+        "table": "previous_application",
+        "description": "Variance of years elapsed since loan disbursements"
+    },
+    "PREV_FIRST_DUE_IS_NA_MEAN": {
+        "table": "previous_application",
+        "description": "Proportion of past internal loans missing first due date"
+    },
+    "PREV_FIRST_DUE_IS_NA_SUM": {
+        "table": "previous_application",
+        "description": "Count of past internal loans missing first due date"
+    },
+    "PREV_FIRST_DUE_YEARS_MAX": {
+        "table": "previous_application",
+        "description": "Years elapsed since earliest first installment due date"
+    },
+    "PREV_FIRST_DUE_YEARS_MEAN": {
+        "table": "previous_application",
+        "description": "Average years elapsed since first installment due date"
+    },
+    "PREV_FIRST_DUE_YEARS_MIN": {
+        "table": "previous_application",
+        "description": "Years elapsed since most recent first installment due date"
+    },
+    "PREV_FIRST_DUE_YEARS_SUM": {
+        "table": "previous_application",
+        "description": "Sum of years elapsed since first installment due dates"
+    },
+    "PREV_FIRST_DUE_YEARS_VAR": {
+        "table": "previous_application",
+        "description": "Variance of years elapsed since first installment due dates"
+    },
+    "PREV_GOODS_CREDIT_RATIO_MAX": {
+        "table": "previous_application",
+        "description": "Highest credit financing ratio relative to goods price on past loans"
+    },
+    "PREV_GOODS_CREDIT_RATIO_MEAN": {
+        "table": "previous_application",
+        "description": "Average credit financing ratio relative to goods price on past loans"
+    },
+    "PREV_GOODS_CREDIT_RATIO_MIN": {
+        "table": "previous_application",
+        "description": "Lowest credit financing ratio relative to goods price on past loans"
+    },
+    "PREV_GOODS_CREDIT_RATIO_SUM": {
+        "table": "previous_application",
+        "description": "Sum of credit financing ratios to goods price across past loans"
+    },
+    "PREV_GOODS_CREDIT_RATIO_VAR": {
+        "table": "previous_application",
+        "description": "Variance of credit financing ratios to goods price on past loans"
+    },
+    "PREV_GOODS_PRICE_IS_NA_MEAN": {
+        "table": "previous_application",
+        "description": "Proportion of past applications missing goods price data (e.g. cash loans)"
+    },
+    "PREV_GOODS_PRICE_IS_NA_SUM": {
+        "table": "previous_application",
+        "description": "Count of past applications missing goods price data"
+    },
+    "PREV_HAS_DOWN_PAYMENT_MEAN": {
+        "table": "previous_application",
+        "description": "Proportion of past internal loans where client paid a down payment"
+    },
+    "PREV_HAS_DOWN_PAYMENT_SUM": {
+        "table": "previous_application",
+        "description": "Count of past internal loans where client paid a down payment"
+    },
+    "PREV_IS_APPROVED_MEAN": {
+        "table": "previous_application",
+        "description": "Approval rate of past loan applications submitted by client"
+    },
+    "PREV_IS_APPROVED_SUM": {
+        "table": "previous_application",
+        "description": "Total count of past loan applications approved by this institution"
+    },
+    "PREV_IS_CANCELED_MEAN": {
+        "table": "previous_application",
+        "description": "Proportion of past applications canceled by client during processing"
+    },
+    "PREV_IS_CANCELED_SUM": {
+        "table": "previous_application",
+        "description": "Total count of past applications canceled by client"
+    },
+    "PREV_IS_DOWNSIZED_MEAN": {
+        "table": "previous_application",
+        "description": "Proportion of past loans approved with an amount cut relative to requested"
+    },
+    "PREV_IS_DOWNSIZED_SUM": {
+        "table": "previous_application",
+        "description": "Count of past loans approved with an amount cut relative to requested"
+    },
+    "PREV_IS_RECENT_1Y_MEAN": {
+        "table": "previous_application",
+        "description": "Proportion of past applications submitted within the past 12 months"
+    },
+    "PREV_IS_RECENT_1Y_SUM": {
+        "table": "previous_application",
+        "description": "Count of past applications submitted within the past 12 months"
+    },
+    "PREV_IS_RECENT_2Y_MEAN": {
+        "table": "previous_application",
+        "description": "Proportion of past applications submitted within the past 24 months"
+    },
+    "PREV_IS_RECENT_2Y_SUM": {
+        "table": "previous_application",
+        "description": "Count of past applications submitted within the past 24 months"
+    },
+    "PREV_IS_REFUSED_MEAN": {
+        "table": "previous_application",
+        "description": "Rejection rate of past loan applications submitted by client"
+    },
+    "PREV_IS_REFUSED_SUM": {
+        "table": "previous_application",
+        "description": "Total count of past loan applications rejected by this institution"
+    },
+    "PREV_IS_SHORT_TERM_MEAN": {
+        "table": "previous_application",
+        "description": "Proportion of past internal loans with short tenor (<=12 months)"
+    },
+    "PREV_IS_SHORT_TERM_SUM": {
+        "table": "previous_application",
+        "description": "Count of past internal loans with short tenor (<=12 months)"
+    },
+    "PREV_IS_UNUSED_MEAN": {
+        "table": "previous_application",
+        "description": "Proportion of approved credit offers that client chose not to use"
+    },
+    "PREV_IS_UNUSED_SUM": {
+        "table": "previous_application",
+        "description": "Count of approved credit offers that client chose not to use"
+    },
+    "PREV_LAST_DUE_1ST_VERSION_IS_NA_MEAN": {
+        "table": "previous_application",
+        "description": "Proportion of past loans missing original scheduled maturity date"
+    },
+    "PREV_LAST_DUE_1ST_VERSION_IS_NA_SUM": {
+        "table": "previous_application",
+        "description": "Count of past loans missing original scheduled maturity date"
+    },
+    "PREV_LAST_DUE_1ST_VERSION_YEARS_MAX": {
+        "table": "previous_application",
+        "description": "Years elapsed since earliest scheduled maturity date"
+    },
+    "PREV_LAST_DUE_1ST_VERSION_YEARS_MEAN": {
+        "table": "previous_application",
+        "description": "Average years elapsed since original scheduled maturity date"
+    },
+    "PREV_LAST_DUE_1ST_VERSION_YEARS_MIN": {
+        "table": "previous_application",
+        "description": "Years elapsed since most recent scheduled maturity date"
+    },
+    "PREV_LAST_DUE_1ST_VERSION_YEARS_SUM": {
+        "table": "previous_application",
+        "description": "Sum of years elapsed since original scheduled maturity dates"
+    },
+    "PREV_LAST_DUE_1ST_VERSION_YEARS_VAR": {
+        "table": "previous_application",
+        "description": "Variance of years elapsed since original scheduled maturity dates"
+    },
+    "PREV_LAST_DUE_IS_NA_MEAN": {
+        "table": "previous_application",
+        "description": "Proportion of past internal loans missing actual last due date"
+    },
+    "PREV_LAST_DUE_IS_NA_SUM": {
+        "table": "previous_application",
+        "description": "Count of past internal loans missing actual last due date"
+    },
+    "PREV_LAST_DUE_YEARS_MAX": {
+        "table": "previous_application",
+        "description": "Years elapsed since earliest actual final installment due date"
+    },
+    "PREV_LAST_DUE_YEARS_MEAN": {
+        "table": "previous_application",
+        "description": "Average years elapsed since actual final installment due date"
+    },
+    "PREV_LAST_DUE_YEARS_MIN": {
+        "table": "previous_application",
+        "description": "Years elapsed since most recent actual final installment due date"
+    },
+    "PREV_LAST_DUE_YEARS_SUM": {
+        "table": "previous_application",
+        "description": "Sum of years elapsed since actual final installment due dates"
+    },
+    "PREV_LAST_DUE_YEARS_VAR": {
+        "table": "previous_application",
+        "description": "Variance of years elapsed since actual final installment due dates"
+    },
+    "PREV_NAME_CONTRACT_TYPE_Cash_loans_MEAN": {
+        "table": "previous_application",
+        "description": "Proportion of past internal applications for cash loans"
+    },
+    "PREV_NAME_CONTRACT_TYPE_Cash_loans_SUM": {
+        "table": "previous_application",
+        "description": "Total past internal applications for cash loans"
+    },
+    "PREV_NAME_CONTRACT_TYPE_Consumer_loans_MEAN": {
+        "table": "previous_application",
+        "description": "Proportion of past internal applications for consumer point-of-sale loans"
+    },
+    "PREV_NAME_CONTRACT_TYPE_Consumer_loans_SUM": {
+        "table": "previous_application",
+        "description": "Total past internal applications for consumer point-of-sale loans"
+    },
+    "PREV_NAME_CONTRACT_TYPE_Revolving_loans_MEAN": {
+        "table": "previous_application",
+        "description": "Proportion of past internal applications for revolving/overdraft credit"
+    },
+    "PREV_NAME_CONTRACT_TYPE_Revolving_loans_SUM": {
+        "table": "previous_application",
+        "description": "Total past internal applications for revolving/overdraft credit"
+    },
+    "PREV_PLANNED_CONTRACT_DURATION_MAX": {
+        "table": "previous_application",
+        "description": "Maximum planned contract duration in days on past internal loans"
+    },
+    "PREV_PLANNED_CONTRACT_DURATION_MEAN": {
+        "table": "previous_application",
+        "description": "Average planned contract duration in days on past internal loans"
+    },
+    "PREV_PLANNED_CONTRACT_DURATION_MIN": {
+        "table": "previous_application",
+        "description": "Minimum planned contract duration in days on past internal loans"
+    },
+    "PREV_PLANNED_CONTRACT_DURATION_SUM": {
+        "table": "previous_application",
+        "description": "Total planned contract duration days across past internal loans"
+    },
+    "PREV_PLANNED_CONTRACT_DURATION_VAR": {
+        "table": "previous_application",
+        "description": "Variance of planned contract duration days across past loans"
+    },
+    "PREV_RATE_DOWN_PAYMENT_CLEAN_MAX": {
+        "table": "previous_application",
+        "description": "Highest down payment percentage paid across past internal loans"
+    },
+    "PREV_RATE_DOWN_PAYMENT_CLEAN_MEAN": {
+        "table": "previous_application",
+        "description": "Average down payment percentage paid across past internal loans"
+    },
+    "PREV_RATE_DOWN_PAYMENT_CLEAN_MIN": {
+        "table": "previous_application",
+        "description": "Lowest down payment percentage paid across past internal loans"
+    },
+    "PREV_RATE_DOWN_PAYMENT_CLEAN_SUM": {
+        "table": "previous_application",
+        "description": "Sum of down payment percentages across past internal loans"
+    },
+    "PREV_RATE_DOWN_PAYMENT_CLEAN_VAR": {
+        "table": "previous_application",
+        "description": "Variance of down payment percentages across past internal loans"
+    },
+    "PREV_RATE_DOWN_PAYMENT_MAX": {
+        "table": "previous_application",
+        "description": "Maximum nominal down payment rate on past internal loans"
+    },
+    "PREV_RATE_DOWN_PAYMENT_MEAN": {
+        "table": "previous_application",
+        "description": "Average nominal down payment rate on past internal loans"
+    },
+    "PREV_RATE_DOWN_PAYMENT_MIN": {
+        "table": "previous_application",
+        "description": "Minimum nominal down payment rate on past internal loans"
+    },
+    "PREV_RATE_DOWN_PAYMENT_SUM": {
+        "table": "previous_application",
+        "description": "Sum of nominal down payment rates on past internal loans"
+    },
+    "PREV_RATE_DOWN_PAYMENT_VAR": {
+        "table": "previous_application",
+        "description": "Variance of nominal down payment rates on past internal loans"
+    },
+    "PREV_RATE_INTEREST_PRIMARY_IS_NA_MEAN": {
+        "table": "previous_application",
+        "description": "Proportion of past internal loans missing primary interest rate data"
+    },
+    "PREV_TERMINATION_IS_NA_MEAN": {
+        "table": "previous_application",
+        "description": "Proportion of past internal loans still ongoing (missing termination date)"
+    },
+    "PREV_TERMINATION_IS_NA_SUM": {
+        "table": "previous_application",
+        "description": "Count of past internal loans still ongoing (missing termination date)"
+    },
+    "PREV_TERMINATION_YEARS_MAX": {
+        "table": "previous_application",
+        "description": "Years elapsed since earliest internal contract termination"
+    },
+    "PREV_TERMINATION_YEARS_MEAN": {
+        "table": "previous_application",
+        "description": "Average years elapsed since internal contract terminations"
+    },
+    "PREV_TERMINATION_YEARS_MIN": {
+        "table": "previous_application",
+        "description": "Years elapsed since most recent internal contract termination"
+    },
+    "PREV_TERMINATION_YEARS_SUM": {
+        "table": "previous_application",
+        "description": "Sum of years elapsed since internal contract terminations"
+    },
+    "PREV_TERMINATION_YEARS_VAR": {
+        "table": "previous_application",
+        "description": "Variance of years elapsed since internal contract terminations"
+    },
+    "PREV_TOTAL_CONTRACT_VAL_MAX": {
+        "table": "previous_application",
+        "description": "Maximum total contractual repayment liability on an individual past loan"
+    },
+    "PREV_TOTAL_CONTRACT_VAL_MEAN": {
+        "table": "previous_application",
+        "description": "Average total contractual repayment liability across past internal loans"
+    },
+    "PREV_TOTAL_CONTRACT_VAL_MIN": {
+        "table": "previous_application",
+        "description": "Minimum total contractual repayment liability on an individual past loan"
+    },
+    "PREV_TOTAL_CONTRACT_VAL_SUM": {
+        "table": "previous_application",
+        "description": "Cumulative total contractual repayment liabilities across all past loans"
+    },
+    "PREV_TOTAL_CONTRACT_VAL_VAR": {
+        "table": "previous_application",
+        "description": "Variance of total contractual repayment liabilities on past loans"
+    },
+    "POS_CNT_INSTALMENT_CLEAN_MAX": {
+        "table": "POS_CASH_balance",
+        "description": "Longest contractual installment term on cash/POS loans"
+    },
+    "POS_CNT_INSTALMENT_CLEAN_MEAN": {
+        "table": "POS_CASH_balance",
+        "description": "Average contractual installment term on cash/POS loans"
+    },
+    "POS_CNT_INSTALMENT_CLEAN_SUM": {
+        "table": "POS_CASH_balance",
+        "description": "Total count of contractual installments scheduled across cash/POS loans"
+    },
+    "POS_CNT_INSTALMENT_FUTURE_CLEAN_MAX": {
+        "table": "POS_CASH_balance",
+        "description": "Maximum remaining installment terms left to be paid on a cash/POS loan"
+    },
+    "POS_CNT_INSTALMENT_FUTURE_CLEAN_MEAN": {
+        "table": "POS_CASH_balance",
+        "description": "Average remaining installment terms left to be paid on cash/POS loans"
+    },
+    "POS_CNT_INSTALMENT_FUTURE_CLEAN_MIN": {
+        "table": "POS_CASH_balance",
+        "description": "Minimum remaining installment terms left to be paid on a cash/POS loan"
+    },
+    "POS_CNT_INSTALMENT_FUTURE_IS_NA_MEAN": {
+        "table": "POS_CASH_balance",
+        "description": "Proportion of POS snapshots missing remaining installment count"
+    },
+    "POS_CNT_INSTALMENT_FUTURE_IS_NA_SUM": {
+        "table": "POS_CASH_balance",
+        "description": "Count of POS snapshots missing remaining installment count"
+    },
+    "POS_CNT_INSTALMENT_IS_NA_MEAN": {
+        "table": "POS_CASH_balance",
+        "description": "Proportion of POS snapshots missing total installment count"
+    },
+    "POS_CNT_INSTALMENT_IS_NA_SUM": {
+        "table": "POS_CASH_balance",
+        "description": "Count of POS snapshots missing total installment count"
+    },
+    "POS_COMPLETION_RATIO_MAX": {
+        "table": "POS_CASH_balance",
+        "description": "Highest loan completion progress (paid installments divided by term)"
+    },
+    "POS_COMPLETION_RATIO_MEAN": {
+        "table": "POS_CASH_balance",
+        "description": "Average loan completion progress across cash/POS loan snapshots"
+    },
+    "POS_COMPLETION_RATIO_MIN": {
+        "table": "POS_CASH_balance",
+        "description": "Lowest loan completion progress across cash/POS loan snapshots"
+    },
+    "POS_COMPLETION_TREND_6M_MAX": {
+        "table": "POS_CASH_balance",
+        "description": "Strongest loan completion acceleration observed in the past 6 months"
+    },
+    "POS_COMPLETION_TREND_6M_MEAN": {
+        "table": "POS_CASH_balance",
+        "description": "Average loan completion progress momentum in the past 6 months"
+    },
+    "POS_COUNT_UNIQUE_LOANS": {
+        "table": "POS_CASH_balance",
+        "description": "Total unique cash/POS installment contracts tracked for this client"
+    },
+    "POS_DPD_DEF_RATIO_MAX": {
+        "table": "POS_CASH_balance",
+        "description": "Peak ratio of regulatory penalized DPD to total past due days"
+    },
+    "POS_DPD_DEF_RATIO_MEAN": {
+        "table": "POS_CASH_balance",
+        "description": "Average ratio of regulatory penalized DPD to total past due days"
+    },
+    "POS_DPD_DEF_RECENT_12M_MAX": {
+        "table": "POS_CASH_balance",
+        "description": "Maximum penalized days past due recorded in the past 12 months"
+    },
+    "POS_DPD_DEF_RECENT_12M_MEAN": {
+        "table": "POS_CASH_balance",
+        "description": "Average penalized days past due recorded in the past 12 months"
+    },
+    "POS_DPD_DEF_RECENT_12M_SUM": {
+        "table": "POS_CASH_balance",
+        "description": "Cumulative penalized days past due recorded in the past 12 months"
+    },
+    "POS_DPD_DEF_RECENT_24M_MAX": {
+        "table": "POS_CASH_balance",
+        "description": "Maximum penalized days past due recorded in the past 24 months"
+    },
+    "POS_DPD_DEF_RECENT_24M_MEAN": {
+        "table": "POS_CASH_balance",
+        "description": "Average penalized days past due recorded in the past 24 months"
+    },
+    "POS_DPD_DEF_RECENT_24M_SUM": {
+        "table": "POS_CASH_balance",
+        "description": "Cumulative penalized days past due recorded in the past 24 months"
+    },
+    "POS_DPD_DEF_RECENT_6M_MAX": {
+        "table": "POS_CASH_balance",
+        "description": "Maximum penalized days past due recorded in the past 6 months"
+    },
+    "POS_DPD_DEF_RECENT_6M_MEAN": {
+        "table": "POS_CASH_balance",
+        "description": "Average penalized days past due recorded in the past 6 months"
+    },
+    "POS_DPD_DEF_RECENT_6M_SUM": {
+        "table": "POS_CASH_balance",
+        "description": "Cumulative penalized days past due recorded in the past 6 months"
+    },
+    "POS_DPD_IS_DETERIORATING_MEAN": {
+        "table": "POS_CASH_balance",
+        "description": "Frequency of deteriorating delinquency trends over past 3 months"
+    },
+    "POS_DPD_RECENT_12M_MAX": {
+        "table": "POS_CASH_balance",
+        "description": "Maximum raw days past due (DPD) recorded in the past 12 months"
+    },
+    "POS_DPD_RECENT_12M_MEAN": {
+        "table": "POS_CASH_balance",
+        "description": "Average raw days past due (DPD) recorded in the past 12 months"
+    },
+    "POS_DPD_RECENT_12M_SUM": {
+        "table": "POS_CASH_balance",
+        "description": "Cumulative raw days past due (DPD) recorded in the past 12 months"
+    },
+    "POS_DPD_RECENT_24M_MAX": {
+        "table": "POS_CASH_balance",
+        "description": "Maximum raw days past due (DPD) recorded in the past 24 months"
+    },
+    "POS_DPD_RECENT_24M_MEAN": {
+        "table": "POS_CASH_balance",
+        "description": "Average raw days past due (DPD) recorded in the past 24 months"
+    },
+    "POS_DPD_RECENT_24M_SUM": {
+        "table": "POS_CASH_balance",
+        "description": "Cumulative raw days past due (DPD) recorded in the past 24 months"
+    },
+    "POS_DPD_RECENT_6M_MAX": {
+        "table": "POS_CASH_balance",
+        "description": "Maximum raw days past due (DPD) recorded in the past 6 months"
+    },
+    "POS_DPD_RECENT_6M_MEAN": {
+        "table": "POS_CASH_balance",
+        "description": "Average raw days past due (DPD) recorded in the past 6 months"
+    },
+    "POS_DPD_RECENT_6M_SUM": {
+        "table": "POS_CASH_balance",
+        "description": "Cumulative raw days past due (DPD) recorded in the past 6 months"
+    },
+    "POS_DPD_TREND_6M_12M_MEAN": {
+        "table": "POS_CASH_balance",
+        "description": "Momentum ratio comparing recent 6-month DPD to prior 12-month baseline"
+    },
+    "POS_IS_ACTIVE_LOAN_MEAN": {
+        "table": "POS_CASH_balance",
+        "description": "Proportion of monthly snapshots where POS loan maintained active status"
+    },
+    "POS_IS_ACTIVE_LOAN_SUM": {
+        "table": "POS_CASH_balance",
+        "description": "Count of monthly snapshots where POS loan maintained active status"
+    },
+    "POS_IS_DPD_1_30_MEAN": {
+        "table": "POS_CASH_balance",
+        "description": "Proportion of monthly snapshots with minor delinquency (1–30 DPD)"
+    },
+    "POS_IS_DPD_1_30_SUM": {
+        "table": "POS_CASH_balance",
+        "description": "Total monthly snapshots with minor delinquency (1–30 DPD)"
+    },
+    "POS_IS_DPD_30_MEAN": {
+        "table": "POS_CASH_balance",
+        "description": "Proportion of monthly snapshots with delinquency exceeding 30 DPD"
+    },
+    "POS_IS_DPD_30_SUM": {
+        "table": "POS_CASH_balance",
+        "description": "Total monthly snapshots with delinquency exceeding 30 DPD"
+    },
+    "POS_IS_DPD_60_MEAN": {
+        "table": "POS_CASH_balance",
+        "description": "Proportion of monthly snapshots with delinquency exceeding 60 DPD"
+    },
+    "POS_IS_DPD_60_SUM": {
+        "table": "POS_CASH_balance",
+        "description": "Total monthly snapshots with delinquency exceeding 60 DPD"
+    },
+    "POS_IS_DPD_90_MEAN": {
+        "table": "POS_CASH_balance",
+        "description": "Proportion of monthly snapshots with non-performing status (>90 DPD)"
+    },
+    "POS_IS_DPD_90_SUM": {
+        "table": "POS_CASH_balance",
+        "description": "Total monthly snapshots with non-performing status (>90 DPD)"
+    },
+    "POS_IS_DPD_DEF_1_30_MEAN": {
+        "table": "POS_CASH_balance",
+        "description": "Proportion of monthly snapshots with penalized 1–30 DPD"
+    },
+    "POS_IS_DPD_DEF_1_30_SUM": {
+        "table": "POS_CASH_balance",
+        "description": "Total monthly snapshots with penalized 1–30 DPD"
+    },
+    "POS_IS_DPD_DEF_MEAN": {
+        "table": "POS_CASH_balance",
+        "description": "Proportion of monthly snapshots with regulatory penalized delinquency"
+    },
+    "POS_IS_DPD_DEF_SUM": {
+        "table": "POS_CASH_balance",
+        "description": "Total monthly snapshots with regulatory penalized delinquency"
+    },
+    "POS_IS_DPD_MEAN": {
+        "table": "POS_CASH_balance",
+        "description": "Overall frequency of delinquency occurrences in POS monthly history"
+    },
+    "POS_IS_DPD_SUM": {
+        "table": "POS_CASH_balance",
+        "description": "Total monthly snapshots where client incurred payment delinquency"
+    },
+    "POS_IS_LONG_TERM_MEAN": {
+        "table": "POS_CASH_balance",
+        "description": "Proportion of cash/POS loans categorized as long-term (>24 months)"
+    },
+    "POS_IS_LONG_TERM_SUM": {
+        "table": "POS_CASH_balance",
+        "description": "Total monthly snapshots where contract term was long-term (>24 months)"
+    },
+    "POS_IS_NEAR_COMPLETION_MEAN": {
+        "table": "POS_CASH_balance",
+        "description": "Proportion of snapshots where loan was within 3 installments of payoff"
+    },
+    "POS_IS_NEAR_COMPLETION_SUM": {
+        "table": "POS_CASH_balance",
+        "description": "Count of snapshots where loan was within 3 installments of payoff"
+    },
+    "POS_IS_RECENT_12M_MEAN": {
+        "table": "POS_CASH_balance",
+        "description": "Proportion of cash/POS statements recorded within the last 12 months"
+    },
+    "POS_IS_RECENT_12M_SUM": {
+        "table": "POS_CASH_balance",
+        "description": "Count of cash/POS statements recorded within the last 12 months"
+    },
+    "POS_IS_RECENT_24M_MEAN": {
+        "table": "POS_CASH_balance",
+        "description": "Proportion of cash/POS statements recorded within the last 24 months"
+    },
+    "POS_IS_RECENT_24M_SUM": {
+        "table": "POS_CASH_balance",
+        "description": "Count of cash/POS statements recorded within the last 24 months"
+    },
+    "POS_IS_RECENT_6M_MEAN": {
+        "table": "POS_CASH_balance",
+        "description": "Proportion of cash/POS statements recorded within the last 6 months"
+    },
+    "POS_IS_RECENT_6M_SUM": {
+        "table": "POS_CASH_balance",
+        "description": "Count of cash/POS statements recorded within the last 6 months"
+    },
+    "POS_IS_SHORT_TERM_MEAN": {
+        "table": "POS_CASH_balance",
+        "description": "Proportion of cash/POS loans categorized as short-term (<=12 months)"
+    },
+    "POS_IS_SHORT_TERM_SUM": {
+        "table": "POS_CASH_balance",
+        "description": "Total monthly snapshots where contract term was short-term (<=12 months)"
+    },
+    "POS_MONTHS_BALANCE_MAX": {
+        "table": "POS_CASH_balance",
+        "description": "Most recent statement snapshot month on cash/POS loans (negative)"
+    },
+    "POS_MONTHS_BALANCE_MEAN": {
+        "table": "POS_CASH_balance",
+        "description": "Average statement snapshot month across cash/POS loans"
+    },
+    "POS_MONTHS_BALANCE_MIN": {
+        "table": "POS_CASH_balance",
+        "description": "Earliest statement snapshot month on cash/POS loans (negative)"
+    },
+    "POS_MONTHS_BALANCE_YEARS_MAX": {
+        "table": "POS_CASH_balance",
+        "description": "Total historical depth in years of cash/POS installment tracking"
+    },
+    "POS_REMAINING_TERM_RATIO_MAX": {
+        "table": "POS_CASH_balance",
+        "description": "Highest ratio of remaining term relative to total term across snapshots"
+    },
+    "POS_REMAINING_TERM_RATIO_MEAN": {
+        "table": "POS_CASH_balance",
+        "description": "Average ratio of remaining term relative to total term across snapshots"
+    },
+    "POS_SK_DPD_DEF_MAX": {
+        "table": "POS_CASH_balance",
+        "description": "Peak regulatory penalized days past due recorded on cash/POS loans"
+    },
+    "POS_SK_DPD_DEF_MEAN": {
+        "table": "POS_CASH_balance",
+        "description": "Average regulatory penalized days past due across cash/POS snapshots"
+    },
+    "POS_SK_DPD_DEF_SUM": {
+        "table": "POS_CASH_balance",
+        "description": "Cumulative regulatory penalized days past due across cash/POS loans"
+    },
+    "POS_SK_DPD_MAX": {
+        "table": "POS_CASH_balance",
+        "description": "Peak raw days past due (DPD) recorded on cash/POS loans"
+    },
+    "POS_SK_DPD_MEAN": {
+        "table": "POS_CASH_balance",
+        "description": "Average raw days past due (DPD) across cash/POS loan snapshots"
+    },
+    "POS_SK_DPD_SUM": {
+        "table": "POS_CASH_balance",
+        "description": "Cumulative raw days past due (DPD) recorded across cash/POS loans"
+    },
+    "POS_SK_DPD_VAR": {
+        "table": "POS_CASH_balance",
+        "description": "Variance of raw days past due across cash/POS loan snapshots"
+    },
+    "POS_STATUS_Active_MEAN": {
+        "table": "POS_CASH_balance",
+        "description": "Proportion of months where contract status remained Active"
+    },
+    "POS_STATUS_Active_SUM": {
+        "table": "POS_CASH_balance",
+        "description": "Count of monthly snapshots where contract status was Active"
+    },
+    "POS_STATUS_Approved_MEAN": {
+        "table": "POS_CASH_balance",
+        "description": "Proportion of months where contract status was in Approved stage"
+    },
+    "POS_STATUS_Completed_MEAN": {
+        "table": "POS_CASH_balance",
+        "description": "Proportion of months where contract status was fully Completed"
+    },
+    "POS_STATUS_Completed_SUM": {
+        "table": "POS_CASH_balance",
+        "description": "Count of monthly snapshots where contract status was Completed"
+    },
+    "POS_STATUS_Demand_MEAN": {
+        "table": "POS_CASH_balance",
+        "description": "Proportion of months where loan account was flagged for debt recovery"
+    },
+    "POS_STATUS_Demand_SUM": {
+        "table": "POS_CASH_balance",
+        "description": "Count of monthly snapshots where loan was flagged for debt recovery"
+    },
+    "POS_STATUS_Returned_to_the_store_MEAN": {
+        "table": "POS_CASH_balance",
+        "description": "Proportion of months where financed goods were returned to retailer"
+    },
+    "POS_STATUS_Returned_to_the_store_SUM": {
+        "table": "POS_CASH_balance",
+        "description": "Count of monthly snapshots where goods were returned to retailer"
+    },
+    "POS_STATUS_Signed_MEAN": {
+        "table": "POS_CASH_balance",
+        "description": "Proportion of months where contract was in newly Signed status"
+    },
+    "POS_STATUS_Signed_SUM": {
+        "table": "POS_CASH_balance",
+        "description": "Count of monthly snapshots where contract was in newly Signed status"
+    },
+    "INS_AMT_INSTALMENT_MAX": {
+        "table": "installments_payments",
+        "description": "Highest scheduled installment payment amount on historical contracts"
+    },
+    "INS_AMT_INSTALMENT_MEAN": {
+        "table": "installments_payments",
+        "description": "Average scheduled installment payment amount on historical contracts"
+    },
+    "INS_AMT_INSTALMENT_MIN": {
+        "table": "installments_payments",
+        "description": "Lowest scheduled installment payment amount on historical contracts"
+    },
+    "INS_AMT_INSTALMENT_SUM": {
+        "table": "installments_payments",
+        "description": "Total scheduled repayment obligation across historical installment terms"
+    },
+    "INS_AMT_PAYMENT_MAX": {
+        "table": "installments_payments",
+        "description": "Highest single payment amount deposited by client on an installment"
+    },
+    "INS_AMT_PAYMENT_MEAN": {
+        "table": "installments_payments",
+        "description": "Average payment amount deposited by client per installment"
+    },
+    "INS_AMT_PAYMENT_MIN": {
+        "table": "installments_payments",
+        "description": "Lowest single payment amount deposited by client on an installment"
+    },
+    "INS_AMT_PAYMENT_SUM": {
+        "table": "installments_payments",
+        "description": "Cumulative total funds paid by client across historical installments"
+    },
+    "INS_COUNT_UNIQUE_LOANS": {
+        "table": "installments_payments",
+        "description": "Total count of unique installment loan contracts with payment history"
+    },
+    "INS_DAYS_ENTRY_PAYMENT_MAX": {
+        "table": "installments_payments",
+        "description": "Days since the most recent actual payment deposit date (negative)"
+    },
+    "INS_DAYS_ENTRY_PAYMENT_MEAN": {
+        "table": "installments_payments",
+        "description": "Average days since actual payment deposit dates"
+    },
+    "INS_DAYS_ENTRY_PAYMENT_MIN": {
+        "table": "installments_payments",
+        "description": "Days since the earliest actual payment deposit date (negative)"
+    },
+    "INS_DAYS_INSTALMENT_MAX": {
+        "table": "installments_payments",
+        "description": "Days since the most recent scheduled installment due date"
+    },
+    "INS_DAYS_INSTALMENT_MEAN": {
+        "table": "installments_payments",
+        "description": "Average days since scheduled installment due dates"
+    },
+    "INS_DAYS_INSTALMENT_MIN": {
+        "table": "installments_payments",
+        "description": "Days since the earliest scheduled installment due date"
+    },
+    "INS_IS_CREDIT_CARD_MEAN": {
+        "table": "installments_payments",
+        "description": "Proportion of payments made toward revolving credit card balances"
+    },
+    "INS_IS_INITIAL_STAGE_MEAN": {
+        "table": "installments_payments",
+        "description": "Proportion of payments occurring during initial loan cycles (<=6)"
+    },
+    "INS_IS_MATURE_STAGE_MEAN": {
+        "table": "installments_payments",
+        "description": "Proportion of payments occurring during seasoned loan cycles (>24)"
+    },
+    "INS_IS_OVERPAID_MEAN": {
+        "table": "installments_payments",
+        "description": "Frequency rate of client paying more than scheduled installment"
+    },
+    "INS_IS_OVERPAID_SUM": {
+        "table": "installments_payments",
+        "description": "Total payment cycles where client paid more than scheduled amount"
+    },
+    "INS_IS_PAYMENT_DELAYED_MEAN": {
+        "table": "installments_payments",
+        "description": "Historical delinquency rate (fraction of payments deposited late)"
+    },
+    "INS_IS_PAYMENT_DELAYED_SUM": {
+        "table": "installments_payments",
+        "description": "Total count of past installment payments deposited after the due date"
+    },
+    "INS_IS_PAYMENT_EARLY_MEAN": {
+        "table": "installments_payments",
+        "description": "Proportion of installment payments deposited before the scheduled due date"
+    },
+    "INS_IS_PAYMENT_EARLY_SUM": {
+        "table": "installments_payments",
+        "description": "Total count of past installment payments deposited ahead of schedule"
+    },
+    "INS_IS_RECENT_12M_MEAN": {
+        "table": "installments_payments",
+        "description": "Proportion of installment payments executed within the past 12 months"
+    },
+    "INS_IS_RECENT_12M_SUM": {
+        "table": "installments_payments",
+        "description": "Total count of installment payments executed within the past 12 months"
+    },
+    "INS_IS_RECENT_24M_MEAN": {
+        "table": "installments_payments",
+        "description": "Proportion of installment payments executed within the past 24 months"
+    },
+    "INS_IS_RECENT_24M_SUM": {
+        "table": "installments_payments",
+        "description": "Total count of installment payments executed within the past 24 months"
+    },
+    "INS_IS_RECENT_6M_MEAN": {
+        "table": "installments_payments",
+        "description": "Proportion of installment payments executed within the past 6 months"
+    },
+    "INS_IS_RECENT_6M_SUM": {
+        "table": "installments_payments",
+        "description": "Total count of installment payments executed within the past 6 months"
+    },
+    "INS_IS_RESTRUCTURED_MEAN": {
+        "table": "installments_payments",
+        "description": "Proportion of installment records associated with restructured schedules"
+    },
+    "INS_IS_RESTRUCTURED_SUM": {
+        "table": "installments_payments",
+        "description": "Count of installment records associated with restructured schedules"
+    },
+    "INS_IS_UNDERPAID_MEAN": {
+        "table": "installments_payments",
+        "description": "Frequency rate of client paying less than scheduled installment"
+    },
+    "INS_IS_UNDERPAID_SUM": {
+        "table": "installments_payments",
+        "description": "Total payment cycles where client paid less than scheduled amount"
+    },
+    "INS_NUM_INSTALMENT_NUMBER_MAX": {
+        "table": "installments_payments",
+        "description": "Highest installment sequence number completed by client"
+    },
+    "INS_NUM_INSTALMENT_NUMBER_MEAN": {
+        "table": "installments_payments",
+        "description": "Average installment sequence number across historical payments"
+    },
+    "INS_NUM_INSTALMENT_VERSION_MAX": {
+        "table": "installments_payments",
+        "description": "Maximum schedule revision version number applied on a contract"
+    },
+    "INS_NUM_INSTALMENT_VERSION_NUNIQUE": {
+        "table": "installments_payments",
+        "description": "Count of distinct payment schedule versions applied to client loans"
+    },
+    "INS_PAYMENT_DELAY_MAX": {
+        "table": "installments_payments",
+        "description": "Peak historical payment delay in days beyond the due date"
+    },
+    "INS_PAYMENT_DELAY_MEAN": {
+        "table": "installments_payments",
+        "description": "Average payment delay in days beyond the scheduled due date"
+    },
+    "INS_PAYMENT_DELAY_SUM": {
+        "table": "installments_payments",
+        "description": "Cumulative total days of late payment delay across all past installments"
+    },
+    "INS_PAYMENT_DELAY_VAR": {
+        "table": "installments_payments",
+        "description": "Variance of payment delay days across historical installments"
+    },
+    "INS_PAYMENT_DIFF_MAX": {
+        "table": "installments_payments",
+        "description": "Largest payment shortfall amount on a single installment"
+    },
+    "INS_PAYMENT_DIFF_MEAN": {
+        "table": "installments_payments",
+        "description": "Average payment difference (shortfall or overpayment) per installment"
+    },
+    "INS_PAYMENT_DIFF_SUM": {
+        "table": "installments_payments",
+        "description": "Total cumulative payment shortfall across historical installments"
+    },
+    "INS_PAYMENT_DIFF_VAR": {
+        "table": "installments_payments",
+        "description": "Variance of installment payment differences relative to scheduled due"
+    },
+    "INS_PAYMENT_EARLY_MAX": {
+        "table": "installments_payments",
+        "description": "Maximum days an installment was deposited ahead of the due date"
+    },
+    "INS_PAYMENT_EARLY_MEAN": {
+        "table": "installments_payments",
+        "description": "Average days installments were deposited ahead of the scheduled due date"
+    },
+    "INS_PAYMENT_EARLY_SUM": {
+        "table": "installments_payments",
+        "description": "Cumulative total days saved by depositing installments early"
+    },
+    "INS_PAYMENT_RATIO_MAX": {
+        "table": "installments_payments",
+        "description": "Highest ratio of amount paid relative to scheduled amount on an installment"
+    },
+    "INS_PAYMENT_RATIO_MEAN": {
+        "table": "installments_payments",
+        "description": "Average ratio of amount paid relative to scheduled installment amount"
+    },
+    "INS_PAYMENT_RATIO_MIN": {
+        "table": "installments_payments",
+        "description": "Lowest ratio of amount paid relative to scheduled installment amount"
+    },
+    "CC_AMT_BALANCE_LAST": {
+        "table": "credit_card_balance",
+        "description": "Current total credit card balance on the latest monthly statement"
+    },
+    "CC_AMT_BALANCE_MAX": {
+        "table": "credit_card_balance",
+        "description": "Historical peak credit card statement balance"
+    },
+    "CC_AMT_BALANCE_MEAN": {
+        "table": "credit_card_balance",
+        "description": "Average monthly credit card statement balance"
+    },
+    "CC_AMT_BALANCE_POS_LAST": {
+        "table": "credit_card_balance",
+        "description": "Latest statement positive debt balance (excluding credit credits)"
+    },
+    "CC_AMT_BALANCE_POS_MEAN": {
+        "table": "credit_card_balance",
+        "description": "Average positive debt balance carried across monthly statements"
+    },
+    "CC_AMT_BALANCE_STD": {
+        "table": "credit_card_balance",
+        "description": "Standard deviation of monthly credit card balances"
+    },
+    "CC_AMT_CREDIT_LIMIT_ACTUAL_LAST": {
+        "table": "credit_card_balance",
+        "description": "Actual sanctioned credit card limit on the latest statement"
+    },
+    "CC_AMT_CREDIT_LIMIT_ACTUAL_MAX": {
+        "table": "credit_card_balance",
+        "description": "Highest credit card limit sanctioned in account history"
+    },
+    "CC_AMT_CREDIT_LIMIT_ACTUAL_MEAN": {
+        "table": "credit_card_balance",
+        "description": "Average sanctioned credit card limit across monthly statements"
+    },
+    "CC_AMT_DRAWINGS_ATM_CURRENT_MAX": {
+        "table": "credit_card_balance",
+        "description": "Peak monthly ATM cash withdrawal volume via credit card"
+    },
+    "CC_AMT_DRAWINGS_ATM_CURRENT_MEAN": {
+        "table": "credit_card_balance",
+        "description": "Average monthly ATM cash withdrawal volume via credit card"
+    },
+    "CC_AMT_DRAWINGS_ATM_CURRENT_SUM": {
+        "table": "credit_card_balance",
+        "description": "Total cumulative ATM cash withdrawals executed via credit card"
+    },
+    "CC_AMT_DRAWINGS_ATM_IS_NA_MEAN": {
+        "table": "credit_card_balance",
+        "description": "Proportion of statement months missing ATM withdrawal records"
+    },
+    "CC_AMT_DRAWINGS_ATM_IS_NA_SUM": {
+        "table": "credit_card_balance",
+        "description": "Count of statement months missing ATM withdrawal records"
+    },
+    "CC_AMT_DRAWINGS_CURRENT_MAX": {
+        "table": "credit_card_balance",
+        "description": "Peak monthly total transaction draw volume (ATM, POS, other)"
+    },
+    "CC_AMT_DRAWINGS_CURRENT_MEAN": {
+        "table": "credit_card_balance",
+        "description": "Average monthly total transaction draw volume on credit card"
+    },
+    "CC_AMT_DRAWINGS_CURRENT_SUM": {
+        "table": "credit_card_balance",
+        "description": "Cumulative total transaction draw volume across credit card history"
+    },
+    "CC_AMT_DRAWINGS_OTHER_CURRENT_MAX": {
+        "table": "credit_card_balance",
+        "description": "Peak monthly volume of other non-standard transactions via credit card"
+    },
+    "CC_AMT_DRAWINGS_OTHER_CURRENT_MEAN": {
+        "table": "credit_card_balance",
+        "description": "Average monthly volume of other non-standard transactions via card"
+    },
+    "CC_AMT_DRAWINGS_OTHER_CURRENT_SUM": {
+        "table": "credit_card_balance",
+        "description": "Total volume of other non-standard transactions on credit card"
+    },
+    "CC_AMT_DRAWINGS_POS_CURRENT_MAX": {
+        "table": "credit_card_balance",
+        "description": "Peak monthly point-of-sale (POS) retail spending on credit card"
+    },
+    "CC_AMT_DRAWINGS_POS_CURRENT_MEAN": {
+        "table": "credit_card_balance",
+        "description": "Average monthly point-of-sale (POS) retail spending on credit card"
+    },
+    "CC_AMT_DRAWINGS_POS_CURRENT_SUM": {
+        "table": "credit_card_balance",
+        "description": "Total cumulative retail POS purchase volume via credit card"
+    },
+    "CC_AMT_INST_MIN_IS_NA_MEAN": {
+        "table": "credit_card_balance",
+        "description": "Proportion of statements missing minimum payment regularity figures"
+    },
+    "CC_AMT_INST_MIN_IS_NA_SUM": {
+        "table": "credit_card_balance",
+        "description": "Count of statements missing minimum payment regularity figures"
+    },
+    "CC_AMT_INST_MIN_REGULARITY_LAST": {
+        "table": "credit_card_balance",
+        "description": "Required minimum payment amount on the most recent statement"
+    },
+    "CC_AMT_INST_MIN_REGULARITY_MAX": {
+        "table": "credit_card_balance",
+        "description": "Peak required minimum payment amount across account history"
+    },
+    "CC_AMT_INST_MIN_REGULARITY_MEAN": {
+        "table": "credit_card_balance",
+        "description": "Average required minimum payment amount across account history"
+    },
+    "CC_AMT_PAYMENT_CURRENT_MAX": {
+        "table": "credit_card_balance",
+        "description": "Highest single monthly payment deposited toward credit card debt"
+    },
+    "CC_AMT_PAYMENT_CURRENT_MEAN": {
+        "table": "credit_card_balance",
+        "description": "Average monthly payment deposited toward credit card debt"
+    },
+    "CC_AMT_PAYMENT_CURRENT_SUM": {
+        "table": "credit_card_balance",
+        "description": "Cumulative total payments deposited across credit card history"
+    },
+    "CC_AMT_PAYMENT_IS_NA_MEAN": {
+        "table": "credit_card_balance",
+        "description": "Proportion of statement cycles missing card payment records"
+    },
+    "CC_AMT_PAYMENT_IS_NA_SUM": {
+        "table": "credit_card_balance",
+        "description": "Count of statement cycles missing card payment records"
+    },
+    "CC_AMT_PAYMENT_TOTAL_CURRENT_MAX": {
+        "table": "credit_card_balance",
+        "description": "Peak monthly total clearing payments deposited across all balances"
+    },
+    "CC_AMT_PAYMENT_TOTAL_CURRENT_MEAN": {
+        "table": "credit_card_balance",
+        "description": "Average monthly total clearing payments deposited on card"
+    },
+    "CC_AMT_PAYMENT_TOTAL_CURRENT_SUM": {
+        "table": "credit_card_balance",
+        "description": "Cumulative total clearing payments deposited across card history"
+    },
+    "CC_AMT_RECEIVABLE_PRINCIPAL_LAST": {
+        "table": "credit_card_balance",
+        "description": "Outstanding principal balance receivable on the latest statement"
+    },
+    "CC_AMT_RECEIVABLE_PRINCIPAL_MAX": {
+        "table": "credit_card_balance",
+        "description": "Historical peak principal balance receivable on credit card"
+    },
+    "CC_AMT_RECEIVABLE_PRINCIPAL_MEAN": {
+        "table": "credit_card_balance",
+        "description": "Average monthly principal balance receivable on credit card"
+    },
+    "CC_AMT_RECIVABLE_LAST": {
+        "table": "credit_card_balance",
+        "description": "Total amount receivable (principal, interest, fees) on latest statement"
+    },
+    "CC_AMT_RECIVABLE_MAX": {
+        "table": "credit_card_balance",
+        "description": "Peak total receivable amount recorded in account history"
+    },
+    "CC_AMT_RECIVABLE_MEAN": {
+        "table": "credit_card_balance",
+        "description": "Average monthly total receivable amount in account history"
+    },
+    "CC_AMT_TOTAL_RECEIVABLE_LAST": {
+        "table": "credit_card_balance",
+        "description": "Gross total receivables on the latest credit card statement"
+    },
+    "CC_AMT_TOTAL_RECEIVABLE_MAX": {
+        "table": "credit_card_balance",
+        "description": "Peak gross total receivables recorded on credit card"
+    },
+    "CC_AVG_AMT_PER_ATM_DRAWING_MAX": {
+        "table": "credit_card_balance",
+        "description": "Highest average ticket size per ATM cash withdrawal in a month"
+    },
+    "CC_AVG_AMT_PER_ATM_DRAWING_MEAN": {
+        "table": "credit_card_balance",
+        "description": "Average ticket size per ATM cash withdrawal across card history"
+    },
+    "CC_AVG_AMT_PER_DRAWING_MAX": {
+        "table": "credit_card_balance",
+        "description": "Highest average ticket size per transaction draw in a month"
+    },
+    "CC_AVG_AMT_PER_DRAWING_MEAN": {
+        "table": "credit_card_balance",
+        "description": "Average ticket size across all credit card transaction draws"
+    },
+    "CC_AVG_AMT_PER_POS_DRAWING_MAX": {
+        "table": "credit_card_balance",
+        "description": "Highest average ticket size per retail POS transaction in a month"
+    },
+    "CC_AVG_AMT_PER_POS_DRAWING_MEAN": {
+        "table": "credit_card_balance",
+        "description": "Average ticket size per retail POS transaction on credit card"
+    },
+    "CC_CNT_DRAWINGS_ATM_CURRENT_MAX": {
+        "table": "credit_card_balance",
+        "description": "Maximum number of ATM cash withdrawals executed in a single month"
+    },
+    "CC_CNT_DRAWINGS_ATM_CURRENT_MEAN": {
+        "table": "credit_card_balance",
+        "description": "Average number of ATM cash withdrawals executed per month"
+    },
+    "CC_CNT_DRAWINGS_ATM_CURRENT_SUM": {
+        "table": "credit_card_balance",
+        "description": "Total lifetime count of ATM cash withdrawals on credit card"
+    },
+    "CC_CNT_DRAWINGS_CURRENT_MAX": {
+        "table": "credit_card_balance",
+        "description": "Maximum count of all card transactions executed in a single month"
+    },
+    "CC_CNT_DRAWINGS_CURRENT_MEAN": {
+        "table": "credit_card_balance",
+        "description": "Average count of monthly transactions executed on credit card"
+    },
+    "CC_CNT_DRAWINGS_CURRENT_SUM": {
+        "table": "credit_card_balance",
+        "description": "Total lifetime transaction count executed on credit card"
+    },
+    "CC_CNT_DRAWINGS_OTHER_CURRENT_MAX": {
+        "table": "credit_card_balance",
+        "description": "Maximum other transaction count executed in a single month"
+    },
+    "CC_CNT_DRAWINGS_OTHER_CURRENT_MEAN": {
+        "table": "credit_card_balance",
+        "description": "Average count of other monthly transactions executed on credit card"
+    },
+    "CC_CNT_DRAWINGS_OTHER_CURRENT_SUM": {
+        "table": "credit_card_balance",
+        "description": "Total lifetime count of other non-standard transactions on card"
+    },
+    "CC_CNT_DRAWINGS_POS_CURRENT_MAX": {
+        "table": "credit_card_balance",
+        "description": "Maximum number of retail POS purchase transactions in a single month"
+    },
+    "CC_CNT_DRAWINGS_POS_CURRENT_MEAN": {
+        "table": "credit_card_balance",
+        "description": "Average monthly count of retail POS purchase transactions"
+    },
+    "CC_CNT_DRAWINGS_POS_CURRENT_SUM": {
+        "table": "credit_card_balance",
+        "description": "Total lifetime count of retail POS purchase transactions"
+    },
+    "CC_CNT_INSTALMENT_MATURE_CUM_LAST": {
+        "table": "credit_card_balance",
+        "description": "Cumulative mature installment billing cycles on latest statement"
+    },
+    "CC_CNT_INSTALMENT_MATURE_CUM_MAX": {
+        "table": "credit_card_balance",
+        "description": "Maximum cumulative mature installment billing cycles on card"
+    },
+    "CC_DPD_TOLERANCE_DAYS_MAX": {
+        "table": "credit_card_balance",
+        "description": "Peak grace period tolerance days granted before penalizing card DPD"
+    },
+    "CC_DPD_TOLERANCE_DAYS_MEAN": {
+        "table": "credit_card_balance",
+        "description": "Average grace period tolerance days granted on credit card"
+    },
+    "CC_DRAWING_ATM_CNT_RATIO_MAX": {
+        "table": "credit_card_balance",
+        "description": "Peak monthly ratio of ATM withdrawals to total transaction count"
+    },
+    "CC_DRAWING_ATM_CNT_RATIO_MEAN": {
+        "table": "credit_card_balance",
+        "description": "Average ratio of ATM withdrawals to total transaction count"
+    },
+    "CC_DRAWING_ATM_RATIO_MAX": {
+        "table": "credit_card_balance",
+        "description": "Peak monthly ratio of ATM cash withdrawal volume to total spending"
+    },
+    "CC_DRAWING_ATM_RATIO_MEAN": {
+        "table": "credit_card_balance",
+        "description": "Average ratio of ATM cash withdrawal volume to total spending"
+    },
+    "CC_DRAWING_POS_CNT_RATIO_MAX": {
+        "table": "credit_card_balance",
+        "description": "Peak monthly ratio of POS retail purchases to total transaction count"
+    },
+    "CC_DRAWING_POS_CNT_RATIO_MEAN": {
+        "table": "credit_card_balance",
+        "description": "Average ratio of POS retail purchases to total transaction count"
+    },
+    "CC_DRAWING_TO_BALANCE_RATIO_MAX": {
+        "table": "credit_card_balance",
+        "description": "Peak monthly ratio of new spending/withdrawals relative to balance"
+    },
+    "CC_DRAWING_TO_BALANCE_RATIO_MEAN": {
+        "table": "credit_card_balance",
+        "description": "Average monthly ratio of new spending/withdrawals relative to balance"
+    },
+    "CC_IS_DPD_30_MEAN": {
+        "table": "credit_card_balance",
+        "description": "Proportion of statement months with delinquency exceeding 30 DPD"
+    },
+    "CC_IS_DPD_30_SUM": {
+        "table": "credit_card_balance",
+        "description": "Total count of statement months with delinquency exceeding 30 DPD"
+    },
+    "CC_IS_DPD_90_MEAN": {
+        "table": "credit_card_balance",
+        "description": "Proportion of statement months with severe card default (>90 DPD)"
+    },
+    "CC_IS_DPD_90_SUM": {
+        "table": "credit_card_balance",
+        "description": "Total count of statement months with severe card default (>90 DPD)"
+    },
+    "CC_IS_DPD_DEF_MAX": {
+        "table": "credit_card_balance",
+        "description": "Flag indicating whether card ever incurred regulatory penalized DPD"
+    },
+    "CC_IS_DPD_DEF_MEAN": {
+        "table": "credit_card_balance",
+        "description": "Proportion of statement months with regulatory penalized delinquency"
+    },
+    "CC_IS_DPD_DEF_SUM": {
+        "table": "credit_card_balance",
+        "description": "Total count of statement months with regulatory penalized delinquency"
+    },
+    "CC_IS_DPD_MAX": {
+        "table": "credit_card_balance",
+        "description": "Flag indicating whether card ever incurred payment delinquency"
+    },
+    "CC_IS_DPD_MEAN": {
+        "table": "credit_card_balance",
+        "description": "Proportion of statement months carrying a delinquent balance"
+    },
+    "CC_IS_DPD_SUM": {
+        "table": "credit_card_balance",
+        "description": "Total count of statement months carrying a delinquent balance"
+    },
+    "CC_IS_DRAWING_ATM_MEAN": {
+        "table": "credit_card_balance",
+        "description": "Proportion of months where client utilized ATM cash withdrawal"
+    },
+    "CC_IS_DRAWING_ATM_SUM": {
+        "table": "credit_card_balance",
+        "description": "Total statement months with ATM cash withdrawal activity"
+    },
+    "CC_IS_DRAWING_POS_MEAN": {
+        "table": "credit_card_balance",
+        "description": "Proportion of months where client utilized retail POS card purchase"
+    },
+    "CC_IS_DRAWING_POS_SUM": {
+        "table": "credit_card_balance",
+        "description": "Total statement months with retail POS card purchase activity"
+    },
+    "CC_IS_FREQUENT_USER_MEAN": {
+        "table": "credit_card_balance",
+        "description": "Proportion of months where client was a frequent card user (>=5 txn)"
+    },
+    "CC_IS_FREQUENT_USER_SUM": {
+        "table": "credit_card_balance",
+        "description": "Total statement months meeting frequent user threshold (>=5 txn)"
+    },
+    "CC_IS_FULL_PAYER_MEAN": {
+        "table": "credit_card_balance",
+        "description": "Proportion of months where client paid off 100% of card balance"
+    },
+    "CC_IS_FULL_PAYER_SUM": {
+        "table": "credit_card_balance",
+        "description": "Total statement months where client paid off 100% of card balance"
+    },
+    "CC_IS_HIGH_ATM_FREQ_MEAN": {
+        "table": "credit_card_balance",
+        "description": "Proportion of months with elevated ATM cash withdrawal frequency (>=3)"
+    },
+    "CC_IS_HIGH_ATM_FREQ_SUM": {
+        "table": "credit_card_balance",
+        "description": "Total statement months with elevated ATM cash withdrawal frequency (>=3)"
+    },
+    "CC_IS_MATURE_ACCOUNT_MEAN": {
+        "table": "credit_card_balance",
+        "description": "Proportion of statements where card was a mature account (>=6 cycles)"
+    },
+    "CC_IS_MIN_PAYMENT_REQUIRED_MEAN": {
+        "table": "credit_card_balance",
+        "description": "Proportion of statement cycles requiring a minimum due payment"
+    },
+    "CC_IS_MIN_PAYMENT_REQUIRED_SUM": {
+        "table": "credit_card_balance",
+        "description": "Total statement cycles requiring a minimum due payment"
+    },
+    "CC_IS_PAYMENT_TOTAL_POS_MEAN": {
+        "table": "credit_card_balance",
+        "description": "Proportion of statement cycles where client deposited positive payments"
+    },
+    "CC_IS_PAYMENT_TOTAL_POS_SUM": {
+        "table": "credit_card_balance",
+        "description": "Total statement cycles where client deposited positive payments"
+    },
+    "CC_IS_UNDERPAID_MIN_MAX": {
+        "table": "credit_card_balance",
+        "description": "Flag indicating whether client ever failed to pay the minimum payment"
+    },
+    "CC_IS_UNDERPAID_MIN_MEAN": {
+        "table": "credit_card_balance",
+        "description": "Frequency rate of failing to meet the minimum required card payment"
+    },
+    "CC_IS_UNDERPAID_MIN_SUM": {
+        "table": "credit_card_balance",
+        "description": "Total statement cycles failing to meet the minimum required payment"
+    },
+    "CC_LIMIT_UTILIZATION_LAST": {
+        "table": "credit_card_balance",
+        "description": "Credit card revolving utilization rate on the latest statement"
+    },
+    "CC_LIMIT_UTILIZATION_MAX": {
+        "table": "credit_card_balance",
+        "description": "Historical peak credit card revolving utilization rate"
+    },
+    "CC_LIMIT_UTILIZATION_MEAN": {
+        "table": "credit_card_balance",
+        "description": "Average revolving utilization rate across credit card history"
+    },
+    "CC_MONTHS_BALANCE_MAX": {
+        "table": "credit_card_balance",
+        "description": "Most recent statement snapshot month for credit card (negative)"
+    },
+    "CC_MONTHS_BALANCE_MIN": {
+        "table": "credit_card_balance",
+        "description": "Earliest statement snapshot month for credit card (negative)"
+    },
+    "CC_MONTHS_BALANCE_SIZE": {
+        "table": "credit_card_balance",
+        "description": "Total historical statement snapshots tracked for this credit card"
+    },
+    "CC_NON_PRINCIPAL_AMT_MAX": {
+        "table": "credit_card_balance",
+        "description": "Peak monthly interest, fees, and penalties billed on credit card"
+    },
+    "CC_NON_PRINCIPAL_AMT_MEAN": {
+        "table": "credit_card_balance",
+        "description": "Average monthly interest, fees, and penalties billed on credit card"
+    },
+    "CC_NON_PRINCIPAL_AMT_SUM": {
+        "table": "credit_card_balance",
+        "description": "Cumulative total interest and fees paid across credit card history"
+    },
+    "CC_PAYMENT_MIN_DIFF_MAX": {
+        "table": "credit_card_balance",
+        "description": "Peak shortfall between payment deposited and required minimum due"
+    },
+    "CC_PAYMENT_MIN_DIFF_MEAN": {
+        "table": "credit_card_balance",
+        "description": "Average shortfall between payment deposited and required minimum due"
+    },
+    "CC_PAYMENT_MIN_DIFF_SUM": {
+        "table": "credit_card_balance",
+        "description": "Cumulative total payment shortfall relative to minimum due"
+    },
+    "CC_PAYMENT_RATIO_MIN_LAST": {
+        "table": "credit_card_balance",
+        "description": "Ratio of payment deposited relative to minimum due on latest statement"
+    },
+    "CC_PAYMENT_RATIO_MIN_MEAN": {
+        "table": "credit_card_balance",
+        "description": "Average ratio of payment deposited relative to minimum due"
+    },
+    "CC_PAYMENT_RATIO_MIN_MIN": {
+        "table": "credit_card_balance",
+        "description": "Lowest ratio of payment deposited relative to minimum due"
+    },
+    "CC_PAYMENT_TO_BALANCE_RATIO_LAST": {
+        "table": "credit_card_balance",
+        "description": "Ratio of payment deposited relative to statement balance on latest statement"
+    },
+    "CC_PAYMENT_TO_BALANCE_RATIO_MAX": {
+        "table": "credit_card_balance",
+        "description": "Peak ratio of payment deposited relative to statement balance"
+    },
+    "CC_PAYMENT_TO_BALANCE_RATIO_MEAN": {
+        "table": "credit_card_balance",
+        "description": "Average monthly ratio of payment deposited relative to statement balance"
+    },
+    "CC_PRINCIPAL_TO_BALANCE_RATIO_LAST": {
+        "table": "credit_card_balance",
+        "description": "Ratio of principal debt to total balance on the latest statement"
+    },
+    "CC_PRINCIPAL_TO_BALANCE_RATIO_MEAN": {
+        "table": "credit_card_balance",
+        "description": "Average ratio of principal debt to total card statement balance"
+    },
+    "CC_PRINCIPAL_TO_BALANCE_RATIO_MIN": {
+        "table": "credit_card_balance",
+        "description": "Lowest ratio of principal debt to total card statement balance"
+    },
+    "CC_SK_DPD_DEF_MAX": {
+        "table": "credit_card_balance",
+        "description": "Peak regulatory penalized days past due on credit card account"
+    },
+    "CC_SK_DPD_DEF_MEAN": {
+        "table": "credit_card_balance",
+        "description": "Average regulatory penalized days past due on credit card account"
+    },
+    "CC_SK_DPD_DEF_STD": {
+        "table": "credit_card_balance",
+        "description": "Standard deviation of regulatory penalized days past due on card"
+    },
+    "CC_SK_DPD_MAX": {
+        "table": "credit_card_balance",
+        "description": "Peak raw days past due (DPD) recorded on credit card account"
+    },
+    "CC_SK_DPD_MEAN": {
+        "table": "credit_card_balance",
+        "description": "Average raw days past due (DPD) across credit card statements"
+    },
+    "CC_SK_DPD_STD": {
+        "table": "credit_card_balance",
+        "description": "Standard deviation of raw days past due across credit card statements"
+    },
+    "CC_STATUS_IS_ACTIVE_LAST": {
+        "table": "credit_card_balance",
+        "description": "Flag indicating credit card was in Active status on latest statement"
+    },
+    "CC_STATUS_IS_ACTIVE_MEAN": {
+        "table": "credit_card_balance",
+        "description": "Proportion of monthly statements where credit card maintained Active status"
+    },
+    "CC_STATUS_IS_COMPLETED_LAST": {
+        "table": "credit_card_balance",
+        "description": "Flag indicating credit card was in Completed status on latest statement"
+    },
+    "CC_STATUS_IS_COMPLETED_MEAN": {
+        "table": "credit_card_balance",
+        "description": "Proportion of monthly statements where credit card was Completed"
+    }
+}

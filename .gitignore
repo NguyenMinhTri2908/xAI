@@ -8,3 +8,7 @@ assets/external/
 .DS_Store
 venv/
 .venv/
+.idea/
+.vscode/
+# AntiGravity / Cursor Agent rules
+.cursorrules

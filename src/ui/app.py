@@ -135,217 +135,219 @@ def breadcrumb_bar() -> rx.Component:
 
 
 def client_profile_card() -> rx.Component:
-    """Card 1 (Trái): Hồ sơ khách hàng, trả về 'None' nếu thiếu dữ liệu."""
-    return rx.box(
+    """Card 1 (Trái): Thông tin cá nhân / Profile khách hàng."""
+    return rx.card(
         rx.vstack(
+            # Header
             rx.hstack(
-                rx.avatar(
-                    fallback="NA",
-                    size="4",
-                    radius="full",
-                    color_scheme="gray",
-                    variant="solid",
-                ),
-                rx.vstack(
-                    rx.hstack(
-                        rx.heading("Name", size="3", weight="bold", color="white"),
-                        rx.badge(
-                            rx.cond(
-                                UnderwritingState.selected_client_id != "",
-                                f"#{UnderwritingState.selected_client_id}",
-                                "None",
-                            ),
-                            variant="surface",
-                            color_scheme="gray",
-                            size="1",
+                rx.hstack(
+                    rx.icon("user", size=16, color="#9CA3AF"),
+                    rx.text(
+                        rx.cond(
+                            UnderwritingState.selected_client_id != "",
+                            f"ID: #{UnderwritingState.selected_client_id}",
+                            "ID: N/A",
                         ),
-                        spacing="2",
-                        align="center",
+                        size="3",
+                        font_weight="600",
+                        color="#9CA3AF",
                     ),
-                    rx.hstack(
-                        rx.badge(
-                            rx.cond(
-                                UnderwritingState.current_tier != "None",
-                                f"Risk · {UnderwritingState.current_tier}",
-                                "Risk · None",
-                            ),
-                            color_scheme="green",
-                            variant="surface",
-                            size="1",
-                            radius="full",
-                        ),
-                        spacing="2",
+                    spacing="2",
+                    align="center",
+                ),
+                width="100%",
+                align="center",
+            ),
+            rx.divider(border_color="#1E293B", margin_y="1"),
+            # Grid thông tin cá nhân
+            rx.grid(
+                rx.vstack(
+                    rx.text("NAME", size="1", color="#9CA3AF", weight="medium"),
+                    rx.text(
+                        "Client Name",
+                        size="4",
+                        weight="bold",
+                        color="#FFFFFF",
                     ),
                     spacing="1",
                     align_items="flex-start",
                 ),
-                spacing="3",
-                align="center",
-                width="100%",
-            ),
-            rx.divider(border_color="#1E293B", margin_y="2"),
-            rx.grid(
                 rx.vstack(
-                    rx.text("AGE", size="1", color="#64748B", weight="bold"),
+                    rx.text("APPLICANT AGE", size="1", color="#9CA3AF", weight="medium"),
                     rx.text(
                         UnderwritingState.client_age,
-                        size="2",
+                        size="4",
                         weight="bold",
-                        color="#F8FAFC",
+                        color="#FFFFFF",
                     ),
-                    spacing="0",
+                    spacing="1",
                     align_items="flex-start",
                 ),
                 rx.vstack(
-                    rx.text("EXPERIENCE / TENURE", size="1", color="#64748B", weight="bold"),
+                    rx.text("EMPLOYMENT TENURE", size="1", color="#9CA3AF", weight="medium"),
                     rx.text(
                         UnderwritingState.client_experience,
-                        size="2",
+                        size="4",
                         weight="bold",
-                        color="#F8FAFC",
+                        color="#FFFFFF",
                     ),
-                    spacing="0",
+                    spacing="1",
                     align_items="flex-start",
                 ),
                 columns="2",
                 spacing="3",
                 width="100%",
             ),
-            spacing="2",
+            spacing="3",
             width="100%",
         ),
-        background="#161B22",
-        border="1px solid #21262D",
+        background="#111827",
+        border="1px solid #1F2937",
         border_radius="10px",
-        padding="4",
-        width="34%",
+        padding="5",
+        flex="1",
+        width="100%",
     )
 
 
 def loan_terms_card() -> rx.Component:
-    """Card 2 (Giữa): Điều kiện khoản vay - 100% dữ liệu động, trả về 'None' khi rỗng."""
-    return rx.box(
+    """Card 2 (Giữa): Thông tin khoản vay / Điều kiện đề xuất."""
+    return rx.card(
         rx.vstack(
-            rx.text("LOAN TERMS", size="1", color="#64748B", weight="bold"),
+            # Header
+            rx.hstack(
+                rx.hstack(
+                    rx.icon("credit-card", size=16, color="#9CA3AF"),
+                    rx.text(
+                        "Loan Details",
+                        size="3",
+                        font_weight="600",
+                        color="#9CA3AF",
+                    ),
+                    spacing="2",
+                    align="center",
+                ),
+                rx.spacer(),
+                rx.badge(
+                    "Active Terms",
+                    variant="surface",
+                    color_scheme="gray",
+                    size="1",
+                ),
+                width="100%",
+                align="center",
+            ),
+            rx.divider(border_color="#1E293B", margin_y="1"),
+            # 2x2 Grid
             rx.grid(
                 rx.vstack(
-                    rx.text("REQUESTED AMOUNT", size="1", color="#94A3B8", weight="bold"),
+                    rx.text("REQUESTED AMOUNT", size="1", color="#9CA3AF", weight="medium"),
                     rx.text(
                         UnderwritingState.client_credit,
-                        size="5",
+                        size="4",
                         weight="bold",
-                        color="#F8FAFC",
+                        color="#FFFFFF",
                     ),
-                    spacing="0",
+                    spacing="1",
                     align_items="flex-start",
                 ),
                 rx.vstack(
-                    rx.text("LOAN TERM", size="1", color="#94A3B8", weight="bold"),
+                    rx.text("LOAN TERM", size="1", color="#9CA3AF", weight="medium"),
                     rx.text(
                         UnderwritingState.client_term,
-                        size="5",
+                        size="4",
                         weight="bold",
-                        color="#F8FAFC",
+                        color="#FFFFFF",
                     ),
-                    spacing="0",
+                    spacing="1",
                     align_items="flex-start",
                 ),
                 rx.vstack(
-                    rx.text("EST. MONTHLY PAYMENT", size="1", color="#94A3B8", weight="bold"),
+                    rx.text("EST. MONTHLY PAYMENT", size="1", color="#9CA3AF", weight="medium"),
                     rx.text(
                         UnderwritingState.client_annuity,
-                        size="3",
+                        size="4",
                         weight="bold",
-                        color="#F8FAFC",
+                        color="#FFFFFF",
                     ),
-                    spacing="0",
+                    spacing="1",
                     align_items="flex-start",
                 ),
                 rx.vstack(
-                    rx.text("PAYMENT-TO-INCOME", size="1", color="#94A3B8", weight="bold"),
-                    rx.hstack(
-                        rx.icon("percent", size=14, color="#94A3B8"),
-                        rx.text(
-                            UnderwritingState.client_dti,
-                            size="2",
-                            weight="bold",
-                            color="#F8FAFC",
-                        ),
-                        spacing="1",
-                        align="center",
+                    rx.text("DEBT-TO-INCOME (DTI)", size="1", color="#9CA3AF", weight="medium"),
+                    rx.text(
+                        UnderwritingState.client_dti,
+                        size="4",
+                        weight="bold",
+                        color="#FFFFFF",
                     ),
-                    spacing="0",
+                    spacing="1",
                     align_items="flex-start",
                 ),
                 columns="2",
                 spacing="3",
                 width="100%",
             ),
-            spacing="2",
+            spacing="3",
             width="100%",
         ),
-        background="#161B22",
-        border="1px solid #21262D",
+        background="#111827",
+        border="1px solid #1F2937",
         border_radius="10px",
-        padding="4",
-        width="34%",
+        padding="5",
+        flex="1",
+        width="100%",
     )
 
 
 def ai_recommendation_card() -> rx.Component:
-    """Card 3 (Phải trên Header): AI RECOMMENDATION tích hợp trọn vẹn."""
-    return rx.box(
+    """Card 3 (Phải): Đánh giá & Khuyến nghị mô hình AI."""
+    return rx.card(
         rx.vstack(
+            # Header
             rx.hstack(
-                rx.text(
-                    "AI RECOMMENDATION",
-                    size="1",
-                    color="#64748B",
-                    weight="bold",
+                rx.hstack(
+                    rx.icon("sparkles", size=16, color="#9CA3AF"),
+                    rx.text(
+                        "AI Recommendation",
+                        size="3",
+                        font_weight="600",
+                        color="#9CA3AF",
+                    ),
+                    spacing="2",
+                    align="center",
                 ),
+                rx.spacer(),
                 rx.badge(
                     rx.cond(
                         UnderwritingState.current_tier != "None",
-                        UnderwritingState.current_tier,
-                        "None",
+                        f"Tier {UnderwritingState.current_tier}",
+                        "Tier N/A",
                     ),
                     color_scheme="gray",
                     variant="surface",
                     size="1",
                 ),
-                justify="between",
                 width="100%",
+                align="center",
             ),
+            rx.divider(border_color="#1E293B", margin_y="1"),
+            # Khôi phục layout 2 cột cũ với chuẩn typography và padding mới
             rx.grid(
                 rx.vstack(
-                    rx.text(
-                        "POSSIBILITY OF DEFAULT",
-                        size="1",
-                        color="#94A3B8",
-                        weight="bold",
-                    ),
+                    rx.text("PROBABILITY OF DEFAULT", size="1", color="#9CA3AF", weight="medium"),
                     rx.text(
                         UnderwritingState.pd_display,
-                        size="5",
+                        size="4",
                         weight="bold",
                         color=UnderwritingState.decision_color,
                     ),
-                    rx.text(
-                        "Threshold: 16.0% (±1.0%)",
-                        size="1",
-                        color="#64748B",
-                        weight="medium",
-                    ),
-                    spacing="0",
+                    rx.text("Threshold: 16.0% (±1.0%)", size="1", color="#64748B", weight="medium"),
+                    spacing="1",
                     align_items="flex-start",
                 ),
                 rx.vstack(
-                    rx.text(
-                        "SUGGESTED ACTION",
-                        size="1",
-                        color="#94A3B8",
-                        weight="bold",
-                    ),
+                    rx.text("SUGGESTED ACTION", size="1", color="#9CA3AF", weight="medium"),
                     rx.box(
                         rx.hstack(
                             rx.icon(
@@ -358,7 +360,7 @@ def ai_recommendation_card() -> rx.Component:
                                         "alert-triangle",
                                     ),
                                 ),
-                                size=15,
+                                size=14,
                                 color=UnderwritingState.decision_color,
                             ),
                             rx.text(
@@ -373,10 +375,9 @@ def ai_recommendation_card() -> rx.Component:
                         background=UnderwritingState.decision_bg_color,
                         border=f"1px solid {UnderwritingState.decision_color}",
                         border_radius="6px",
-                        padding_x="2",
+                        padding_x="2.5",
                         padding_y="1",
-                        margin_top="1",
-                        width="100%",
+                        display="inline-flex",
                     ),
                     rx.text(
                         rx.cond(
@@ -386,24 +387,23 @@ def ai_recommendation_card() -> rx.Component:
                         ),
                         size="1",
                         color="#64748B",
-                        margin_top="1",
                     ),
-                    spacing="0",
+                    spacing="1",
                     align_items="flex-start",
-                    width="100%",
                 ),
                 columns="2",
                 spacing="3",
                 width="100%",
             ),
-            spacing="2",
+            spacing="3",
             width="100%",
         ),
-        background="#161B22",
-        border="1px solid #21262D",
+        background="#111827",
+        border="1px solid #1F2937",
         border_radius="10px",
-        padding="4",
-        width="34%",
+        padding="5",
+        flex="1",
+        width="100%",
     )
 
 
@@ -411,7 +411,7 @@ def action_bar_view() -> rx.Component:
     """Hàng 4 nút quyết định phê duyệt bên dưới."""
     return rx.hstack(
         rx.button(
-            rx.icon("check-circle", size=16),
+            rx.icon("circle-check", size=16),
             "Approve",
             background="#059669",
             color="white",
@@ -420,7 +420,7 @@ def action_bar_view() -> rx.Component:
             cursor="pointer",
         ),
         rx.button(
-            rx.icon("x-circle", size=16),
+            rx.icon("circle-x", size=16),
             "Decline Loan",
             background="#DC2626",
             color="white",
@@ -465,7 +465,7 @@ def full_underwriting_header() -> rx.Component:
                         client_profile_card(),
                         loan_terms_card(),
                         ai_recommendation_card(),
-                        spacing="3",
+                        spacing="4",
                         width="100%",
                         align_items="stretch",
                     ),

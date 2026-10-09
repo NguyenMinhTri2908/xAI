@@ -1,6 +1,6 @@
 import reflex as rx
 from ..feature_search_state import FeatureSearchState
-from src.ui.drawer_state import FeatureDrawerState  # <-- 1. Import state Drawer
+from src.ui.drawer_state import FeatureDrawerState
 
 
 def table_badge(table_name: str) -> rx.Component:
@@ -26,7 +26,7 @@ def table_badge(table_name: str) -> rx.Component:
 def feature_search_view() -> rx.Component:
     """Component view displaying feature search, real-time SHAP impact, and auto-scroll streaming."""
     return rx.vstack(
-        # 1. Header (đã giữ đúng padding_left=12px để thẳng hàng chữ)
+        # 1. Header
         rx.vstack(
             rx.heading("Feature Search & Attribution", size="4", color="white", weight="bold"),
             rx.text(
@@ -110,16 +110,18 @@ def feature_search_view() -> rx.Component:
                                     color="#94A3B8",
                                 )
                             ),
-                            # --- 2. HIỆU ỨNG HOVER SÁNG TOÀN DÒNG + CLICK MỞ DRAWER ---
+                            # Hiệu ứng hover sáng toàn dòng + Click mở Notion-style Drawer
                             cursor="pointer",
                             transition="background 0.15s ease",
                             _hover={
-                                "background": "rgba(56, 189, 248, 0.08)",  # Sáng nhẹ màu xanh hồ quang
+                                "background": "rgba(56, 189, 248, 0.08)",
                             },
                             on_click=lambda: FeatureDrawerState.open_feature({
                                 "feature": item["name"],
+                                "table": item["table"],
+                                "raw_value": "Active",
                                 "display_value": "Portfolio Active",
-                                "shap_value": item["impact_text"],
+                                "shap_value": item["shap_value"],
                                 "description": item["description"],
                             }),
                         ),
