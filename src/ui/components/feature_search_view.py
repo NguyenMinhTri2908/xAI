@@ -119,7 +119,10 @@ def feature_search_view() -> rx.Component:
                             on_click=lambda: FeatureDrawerState.open_feature({
                                 "feature": item["name"],
                                 "table": item["table"],
+<<<<<<< HEAD
                                 "raw_value": "Active",
+=======
+>>>>>>> origin/master
                                 "display_value": "Portfolio Active",
                                 "shap_value": item["shap_value"],
                                 "description": item["description"],
