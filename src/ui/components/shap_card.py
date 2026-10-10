@@ -55,7 +55,7 @@ def risk_driver_row(factor: dict) -> rx.Component:
             "background": "rgba(255, 255, 255, 0.06)",
         },
         transition="background 0.15s ease",
-        on_click=lambda: FeatureDrawerState.open_feature(factor),
+        on_click=lambda: FeatureDrawerState.select_feature(factor["feature"]),
     )
 
     # Tooltip.content chỉ nhận chuỗi văn bản (String)
@@ -127,7 +127,7 @@ def trust_driver_row(factor: dict) -> rx.Component:
             "background": "rgba(255, 255, 255, 0.06)",
         },
         transition="background 0.15s ease",
-        on_click=lambda: FeatureDrawerState.open_feature(factor),
+        on_click=lambda: FeatureDrawerState.select_feature(factor["feature"]),
     )
 
     # Tooltip.content chỉ nhận chuỗi văn bản (String)

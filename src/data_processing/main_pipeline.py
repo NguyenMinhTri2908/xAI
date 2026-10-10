@@ -4,7 +4,12 @@ import numpy as np
 import pandas as pd
 
 # Load benchmarks from pre-extracted JSON artifact
-BENCHMARK_PATH = "/Users/nguyenminhtri/FinalYearPro/Model/fair/train_benchmarks.json"
+try:
+    from src.config import BENCHMARK_PATH
+except Exception:
+    BENCHMARK_PATH = os.path.join(os.path.dirname(__file__), "..", "models", "train_benchmarks.json")
+if not os.path.exists(BENCHMARK_PATH):
+    BENCHMARK_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "models", "train_benchmarks.json"))
 
 FAIR_PROHIBITED_COLUMNS = [
     'CODE_GENDER', 'NAME_FAMILY_STATUS', 'CNT_CHILDREN', 'CNT_FAM_MEMBERS',

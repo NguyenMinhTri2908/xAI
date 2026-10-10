@@ -160,7 +160,7 @@ class CreditScoringEngine:
         feature_importance = pd.DataFrame({
             "feature": self.features,
             "shap_value": shap_array,
-            "raw_value": df_row[self.features].iloc[0].values
+            "raw_value": df_clean[self.features].iloc[0].values
         })
 
         # Decode numeric/categorical values to human-readable strings via metadata contract
@@ -205,6 +205,31 @@ class CreditScoringEngine:
             "top_positive_factors": trust_drivers,
             "all_shap_values": all_shap_dict  # <- Cung cấp toàn bộ 891 giá trị SHAP
         }
+
+    def predict_batch_pd(self, df_input: pd.DataFrame) -> List[Dict[str, Any]]:
+        """Tính toán nhanh xác suất vỡ nợ (PD) theo lô cho bảng Client Registry."""
+        if df_input.empty:
+            return []
+        df_clean = self._align_and_cast_features(df_input)
+        lgb_preds = [model.predict_proba(df_clean)[:, 1] for model in self.lgb_models]
+        mean_lgb = np.mean(lgb_preds, axis=0)
+        xgb_preds = [model.predict_proba(df_clean)[:, 1] for model in self.xgb_models]
+        mean_xgb = np.mean(xgb_preds, axis=0)
+        w_lgb = self.blend_weights.get("lightgbm", 0.5)
+        w_xgb = self.blend_weights.get("xgboost", 0.5)
+        final_pds = (mean_lgb * w_lgb) + (mean_xgb * w_xgb)
+
+        results = []
+        for pd_val in final_pds:
+            tier, decision = self._determine_credit_tier(float(pd_val))
+            pct = round(float(pd_val) * 100, 1)
+            results.append({
+                "pd_val": float(pd_val),
+                "pd_display": f"{pct:.1f}%",
+                "tier": tier,
+                "decision": decision,
+            })
+        return results
 
 
 # ==============================================================================

@@ -116,17 +116,7 @@ def feature_search_view() -> rx.Component:
                             _hover={
                                 "background": "rgba(56, 189, 248, 0.08)",
                             },
-                            on_click=lambda: FeatureDrawerState.open_feature({
-                                "feature": item["name"],
-                                "table": item["table"],
-<<<<<<< HEAD
-                                "raw_value": "Active",
-=======
->>>>>>> origin/master
-                                "display_value": "Portfolio Active",
-                                "shap_value": item["shap_value"],
-                                "description": item["description"],
-                            }),
+                            on_click=lambda: FeatureDrawerState.select_feature(item["name"]),
                         ),
                     ),
                     # Dòng thông báo trạng thái cuộn nhẹ ở cuối danh sách
