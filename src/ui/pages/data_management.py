@@ -76,8 +76,108 @@ def data_management_navbar() -> rx.Component:
     )
 
 
+def production_dataset_row(item: dict) -> rx.Component:
+    """Hàng dataset trong danh sách Thẻ 1 với Radio Check và validation badge."""
+    is_selected = UnderwritingState.selected_production_file == item["filename"]
+    return rx.box(
+        rx.hstack(
+            # Radio check icon (Active: Cyan ring with cyan dot; Inactive: Gray ring)
+            rx.cond(
+                is_selected,
+                rx.box(
+                    rx.box(
+                        width="8px",
+                        height="8px",
+                        border_radius="50%",
+                        background="#06B6D4",
+                    ),
+                    width="18px",
+                    height="18px",
+                    border_radius="50%",
+                    border="2px solid #06B6D4",
+                    display="flex",
+                    align_items="center",
+                    justify_content="center",
+                    flex_shrink=0,
+                ),
+                rx.box(
+                    width="18px",
+                    height="18px",
+                    border_radius="50%",
+                    border="2px solid #475569",
+                    flex_shrink=0,
+                ),
+            ),
+            # Metadata cột & dòng
+            rx.vstack(
+                rx.hstack(
+                    rx.text(
+                        item["filename"],
+                        size="2",
+                        weight="bold",
+                        color=rx.cond(is_selected, "#FFFFFF", "#E2E8F0"),
+                        font_family="monospace",
+                    ),
+                    rx.badge(
+                        item["format_tag"],
+                        color_scheme="cyan",
+                        variant="soft",
+                        size="1",
+                    ),
+                    rx.badge(
+                        item["status_badge"],
+                        color_scheme=item["status_badge_color"],
+                        variant="surface",
+                        size="1",
+                    ),
+                    spacing="2",
+                    align="center",
+                ),
+                rx.text(
+                    item["features_rows_label"],
+                    size="1",
+                    color=rx.cond(is_selected, "#94A3B8", "#64748B"),
+                ),
+                spacing="1",
+                align_items="flex-start",
+            ),
+            spacing="3",
+            align="center",
+            width="100%",
+        ),
+        padding="3",
+        border_radius="8px",
+        cursor="pointer",
+        border=rx.cond(
+            is_selected,
+            "1px solid #06B6D4",
+            "1px solid #1E293B",
+        ),
+        background=rx.cond(
+            is_selected,
+            "rgba(6, 182, 212, 0.08)",
+            "#0B0F17",
+        ),
+        _hover={
+            "background": rx.cond(
+                is_selected,
+                "rgba(6, 182, 212, 0.12)",
+                "rgba(255, 255, 255, 0.03)",
+            ),
+            "border_color": rx.cond(
+                is_selected,
+                "#06B6D4",
+                "#334155",
+            ),
+        },
+        transition="all 0.15s ease",
+        on_click=UnderwritingState.set_selected_production_file(item["filename"]),
+        width="100%",
+    )
+
+
 def preset_dataset_card() -> rx.Component:
-    """Card 1 (Trái): Bộ chọn Preset Dataset có sẵn."""
+    """Card 1 (Trái): 1. Preprocessed Datasets (Auto-scanned & Validated)."""
     return rx.card(
         rx.vstack(
             rx.hstack(
@@ -88,8 +188,8 @@ def preset_dataset_card() -> rx.Component:
                     border_radius="8px",
                 ),
                 rx.vstack(
-                    rx.text("1. Benchmark Preset Datasets", size="3", weight="bold", color="#F8FAFC"),
-                    rx.text("Choose from pre-computed master or benchmark raw datasets", size="1", color="#9CA3AF"),
+                    rx.text("1. Preprocessed Datasets", size="3", weight="bold", color="#F8FAFC"),
+                    rx.text("Select a pre-computed dataset ready for instant risk scoring & xAI inspection.", size="1", color="#9CA3AF"),
                     spacing="0",
                     align_items="flex-start",
                 ),
@@ -97,63 +197,58 @@ def preset_dataset_card() -> rx.Component:
                 align="center",
             ),
             rx.divider(border_color="#1E293B", margin_y="1"),
-            rx.vstack(
-                rx.text("AVAILABLE PRESETS", size="1", weight="bold", color="#9CA3AF", letter_spacing="0.05em"),
-                rx.select(
-                    UnderwritingState.dataset_source_options,
-                    value=UnderwritingState.selected_dataset_source_label,
-                    on_change=UnderwritingState.handle_source_select,
-                    size="2",
-                    variant="surface",
-                    width="100%",
-                ),
-                spacing="1",
-                width="100%",
-                align_items="flex-start",
-            ),
-            rx.box(
+
+            # Danh sách Selectable List Cards
+            rx.cond(
+                UnderwritingState.has_production_datasets,
                 rx.vstack(
-                    rx.hstack(
-                        rx.icon("check", size=13, color="#10B981"),
-                        rx.text("Demo 1,000 Clients: Pre-computed 891 features with full joins", size="1", color="#94A3B8"),
-                        spacing="2",
-                        align="center",
+                    rx.foreach(
+                        UnderwritingState.production_datasets,
+                        lambda item: production_dataset_row(item),
                     ),
-                    rx.hstack(
-                        rx.icon("check", size=13, color="#10B981"),
-                        rx.text("Full Test Master: Production scoring pool (48,744 applicant records)", size="1", color="#94A3B8"),
-                        spacing="2",
-                        align="center",
-                    ),
-                    rx.hstack(
-                        rx.icon("check", size=13, color="#10B981"),
-                        rx.text("Raw Application Test: Runs automatic zero-leakage pipeline transformations", size="1", color="#94A3B8"),
-                        spacing="2",
-                        align="center",
-                    ),
-                    spacing="1",
+                    spacing="2",
                     width="100%",
                 ),
-                background="#0B0F17",
-                border="1px solid #1E293B",
-                border_radius="8px",
-                padding="3",
-                width="100%",
+                # Empty State khi thư mục không có file
+                rx.center(
+                    rx.vstack(
+                        rx.icon("folder-x", size=26, color="#64748B"),
+                        rx.text(
+                            "No processed datasets found in data/production directory.",
+                            size="2",
+                            color="#94A3B8",
+                            text_align="center",
+                        ),
+                        spacing="2",
+                        align="center",
+                        padding_y="6",
+                    ),
+                    width="100%",
+                    background="#0B0F17",
+                    border="1px dashed #1E293B",
+                    border_radius="8px",
+                ),
             ),
+
             rx.spacer(),
+            # Nút Load Selected Dataset (Xanh dương gradient kèm icon Play)
             rx.button(
                 rx.cond(
                     UnderwritingState.is_ingesting,
-                    rx.hstack(rx.spinner(size="2"), rx.text("Processing Pipeline...", size="2"), spacing="2"),
-                    rx.hstack(rx.icon("play", size=15), rx.text("Load & Run Pipeline", size="2", weight="bold"), spacing="2"),
+                    rx.hstack(rx.spinner(size="2"), rx.text("Loading Dataset...", size="2"), spacing="2"),
+                    rx.hstack(rx.icon("play", size=15), rx.text("Load Selected Dataset", size="2", weight="bold"), spacing="2"),
                 ),
                 size="2",
                 variant="solid",
-                color_scheme="blue",
+                style={
+                    "background": "linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)",
+                    "color": "white",
+                    "box_shadow": "0 2px 8px rgba(37, 99, 235, 0.35)",
+                },
                 cursor="pointer",
                 width="100%",
-                on_click=UnderwritingState.run_pipeline,
-                disabled=UnderwritingState.is_ingesting,
+                on_click=UnderwritingState.load_selected_production_dataset,
+                disabled=UnderwritingState.is_ingesting | (~UnderwritingState.has_production_datasets),
             ),
             spacing="3",
             width="100%",
@@ -169,7 +264,7 @@ def preset_dataset_card() -> rx.Component:
 
 
 def custom_upload_card() -> rx.Component:
-    """Card 2 (Phải): Upload file CSV / Parquet tùy chỉnh."""
+    """Card 2 (Phải): 2. Custom File Ingestion (Dropzone + Size/Format Validation)."""
     return rx.card(
         rx.vstack(
             rx.hstack(
@@ -181,7 +276,7 @@ def custom_upload_card() -> rx.Component:
                 ),
                 rx.vstack(
                     rx.text("2. Custom File Ingestion", size="3", weight="bold", color="#F8FAFC"),
-                    rx.text("Upload CSV / Parquet file (Dataset auto-named after file)", size="1", color="#9CA3AF"),
+                    rx.text("Register an external CSV or Parquet dataset.", size="1", color="#9CA3AF"),
                     spacing="0",
                     align_items="flex-start",
                 ),
@@ -189,43 +284,79 @@ def custom_upload_card() -> rx.Component:
                 align="center",
             ),
             rx.divider(border_color="#1E293B", margin_y="1"),
-            # Dropzone
+
+            # Dropzone viền nét đứt
             rx.upload(
                 rx.vstack(
-                    rx.icon("file-up", size=30, color="#818CF8"),
-                    rx.text("Browse or drag & drop CSV or Parquet file here", size="2", weight="bold", color="#F3F4F6"),
-                    rx.text("Supports single loan application record or batch datasets", size="1", color="#9CA3AF"),
+                    rx.box(
+                        rx.icon("cloud-upload", size=30, color="#818CF8"),
+                        background="rgba(129, 140, 248, 0.1)",
+                        border_radius="50%",
+                        padding="2.5",
+                    ),
+                    rx.text("Drop your dataset here", size="3", weight="bold", color="#F3F4F6"),
+                    rx.text("Drag & drop CSV or Parquet file here (Max 500MB)", size="1", color="#9CA3AF"),
                     align="center",
                     spacing="1",
-                    padding="4",
+                    padding_y="4",
+                    padding_x="3",
                 ),
                 id="main_dataset_upload",
-                border="1px dashed #374151",
+                accept={"text/csv": [".csv"], "application/octet-stream": [".parquet"]},
+                max_files=1,
+                border="1px dashed #4F46E5",
                 border_radius="8px",
                 background="#0B0F19",
                 cursor="pointer",
                 width="100%",
             ),
-            # Danh sách file đã chọn
-            rx.hstack(
-                rx.foreach(
-                    rx.selected_files("main_dataset_upload"),
-                    lambda f: rx.badge(rx.icon("file", size=12), f, color_scheme="indigo", variant="surface", size="1"),
-                ),
-                width="100%",
-                wrap="wrap",
-                spacing="1",
+
+            # Chú thích kỹ thuật thực tế
+            rx.text(
+                "Supported Formats: .CSV, .PARQUET | Max File Size Enforced: 500MB",
+                size="1",
+                color="#64748B",
             ),
+
+            # Chip hiển thị file upload đã chọn
+            rx.foreach(
+                rx.selected_files("main_dataset_upload"),
+                lambda f: rx.box(
+                    rx.hstack(
+                        rx.hstack(
+                            rx.icon("file-spreadsheet", size=14, color="#A78BFA"),
+                            rx.text(f, size="2", weight="medium", color="#F1F5F9", font_family="monospace"),
+                            spacing="2",
+                            align="center",
+                        ),
+                        rx.spacer(),
+                        rx.badge("READY", color_scheme="green", variant="solid", size="1"),
+                        width="100%",
+                        align="center",
+                    ),
+                    width="100%",
+                    padding="2.5",
+                    border_radius="6px",
+                    background="#1E1B4B",
+                    border="1px solid #4338CA",
+                ),
+            ),
+
             rx.spacer(),
+            # Nút Upload & Ingest Dataset (Màu tím)
             rx.button(
                 rx.cond(
                     UnderwritingState.is_ingesting,
                     rx.hstack(rx.spinner(size="2"), rx.text("Ingesting & Scoring...", size="2"), spacing="2"),
-                    rx.hstack(rx.icon("arrow-up-right", size=15), rx.text("Upload & Ingest Dataset", size="2", weight="bold"), spacing="2"),
+                    rx.hstack(rx.icon("cloud-upload", size=15), rx.text("Upload & Ingest Dataset →", size="2", weight="bold"), spacing="2"),
                 ),
                 size="2",
                 variant="solid",
-                color_scheme="indigo",
+                style={
+                    "background": "linear-gradient(135deg, #7C3AED 0%, #6D28D9 100%)",
+                    "color": "white",
+                    "box_shadow": "0 2px 8px rgba(124, 58, 237, 0.35)",
+                },
                 cursor="pointer",
                 width="100%",
                 on_click=UnderwritingState.handle_file_upload(
@@ -246,59 +377,9 @@ def custom_upload_card() -> rx.Component:
     )
 
 
-def empty_waiting_view() -> rx.Component:
-    """Trạng thái chờ ban đầu khi chưa nạp Dataset."""
-    return rx.center(
-        rx.vstack(
-            rx.box(
-                rx.icon("layers", size=36, color="#64748B"),
-                background="rgba(255, 255, 255, 0.03)",
-                padding="4",
-                border_radius="50%",
-                border="1px dashed #334155",
-            ),
-            rx.text(
-                "Select a dataset above to display client records",
-                size="4",
-                weight="bold",
-                color="#F1F5F9",
-            ),
-            rx.text(
-                "Choose a benchmark preset on the left or upload a custom CSV / Parquet file on the right, then click 'Load & Run Pipeline' to inspect client default risk.",
-                size="2",
-                color="#94A3B8",
-                text_align="center",
-                max_width="520px",
-                line_height="1.6",
-            ),
-            rx.button(
-                rx.hstack(
-                    rx.icon("play", size=14),
-                    rx.text("Quick Load Demo Preset (1,000 Clients)", size="2", weight="bold"),
-                    spacing="2",
-                    align="center",
-                ),
-                size="2",
-                variant="soft",
-                color_scheme="blue",
-                cursor="pointer",
-                on_click=UnderwritingState.run_pipeline,
-                margin_top="2",
-            ),
-            align="center",
-            spacing="2",
-            padding_y="12",
-        ),
-        width="100%",
-        border="1px dashed #1E293B",
-        border_radius="12px",
-        background="#0B0F19",
-        padding="8",
-    )
-
-
 def client_registry_table() -> rx.Component:
-    """Bảng danh sách Client Registry hỗ trợ real-time filter và lazy loading (Feature Search Style)."""
+    """Bảng danh sách Client Registry hỗ trợ real-time filter và lazy loading (Feature Search Style).
+    Khi chưa nạp dataset, hiển thị empty state gọn gàng nhẹ nhàng."""
     return rx.box(
         rx.vstack(
             # Thanh công cụ bảng: Tiêu đề + Bộ tìm kiếm Real-time
@@ -328,6 +409,7 @@ def client_registry_table() -> rx.Component:
                         on_change=UnderwritingState.set_registry_search_query,
                         size="2",
                         width="260px",
+                        disabled=~UnderwritingState.is_dataset_loaded,
                     ),
                     rx.cond(
                         UnderwritingState.registry_search_query != "",
@@ -343,9 +425,13 @@ def client_registry_table() -> rx.Component:
                     ),
                     rx.badge(
                         rx.cond(
-                            UnderwritingState.total_clients_count == 1,
-                            "1 Client",
-                            f"{UnderwritingState.total_clients_count:,} Clients",
+                            UnderwritingState.is_dataset_loaded,
+                            rx.cond(
+                                UnderwritingState.total_clients_count == 1,
+                                "1 Client",
+                                f"{UnderwritingState.total_clients_count:,} Clients",
+                            ),
+                            "0 Clients",
                         ),
                         variant="surface",
                         color_scheme="blue",
@@ -361,112 +447,130 @@ def client_registry_table() -> rx.Component:
 
             # Khung bảng Container Scroll chuẩn Feature Search Style (max_height 500px, overflow_y auto)
             rx.box(
-                rx.table.root(
-                    rx.table.header(
-                        rx.table.row(
-                            rx.table.column_header_cell("CLIENT ID", width="15%"),
-                            rx.table.column_header_cell("DEFAULT RISK (PD)", width="15%"),
-                            rx.table.column_header_cell("RATING TIER", width="11%"),
-                            rx.table.column_header_cell("RECOMMENDATION", width="15%"),
-                            rx.table.column_header_cell("TOTAL INCOME", width="14%"),
-                            rx.table.column_header_cell("LOAN AMOUNT", width="14%"),
-                            rx.table.column_header_cell("ANNUITY", width="11%"),
-                            rx.table.column_header_cell("ACTION", width="10%"),
-                        )
-                    ),
-                    rx.table.body(
-                        rx.foreach(
-                            UnderwritingState.filtered_client_list,
-                            lambda row: rx.table.row(
-                                # CLIENT ID
-                                rx.table.cell(
-                                    rx.hstack(
-                                        rx.icon("user", size=13, color="#9CA3AF"),
-                                        rx.text(
-                                            f"#{row['SK_ID_CURR']}",
-                                            weight="bold",
-                                            size="2",
-                                            color="#FFFFFF",
-                                            font_family="monospace",
-                                        ),
-                                        spacing="1",
-                                        align="center",
-                                    )
-                                ),
-                                # DEFAULT RISK (PD)
-                                rx.table.cell(
-                                    rx.badge(
-                                        row["PD_DISPLAY"],
-                                        color_scheme=rx.cond(
-                                            row["PD_COLOR"] == "#10B981",
-                                            "green",
-                                            rx.cond(row["PD_COLOR"] == "#F59E0B", "amber", "red"),
-                                        ),
-                                        variant="surface",
-                                        size="1",
-                                    )
-                                ),
-                                # RATING TIER
-                                rx.table.cell(
-                                    rx.badge(row["TIER"], variant="soft", color_scheme="gray", size="1")
-                                ),
-                                # RECOMMENDATION
-                                rx.table.cell(
-                                    rx.text(row["DECISION"], size="1", weight="medium", color="#E2E8F0")
-                                ),
-                                # TOTAL INCOME
-                                rx.table.cell(
-                                    rx.text(row["INCOME_DISPLAY"], size="1", color="#CBD5E1")
-                                ),
-                                # LOAN AMOUNT
-                                rx.table.cell(
-                                    rx.text(row["CREDIT_DISPLAY"], size="1", weight="medium", color="#FFFFFF")
-                                ),
-                                # ANNUITY
-                                rx.table.cell(
-                                    rx.text(row["ANNUITY_DISPLAY"], size="1", color="#94A3B8")
-                                ),
-                                # ACTION (Inspect Client Button)
-                                rx.table.cell(
-                                    rx.button(
-                                        rx.hstack(
-                                            rx.text("Inspect", size="1", weight="bold"),
-                                            rx.icon("arrow-right", size=12),
-                                            spacing="1",
-                                            align="center",
-                                        ),
-                                        size="1",
-                                        variant="solid",
-                                        color_scheme="blue",
-                                        cursor="pointer",
-                                        on_click=UnderwritingState.inspect_client(row["SK_ID_CURR"]),
-                                    )
-                                ),
-                                style={
-                                    "transition": "background 0.15s ease",
-                                    "_hover": {"background": "rgba(56, 189, 248, 0.06)"},
-                                },
-                            ),
-                        ),
-                        # Dòng thông báo trạng thái cuộn nhẹ ở cuối danh sách (Lazy Scroll status)
-                        rx.table.row(
-                            rx.table.cell(
-                                rx.center(
-                                    rx.text(
-                                        UnderwritingState.registry_scroll_status,
-                                        size="1",
-                                        color="#64748B",
-                                    ),
-                                    padding="2",
-                                    width="100%",
-                                ),
-                                col_span=8,
+                rx.cond(
+                    UnderwritingState.is_dataset_loaded,
+                    rx.table.root(
+                        rx.table.header(
+                            rx.table.row(
+                                rx.table.column_header_cell("CLIENT ID", width="15%"),
+                                rx.table.column_header_cell("DEFAULT RISK (PD)", width="15%"),
+                                rx.table.column_header_cell("RATING TIER", width="11%"),
+                                rx.table.column_header_cell("RECOMMENDATION", width="15%"),
+                                rx.table.column_header_cell("TOTAL INCOME", width="14%"),
+                                rx.table.column_header_cell("LOAN AMOUNT", width="14%"),
+                                rx.table.column_header_cell("ANNUITY", width="11%"),
+                                rx.table.column_header_cell("ACTION", width="10%"),
                             )
                         ),
+                        rx.table.body(
+                            rx.foreach(
+                                UnderwritingState.filtered_client_list,
+                                lambda row: rx.table.row(
+                                    # CLIENT ID
+                                    rx.table.cell(
+                                        rx.hstack(
+                                            rx.icon("user", size=13, color="#9CA3AF"),
+                                            rx.text(
+                                                f"#{row['SK_ID_CURR']}",
+                                                weight="bold",
+                                                size="2",
+                                                color="#FFFFFF",
+                                                font_family="monospace",
+                                            ),
+                                            spacing="1",
+                                            align="center",
+                                        )
+                                    ),
+                                    # DEFAULT RISK (PD)
+                                    rx.table.cell(
+                                        rx.badge(
+                                            row["PD_DISPLAY"],
+                                            color_scheme=rx.cond(
+                                                row["PD_COLOR"] == "#10B981",
+                                                "green",
+                                                rx.cond(row["PD_COLOR"] == "#F59E0B", "amber", "red"),
+                                            ),
+                                            variant="surface",
+                                            size="1",
+                                        )
+                                    ),
+                                    # RATING TIER
+                                    rx.table.cell(
+                                        rx.badge(row["TIER"], variant="soft", color_scheme="gray", size="1")
+                                    ),
+                                    # RECOMMENDATION
+                                    rx.table.cell(
+                                        rx.text(row["DECISION"], size="1", weight="medium", color="#E2E8F0")
+                                    ),
+                                    # TOTAL INCOME
+                                    rx.table.cell(
+                                        rx.text(row["INCOME_DISPLAY"], size="1", color="#CBD5E1")
+                                    ),
+                                    # LOAN AMOUNT
+                                    rx.table.cell(
+                                        rx.text(row["CREDIT_DISPLAY"], size="1", weight="medium", color="#FFFFFF")
+                                    ),
+                                    # ANNUITY
+                                    rx.table.cell(
+                                        rx.text(row["ANNUITY_DISPLAY"], size="1", color="#94A3B8")
+                                    ),
+                                    # ACTION (Inspect Client Button)
+                                    rx.table.cell(
+                                        rx.button(
+                                            rx.hstack(
+                                                rx.text("Inspect", size="1", weight="bold"),
+                                                rx.icon("arrow-right", size=12),
+                                                spacing="1",
+                                                align="center",
+                                            ),
+                                            size="1",
+                                            variant="solid",
+                                            color_scheme="blue",
+                                            cursor="pointer",
+                                            on_click=UnderwritingState.inspect_client(row["SK_ID_CURR"]),
+                                        )
+                                    ),
+                                    style={
+                                        "transition": "background 0.15s ease",
+                                        "_hover": {"background": "rgba(56, 189, 248, 0.06)"},
+                                    },
+                                ),
+                            ),
+                            # Dòng thông báo trạng thái cuộn nhẹ ở cuối danh sách (Lazy Scroll status)
+                            rx.table.row(
+                                rx.table.cell(
+                                    rx.center(
+                                        rx.text(
+                                            UnderwritingState.registry_scroll_status,
+                                            size="1",
+                                            color="#64748B",
+                                        ),
+                                        padding="2",
+                                        width="100%",
+                                    ),
+                                    col_span=8,
+                                )
+                            ),
+                        ),
+                        width="100%",
+                        variant="surface",
+                        size="2",
                     ),
-                    width="100%",
-                    variant="surface",
-                    size="2",
+                    # Empty state gọn gàng nhẹ nhàng khi chưa nạp dataset
+                    rx.center(
+                        rx.hstack(
+                            rx.icon("layers", size=18, color="#64748B"),
+                            rx.text(
+                                "No dataset loaded. Select a preprocessed dataset above or upload a custom file to view client records.",
+                                size="2",
+                                color="#94A3B8",
+                            ),
+                            spacing="2",
+                            align="center",
+                            padding_y="12",
+                        ),
+                        width="100%",
+                    ),
                 ),
                 max_height="500px",
                 overflow_y="auto",
@@ -488,30 +592,76 @@ def client_registry_table() -> rx.Component:
     )
 
 
+def top_alert_banner() -> rx.Component:
+    """Thanh Alert màu xanh lục đậm trên cùng: Icon chuông + Thông báo nạp thành công kèm nút đóng [x]."""
+    return rx.cond(
+        UnderwritingState.show_alert,
+        rx.box(
+            rx.hstack(
+                rx.cond(
+                    UnderwritingState.alert_type == "success",
+                    rx.icon("bell", size=18, color="#34D399"),
+                    rx.icon("circle_alert", size=18, color="#F87171"),
+                ),
+                rx.text(
+                    UnderwritingState.alert_message,
+                    size="2",
+                    weight="medium",
+                    color=rx.cond(
+                        UnderwritingState.alert_type == "success",
+                        "#A7F3D0",
+                        "#FECACA",
+                    ),
+                ),
+                rx.spacer(),
+                rx.icon_button(
+                    rx.icon("x", size=14, color=rx.cond(
+                        UnderwritingState.alert_type == "success",
+                        "#6EE7B7",
+                        "#FCA5A5",
+                    )),
+                    size="1",
+                    variant="ghost",
+                    color_scheme=rx.cond(
+                        UnderwritingState.alert_type == "success",
+                        "green",
+                        "red",
+                    ),
+                    cursor="pointer",
+                    on_click=UnderwritingState.dismiss_alert,
+                ),
+                width="100%",
+                align="center",
+                spacing="3",
+            ),
+            background=rx.cond(
+                UnderwritingState.alert_type == "success",
+                "rgba(6, 78, 59, 0.65)",
+                "rgba(127, 29, 29, 0.65)",
+            ),
+            border=rx.cond(
+                UnderwritingState.alert_type == "success",
+                "1px solid #059669",
+                "1px solid #DC2626",
+            ),
+            border_radius="8px",
+            padding_x="4",
+            padding_y="2.5",
+            width="100%",
+            box_shadow="0 2px 10px rgba(0, 0, 0, 0.3)",
+        ),
+        rx.fragment(),
+    )
+
+
 def data_management_page() -> rx.Component:
     """Giao diện chính Trang 1: Data Ingestion & Dataset Management."""
     return rx.box(
         data_management_navbar(),
         rx.box(
             rx.vstack(
-                # Thông báo status nếu có
-                rx.cond(
-                    UnderwritingState.status_message != "",
-                    rx.box(
-                        rx.hstack(
-                            rx.icon("info", size=16, color="#60A5FA"),
-                            rx.text(UnderwritingState.status_message, size="2", color="#93C5FD"),
-                            spacing="2",
-                            align="center",
-                        ),
-                        background="rgba(37, 99, 235, 0.12)",
-                        border="1px solid rgba(59, 130, 246, 0.3)",
-                        border_radius="8px",
-                        padding="3",
-                        width="100%",
-                    ),
-                    rx.fragment(),
-                ),
+                # Thanh cảnh báo Alert trên cùng
+                top_alert_banner(),
 
                 # Phía trên: 2 Thẻ song song gọn gàng (Preset bên trái, Upload bên phải)
                 rx.hstack(
@@ -522,12 +672,8 @@ def data_management_page() -> rx.Component:
                     align_items="stretch",
                 ),
 
-                # Phía dưới: Trạng thái chờ ban đầu HOẶC Bảng Client Registry sau khi nạp
-                rx.cond(
-                    UnderwritingState.is_dataset_loaded,
-                    client_registry_table(),
-                    empty_waiting_view(),
-                ),
+                # Phía dưới: Bảng Client Registry & Risk Overview (tự động hiển thị Empty State khi chưa nạp)
+                client_registry_table(),
 
                 spacing="5",
                 width="100%",
@@ -541,4 +687,5 @@ def data_management_page() -> rx.Component:
         width="100%",
         min_height="100vh",
         background="#090D16",
+        on_mount=UnderwritingState.scan_production_dir,
     )

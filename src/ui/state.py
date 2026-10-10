@@ -11,11 +11,13 @@ if str(PROJECT_ROOT) not in sys.path:
 
 import reflex as rx
 import pandas as pd
+import pyarrow.parquet as pq
 from src.config import DEMO_SAMPLES_PARQUET
 from src.engine.credit_scoring import CreditScoringEngine
 from src.data_processing.ingestion_service import (
     load_dataset_from_source,
     load_dataset_from_upload,
+    set_active_dataset,
     get_active_dataset,
     get_active_client_ids,
     get_client_row_data,
@@ -33,6 +35,100 @@ def get_engine():
     return _ENGINE
 
 
+def get_production_dir() -> Path:
+    """Xác định chính xác thư mục data/production qua multi-path check và đảm bảo thư mục tồn tại."""
+    candidates = [
+        Path("/Users/nguyenminhtri/FinalYearPro/data/production"),
+        PROJECT_ROOT / "data" / "production",
+        Path("data/production").resolve(),
+    ]
+    for p in candidates:
+        if p.exists() and p.is_dir():
+            return p
+    fallback = PROJECT_ROOT / "data" / "production"
+    fallback.mkdir(parents=True, exist_ok=True)
+    return fallback
+
+
+def scan_production_datasets() -> List[Dict[str, Any]]:
+    """Tự động quét DUY NHẤT thư mục data/production, đọc metadata và kiểm tra pipeline readiness.
+    Tuyệt đối không quét hay liệt kê các file trong thư mục gốc data/."""
+    prod_dir = get_production_dir()
+    os.makedirs(prod_dir, exist_ok=True)
+
+    if not prod_dir.exists():
+        return []
+
+    datasets = []
+    try:
+        files = sorted([
+            f for f in os.listdir(prod_dir)
+            if (f.endswith(".parquet") or f.endswith(".csv")) and not f.startswith(".")
+        ])
+    except Exception as e:
+        print(f"[scan_production_datasets] Error listing {prod_dir}: {e}")
+        return []
+
+    for f in files:
+        fpath = prod_dir / f
+        ext = ".parquet" if f.endswith(".parquet") else ".csv"
+        num_rows = 0
+        num_cols = 0
+        has_sk_id = False
+        has_features = False
+
+        try:
+            if ext == ".parquet":
+                meta = pq.ParquetFile(fpath)
+                num_rows = meta.metadata.num_rows
+                cols = meta.schema.names
+                num_cols = len(cols)
+                has_sk_id = "SK_ID_CURR" in cols
+                has_features = any(c in cols for c in ["EXT_SOURCE_MEAN", "AMT_CREDIT", "AMT_INCOME_TOTAL", "EXT_SOURCE_2", "TARGET", "PD"])
+            else:
+                df_head = pd.read_csv(fpath, nrows=1)
+                cols = list(df_head.columns)
+                num_cols = len(cols)
+                has_sk_id = "SK_ID_CURR" in cols
+                has_features = any(c in cols for c in ["EXT_SOURCE_MEAN", "AMT_CREDIT", "AMT_INCOME_TOTAL", "EXT_SOURCE_2", "TARGET", "PD"])
+                with open(fpath, "r", encoding="utf-8") as cf:
+                    num_rows = max(sum(1 for _ in cf) - 1, 0)
+        except Exception as e:
+            print(f"[scan_production_datasets] Error reading {f}: {e}")
+            continue
+
+        is_validated = has_sk_id and has_features
+        status_badge = "✓ Validated & Ready" if is_validated else "⚠️ Raw / Needs Pipeline"
+        status_badge_color = "green" if is_validated else "amber"
+
+        feat_count = num_cols - 1 if has_sk_id else num_cols
+        feat_count_label = f"{feat_count} Features" if feat_count > 0 else f"{num_cols} Columns"
+        rows_label = f"{num_rows:,} Rows"
+
+        datasets.append({
+            "filename": f,
+            "id": f,
+            "path": str(fpath),
+            "format_tag": ext,
+            "features_count": feat_count_label,
+            "rows_count": rows_label,
+            "features_rows_label": f"{feat_count_label} / {rows_label}",
+            "is_validated": is_validated,
+            "status_badge": status_badge,
+            "status_badge_color": status_badge_color,
+        })
+
+    return datasets
+
+
+INITIAL_PRODUCTION_DATASETS: List[Dict[str, Any]] = scan_production_datasets()
+INITIAL_SELECTED_FILE: str = (
+    "test_features_master.parquet"
+    if any(d["filename"] == "test_features_master.parquet" for d in INITIAL_PRODUCTION_DATASETS)
+    else (INITIAL_PRODUCTION_DATASETS[0]["filename"] if INITIAL_PRODUCTION_DATASETS else "")
+)
+
+
 class UnderwritingState(rx.State):
     """Reflex state quản lý Data Ingestion, chọn hồ sơ và thẩm định tín dụng."""
 
@@ -44,12 +140,21 @@ class UnderwritingState(rx.State):
     is_loading: bool = False
 
     # Data Ingestion Toolbar State
-    selected_dataset_source: str = "demo_samples"
-    active_source_label: str = "demo_samples.parquet (1,000 clients)"
+    selected_dataset_source: str = "production"
+    active_source_label: str = "No Dataset Loaded"
     is_ingesting: bool = False
     status_message: str = ""
     upload_dialog_open: bool = False
     uploaded_file_name: str = ""
+
+    # Card 1: Dynamic Production Datasets Auto-Scan State (Quét duy nhất data/production)
+    production_datasets: List[Dict[str, Any]] = INITIAL_PRODUCTION_DATASETS
+    selected_production_file: str = INITIAL_SELECTED_FILE
+
+    # Alert notification banner state (Thanh Alert màu xanh lục đậm trên cùng)
+    show_alert: bool = False
+    alert_message: str = ""
+    alert_type: str = "success"  # "success" | "error"
 
     # Kết quả thẩm định
     current_pd: float = 0.0
@@ -143,38 +248,86 @@ class UnderwritingState(rx.State):
     def close_upload_dialog(self):
         self.upload_dialog_open = False
 
+    @rx.event
+    def scan_production_dir(self):
+        """Tự động quét thư mục data/production và cập nhật danh sách tập dữ liệu."""
+        try:
+            scanned = scan_production_datasets()
+            self.production_datasets = scanned
+            if scanned:
+                if not self.selected_production_file or not any(d["filename"] == self.selected_production_file for d in scanned):
+                    has_master = any(d["filename"] == "test_features_master.parquet" for d in scanned)
+                    self.selected_production_file = "test_features_master.parquet" if has_master else scanned[0]["filename"]
+            else:
+                self.selected_production_file = ""
+        except Exception as e:
+            print(f"[UnderwritingState.scan_production_dir] Fallback exception: {e}")
+
+    @rx.event
+    def scan_production_datasets(self):
+        """Alias cho scan_production_dir để tương thích ngược với các component frontend."""
+        return self.scan_production_dir()
+
+    @rx.event
+    def set_selected_production_file(self, filename: str):
+        """Người dùng click chọn một dataset trong danh sách Thẻ 1."""
+        self.selected_production_file = str(filename)
+
+    @rx.event
+    def dismiss_alert(self):
+        """Đóng thanh thông báo alert trên cùng."""
+        self.show_alert = False
+
+    @rx.var
+    def has_production_datasets(self) -> bool:
+        return len(self.production_datasets) > 0
+
     @rx.var
     def dataset_source_options(self) -> List[str]:
-        return [
-            "Preset: Demo 1,000 Clients",
-            "Preset: Full Test Master",
-            "Preset: Raw Application Test",
-        ]
+        if self.production_datasets:
+            return [d["filename"] for d in self.production_datasets]
+        return []
 
     @rx.var
     def selected_dataset_source_label(self) -> str:
-        mapping = {
-            "demo_samples": "Preset: Demo 1,000 Clients",
-            "test_master": "Preset: Full Test Master",
-            "raw_application": "Preset: Raw Application Test",
-            "uploaded": f"Custom: {self.uploaded_file_name}" if self.uploaded_file_name else "Custom Uploaded File",
-        }
-        return mapping.get(self.selected_dataset_source, "Preset: Demo 1,000 Clients")
+        return self.selected_production_file if self.selected_production_file else "None Selected"
 
     def handle_source_select(self, val: str):
-        mapping = {
-            "Preset: Demo 1,000 Clients": "demo_samples",
-            "Preset: Full Test Master": "test_master",
-            "Preset: Raw Application Test": "raw_application",
-        }
-        self.selected_dataset_source = mapping.get(val, "demo_samples")
+        self.selected_production_file = val
 
-    async def run_pipeline(self):
-        """Kích hoạt pipeline nạp dữ liệu và tự động đánh giá hồ sơ đầu tiên."""
+    async def load_selected_production_dataset(self):
+        """Nạp tập dữ liệu được chọn từ Thẻ 1 (Preprocessed Datasets)."""
+        if not self.selected_production_file:
+            return
+
         self.is_ingesting = True
         yield
         try:
-            df, source_label = load_dataset_from_source(self.selected_dataset_source)
+            prod_dir = get_production_dir()
+            file_path = prod_dir / self.selected_production_file
+            if not file_path.exists():
+                self.alert_message = f"File not found in data/production: {self.selected_production_file}"
+                self.alert_type = "error"
+                self.show_alert = True
+                self.status_message = self.alert_message
+                self.is_ingesting = False
+                return
+
+            if self.selected_production_file.endswith(".parquet"):
+                df = pd.read_parquet(file_path)
+            else:
+                df = pd.read_csv(file_path)
+
+            if "SK_ID_CURR" not in df.columns:
+                if df.index.name == "SK_ID_CURR":
+                    df = df.reset_index()
+                else:
+                    df["SK_ID_CURR"] = range(100001, 100001 + len(df))
+
+            source_label = f"{self.selected_production_file} ({len(df):,} records)"
+            set_active_dataset(df, source_label)
+
+            self.selected_dataset_source = self.selected_production_file
             self.active_source_label = source_label
             self.available_client_ids = get_active_client_ids()
             self.total_clients_count = len(self.available_client_ids)
@@ -182,31 +335,58 @@ class UnderwritingState(rx.State):
             self.registry_display_limit = 35
             self.is_dataset_loaded = True
 
+            self.alert_message = f"Loaded {self.total_clients_count:,} records successfully"
+            self.alert_type = "success"
+            self.show_alert = True
+            self.status_message = self.alert_message
+
             if self.available_client_ids:
                 first_id = self.available_client_ids[0]
-                if self.total_clients_count == 1:
-                    self.status_message = f"Loaded single client #{first_id} successfully."
-                else:
-                    self.status_message = f"Loaded {self.total_clients_count:,} client profiles."
                 yield
                 yield self.select_and_evaluate_client(first_id)
-            else:
-                self.status_message = "Dataset contains no client records."
         except Exception as e:
-            self.status_message = f"Error running pipeline: {str(e)}"
+            self.alert_message = f"Error loading dataset: {str(e)}"
+            self.alert_type = "error"
+            self.show_alert = True
+            self.status_message = self.alert_message
         finally:
             self.is_ingesting = False
 
+    async def run_pipeline(self):
+        """Kích hoạt pipeline nạp dữ liệu từ dataset đang chọn."""
+        return await self.load_selected_production_dataset()
+
     async def handle_file_upload(self, files: List[rx.UploadFile]):
-        """Xử lý nạp file CSV/Parquet tùy chỉnh do người dùng upload."""
+        """Xử lý nạp file CSV/Parquet tùy chỉnh do người dùng upload với kiểm tra size 500MB và format."""
         if not files:
             return
+
+        file = files[0]
+        fname = file.filename.lower()
+
+        # 1. Kiểm tra định dạng đuôi file (.csv hoặc .parquet)
+        if not (fname.endswith(".csv") or fname.endswith(".parquet") or fname.endswith(".pq")):
+            self.alert_message = "File size exceeds 500MB limit or unsupported format."
+            self.alert_type = "error"
+            self.show_alert = True
+            self.status_message = self.alert_message
+            return
+
         self.is_ingesting = True
         yield
         try:
-            file = files[0]
             self.uploaded_file_name = file.filename
             file_bytes = await file.read()
+
+            # 2. Rào chắn kích thước file tối đa 500MB (500 * 1024 * 1024 bytes)
+            max_size_bytes = 500 * 1024 * 1024
+            if len(file_bytes) > max_size_bytes:
+                self.alert_message = "File size exceeds 500MB limit or unsupported format."
+                self.alert_type = "error"
+                self.show_alert = True
+                self.status_message = self.alert_message
+                self.is_ingesting = False
+                return
 
             df, source_label = load_dataset_from_upload(file_bytes, file.filename)
             self.selected_dataset_source = "uploaded"
@@ -218,18 +398,24 @@ class UnderwritingState(rx.State):
             self.is_dataset_loaded = True
             self.upload_dialog_open = False
 
+            self.alert_message = f"Loaded {self.total_clients_count:,} records successfully"
+            self.alert_type = "success"
+            self.show_alert = True
+            self.status_message = self.alert_message
+
             if self.available_client_ids:
                 first_id = self.available_client_ids[0]
-                if self.total_clients_count == 1:
-                    self.status_message = f"Loaded single record #{first_id} from {file.filename}."
-                else:
-                    self.status_message = f"Loaded {self.total_clients_count:,} records from {file.filename}."
                 yield
                 yield self.select_and_evaluate_client(first_id)
             else:
-                self.status_message = f"File {file.filename} contained no valid data."
+                self.alert_message = f"File {file.filename} contained no valid data."
+                self.alert_type = "error"
+                self.show_alert = True
         except Exception as e:
-            self.status_message = f"Error processing uploaded file: {str(e)}"
+            self.alert_message = f"Error processing uploaded file: {str(e)}"
+            self.alert_type = "error"
+            self.show_alert = True
+            self.status_message = self.alert_message
         finally:
             self.is_ingesting = False
 

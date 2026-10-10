@@ -20,11 +20,13 @@ app.add_page(
     data_management_page,
     route="/",
     title="Data Management & Registry | xAI Credit Scoring",
+    on_load=UnderwritingState.scan_production_dir,
 )
 app.add_page(
     data_management_page,
     route="/data",
     title="Data Management & Registry | xAI Credit Scoring",
+    on_load=UnderwritingState.scan_production_dir,
 )
 
 # TRANG 2: CLIENT INSPECTION WORKBENCH (/inspection)
