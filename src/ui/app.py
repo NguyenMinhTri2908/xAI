@@ -12,8 +12,19 @@ from src.ui.feature_search_state import FeatureSearchState
 # Re-export index để tương thích ngược
 index = data_management_page
 
-# Khởi tạo Reflex Application
-app = rx.App()
+# Khởi tạo Reflex Application với style vô hiệu hóa hiệu ứng rung nảy của slider
+app = rx.App(
+    style={
+        ".rt-SliderRoot, .rt-SliderTrack, .rt-SliderRange, .rt-SliderThumb": {
+            "transition": "none !important",
+            "animation": "none !important",
+        },
+        ".rt-SliderThumb:hover, .rt-SliderThumb:active, .rt-SliderThumb:focus": {
+            "transition": "none !important",
+            "animation": "none !important",
+        },
+    }
+)
 
 # TRANG 1: DATA INGESTION & DATASET MANAGEMENT (Trang chủ và /data)
 app.add_page(

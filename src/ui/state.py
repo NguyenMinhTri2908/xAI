@@ -192,6 +192,42 @@ class UnderwritingState(rx.State):
     selected_client_raw: Dict[str, Any] = {}
     current_client_shap: Dict[str, float] = {}
 
+    # --- RISK MITIGATION & TERMS SIMULATOR STATE ---
+    # Baseline values (Original client record)
+    baseline_amt_credit: float = 0.0
+    baseline_term_months: int = 12
+    baseline_amt_annuity: float = 0.0
+    baseline_amt_income_total: float = 0.0
+    baseline_dti: float = 0.0
+    baseline_pd: float = 0.0
+    baseline_score_percent: float = 0.0
+    baseline_tier: str = "None"
+    baseline_decision: str = "None"
+
+    # Simulation active levers
+    sim_amt_credit: float = 0.0
+    sim_term_months: int = 12
+    sim_amt_annuity: float = 0.0
+    sim_amt_income_total: float = 0.0
+    sim_dti: float = 0.0
+    interest_rate_factor: float = 0.08
+
+    # Two-way bound string variables for text input fields
+    sim_amt_credit_str: str = "0"
+    sim_term_months_str: str = "12"
+    sim_amt_annuity_str: str = "0"
+    sim_amt_income_str: str = "0"
+
+    # Simulation real-time predicted outcomes
+    sim_pd: float = 0.0
+    sim_score_percent: float = 0.0
+    sim_tier: str = "None"
+    sim_decision: str = "None"
+    sim_delta_pts: float = 0.0
+    sim_delta_text: str = "0.00 pts"
+    sim_delta_color: str = "#94A3B8"
+    is_optimizing: bool = False
+
     def load_demo_clients(self):
         """Khởi động mặc định nạp demo_samples.parquet vào State."""
         if not self.available_client_ids:
@@ -737,6 +773,551 @@ class UnderwritingState(rx.State):
 
         self.top_risk_factors = raw_risks
         self.top_positive_factors = raw_positives
+
+        # 8. Cập nhật Baseline và khởi tạo Terms Simulator
+        self.baseline_amt_credit = credit_num
+        self.baseline_amt_annuity = annuity_num
+        self.baseline_amt_income_total = income_num
+        self.baseline_term_months = term_months if (credit_num > 0 and annuity_num > 0) else 12
+        self.baseline_dti = dti_ratio if (income_num > 0 and annuity_num > 0) else 0.0
+        self.baseline_pd = self.current_pd
+        self.baseline_score_percent = self.current_score_percent
+        self.baseline_tier = self.current_tier
+        self.baseline_decision = self.current_decision
+
+        if self.baseline_amt_credit > 0 and self.baseline_term_months > 0 and self.baseline_amt_annuity > 0:
+            implied_factor = ((self.baseline_amt_annuity * self.baseline_term_months) / self.baseline_amt_credit) - 1.0
+            if 0.0 <= implied_factor <= 0.35:
+                self.interest_rate_factor = round(implied_factor, 3)
+            else:
+                self.interest_rate_factor = 0.08
+        else:
+            self.interest_rate_factor = 0.08
+
+        # Tiền xử lý và lưu cache 891 features cho client hiện tại
+        try:
+            engine.cache_client_features(client_series)
+        except Exception as e:
+            print(f"[cache_client_features] Warning: {e}")
+
+        self.reset_simulation_to_baseline()
         self.is_loading = False
 
         return FeatureSearchState.update_client_shap(shap_lookup)
+
+    # ==============================================================================
+    # RISK MITIGATION & TERMS SIMULATOR LOGIC & BOUNDS CLAMPING
+    # ==============================================================================
+
+    @rx.var
+    def sim_credit_slider_min(self) -> float:
+        base = self.baseline_amt_credit if self.baseline_amt_credit > 0 else (self.sim_amt_credit if self.sim_amt_credit > 0 else 100000.0)
+        return float(round(base * 0.5, -2))
+
+    @rx.var
+    def sim_credit_slider_max(self) -> float:
+        base = self.baseline_amt_credit if self.baseline_amt_credit > 0 else (self.sim_amt_credit if self.sim_amt_credit > 0 else 100000.0)
+        return float(max(round(base * 1.5, -2), round(base * 0.5, -2) + 1000.0))
+
+    @rx.var
+    def sim_income_slider_min(self) -> float:
+        base = self.baseline_amt_income_total if self.baseline_amt_income_total > 0 else (self.sim_amt_income_total if self.sim_amt_income_total > 0 else 50000.0)
+        return float(round(base * 0.7, -2))
+
+    @rx.var
+    def sim_income_slider_max(self) -> float:
+        base = self.baseline_amt_income_total if self.baseline_amt_income_total > 0 else (self.sim_amt_income_total if self.sim_amt_income_total > 0 else 50000.0)
+        return float(max(round(base * 2.0, -2), round(base * 0.7, -2) + 1000.0))
+
+    @rx.var
+    def sim_annuity_slider_min(self) -> float:
+        base_credit = self.baseline_amt_credit if self.baseline_amt_credit > 0 else (self.sim_amt_credit if self.sim_amt_credit > 0 else 100000.0)
+        credit_min = base_credit * 0.5
+        min_annuity = (credit_min / 60.0) * (1.0 + self.interest_rate_factor)
+        return float(max(round(min_annuity, -2), 500.0))
+
+    @rx.var
+    def sim_annuity_slider_max(self) -> float:
+        # Giới hạn max ở mức DTI <= 70%
+        income = self.sim_amt_income_total if self.sim_amt_income_total > 0 else (self.baseline_amt_income_total if self.baseline_amt_income_total > 0 else 50000.0)
+        max_dti = income * 0.70
+        min_annuity = self.sim_annuity_slider_min
+        return float(max(round(max_dti, -2), min_annuity + 1000.0))
+
+    @rx.var
+    def sim_amt_credit_slider(self) -> List[float]:
+        # Neo ở 0% nếu < Min, neo ở 100% nếu > Max
+        val = float(self.sim_amt_credit)
+        val = min(max(val, self.sim_credit_slider_min), self.sim_credit_slider_max)
+        return [val]
+
+    @rx.var
+    def sim_term_months_slider(self) -> List[float]:
+        # Neo trong khoảng cố định [3, 60]
+        val = float(self.sim_term_months)
+        val = min(max(val, 3.0), 60.0)
+        return [val]
+
+    @rx.var
+    def sim_amt_annuity_slider(self) -> List[float]:
+        # Neo ở 0% nếu < Min, neo ở 100% nếu > Max (DTI <= 70%)
+        val = float(self.sim_amt_annuity)
+        val = min(max(val, self.sim_annuity_slider_min), self.sim_annuity_slider_max)
+        return [val]
+
+    @rx.var
+    def sim_amt_income_slider(self) -> List[float]:
+        # Neo ở 0% nếu < Min, neo ở 100% nếu > Max
+        val = float(self.sim_amt_income_total)
+        val = min(max(val, self.sim_income_slider_min), self.sim_income_slider_max)
+        return [val]
+
+    @rx.var
+    def sim_credit_min_display(self) -> str:
+        return f"${self.sim_credit_slider_min:,.0f} (-50%)"
+
+    @rx.var
+    def sim_credit_max_display(self) -> str:
+        return f"${self.sim_credit_slider_max:,.0f} (+50%)"
+
+    @rx.var
+    def sim_income_min_display(self) -> str:
+        return f"${self.sim_income_slider_min:,.0f}"
+
+    @rx.var
+    def sim_income_max_display(self) -> str:
+        return f"${self.sim_income_slider_max:,.0f}"
+
+    @rx.var
+    def sim_annuity_min_display(self) -> str:
+        return f"${self.sim_annuity_slider_min:,.0f}"
+
+    @rx.var
+    def sim_annuity_max_display(self) -> str:
+        return f"${self.sim_annuity_slider_max:,.0f}"
+
+    @rx.var
+    def sim_amt_credit_display(self) -> str:
+        return f"${self.sim_amt_credit:,.0f}"
+
+    @rx.var
+    def sim_term_months_display(self) -> str:
+        return f"{self.sim_term_months} Months"
+
+    @rx.var
+    def sim_amt_annuity_display(self) -> str:
+        return f"${self.sim_amt_annuity:,.0f} / mo"
+
+    @rx.var
+    def sim_amt_income_display(self) -> str:
+        return f"${self.sim_amt_income_total:,.0f}"
+
+    @rx.var
+    def sim_dti_display(self) -> str:
+        return f"{self.sim_dti:.1f}%"
+
+    @rx.var
+    def sim_status_color(self) -> str:
+        if self.sim_decision == "APPROVE":
+            return "#10B981"
+        elif self.sim_decision == "DECLINE":
+            return "#EF4444"
+        return "#F59E0B"
+
+    @rx.var
+    def sim_dti_color(self) -> str:
+        if self.sim_dti <= 35.0:
+            return "#10B981"
+        elif self.sim_dti <= 50.0:
+            return "#F59E0B"
+        return "#EF4444"
+
+    # --- METRICS & DELTA COMPUTED PROPERTIES ---
+
+    @rx.var
+    def is_simulated_changed(self) -> bool:
+        """Kiểm tra xem người dùng đã điều chỉnh bất kỳ tham số nào khác với Baseline hay chưa."""
+        return (
+            abs(self.sim_amt_credit - self.baseline_amt_credit) > 1.0
+            or self.sim_term_months != self.baseline_term_months
+            or abs(self.sim_amt_annuity - self.baseline_amt_annuity) > 1.0
+            or abs(self.sim_amt_income_total - self.baseline_amt_income_total) > 1.0
+            or abs(self.sim_score_percent - self.baseline_score_percent) > 0.001
+        )
+
+    @rx.var
+    def pd_display_value(self) -> str:
+        return f"{self.sim_score_percent:.2f}%"
+
+    @rx.var
+    def pd_delta_badge_text(self) -> str:
+        diff = round(self.sim_score_percent - self.baseline_score_percent, 2)
+        if diff > 0.0:
+            return f"(+{diff:.2f}% pts)"
+        elif diff < 0.0:
+            return f"(-{abs(diff):.2f}% pts)"
+        return ""
+
+    @rx.var
+    def pd_delta_color(self) -> str:
+        diff = self.sim_score_percent - self.baseline_score_percent
+        # Xanh lá nếu rủi ro giảm (delta < 0), đỏ nếu rủi ro tăng (delta > 0)
+        return "#10B981" if diff < 0.0 else "#EF4444"
+
+    @rx.var
+    def diff_credit_text(self) -> str:
+        diff = round(self.sim_amt_credit - self.baseline_amt_credit)
+        if diff > 0:
+            return f"(+${diff:,.0f})"
+        elif diff < 0:
+            return f"(-${abs(diff):,.0f})"
+        return ""
+
+    @rx.var
+    def diff_credit_color(self) -> str:
+        diff = self.sim_amt_credit - self.baseline_amt_credit
+        return "#10B981" if diff > 0 else "#EF4444"
+
+    @rx.var
+    def diff_term_text(self) -> str:
+        diff = self.sim_term_months - self.baseline_term_months
+        if diff > 0:
+            return f"(+{diff}m)"
+        elif diff < 0:
+            return f"(-{abs(diff)}m)"
+        return ""
+
+    @rx.var
+    def diff_term_color(self) -> str:
+        diff = self.sim_term_months - self.baseline_term_months
+        return "#10B981" if diff > 0 else "#EF4444"
+
+    @rx.var
+    def diff_annuity_text(self) -> str:
+        diff = round(self.sim_amt_annuity - self.baseline_amt_annuity)
+        if diff > 0:
+            return f"(+${diff:,.0f})"
+        elif diff < 0:
+            return f"(-${abs(diff):,.0f})"
+        return ""
+
+    @rx.var
+    def diff_annuity_color(self) -> str:
+        diff = self.sim_amt_annuity - self.baseline_amt_annuity
+        return "#10B981" if diff > 0 else "#EF4444"
+
+    @rx.var
+    def diff_income_text(self) -> str:
+        diff = round(self.sim_amt_income_total - self.baseline_amt_income_total)
+        if diff > 0:
+            return f"(+${diff:,.0f})"
+        elif diff < 0:
+            return f"(-${abs(diff):,.0f})"
+        return ""
+
+    @rx.var
+    def diff_income_color(self) -> str:
+        diff = self.sim_amt_income_total - self.baseline_amt_income_total
+        return "#10B981" if diff > 0 else "#EF4444"
+
+    @rx.event
+    def reset_simulation_to_baseline(self):
+        """Khôi phục lại toàn bộ tham số Simulator về mức Baseline ban đầu của khách hàng (nhẹ, tức thì)."""
+        self.sim_amt_credit = float(self.baseline_amt_credit)
+        self.sim_term_months = int(self.baseline_term_months)
+        self.sim_amt_annuity = float(self.baseline_amt_annuity)
+        self.sim_amt_income_total = float(self.baseline_amt_income_total)
+        self.sim_dti = float(self.baseline_dti)
+        self.sim_pd = float(self.baseline_pd)
+        self.sim_score_percent = float(self.baseline_score_percent)
+        self.sim_tier = str(self.baseline_tier)
+        self.sim_decision = str(self.baseline_decision)
+        self.sim_delta_pts = 0.0
+        self.sim_delta_text = "0.00 pts"
+        self.sim_delta_color = "#94A3B8"
+        self.is_optimizing = False
+
+        self.sim_amt_credit_str = f"{int(self.sim_amt_credit):,}" if self.sim_amt_credit > 0 else "0"
+        self.sim_term_months_str = str(int(self.sim_term_months))
+        self.sim_amt_annuity_str = f"{int(self.sim_amt_annuity):,}" if self.sim_amt_annuity > 0 else "0"
+        self.sim_amt_income_str = f"{int(self.sim_amt_income_total):,}" if self.sim_amt_income_total > 0 else "0"
+
+    def _sync_credit_or_term_drag(self):
+        """Chỉ cập nhật UI cục bộ tức thì trong khi kéo slider để đạt 60fps mượt mà tuyệt đối."""
+        term = max(self.sim_term_months, 1)
+        self.sim_amt_annuity = round((self.sim_amt_credit / term) * (1.0 + self.interest_rate_factor), 1)
+        income = max(self.sim_amt_income_total, 1.0)
+        self.sim_dti = round((self.sim_amt_annuity / income) * 100.0, 1)
+        self.sim_amt_annuity_str = f"{int(self.sim_amt_annuity):,}"
+        self.sim_amt_credit_str = f"{int(self.sim_amt_credit):,}"
+        self.sim_term_months_str = str(int(self.sim_term_months))
+
+    def _sync_credit_or_term_changed(self):
+        """Tự động tính lại AMT_ANNUITY và DTI khi AMT_CREDIT hoặc TERM_MONTHS thay đổi kèm ML inference."""
+        self._sync_credit_or_term_drag()
+        self.recalculate_simulation_pd()
+
+    def _sync_annuity_changed(self):
+        """Tự động suy ngược lại TERM_MONTHS và snapped về nấc gần nhất khi AMT_ANNUITY thay đổi."""
+        annuity = max(self.sim_amt_annuity, 1.0)
+        raw_term = (self.sim_amt_credit * (1.0 + self.interest_rate_factor)) / annuity
+        snapped_steps = [3, 6, 12, 18, 24, 30, 36, 42, 48, 54, 60]
+        self.sim_term_months = min(snapped_steps, key=lambda s: abs(s - raw_term))
+        income = max(self.sim_amt_income_total, 1.0)
+        self.sim_dti = round((self.sim_amt_annuity / income) * 100.0, 1)
+        self.sim_term_months_str = str(int(self.sim_term_months))
+        self.sim_amt_annuity_str = f"{int(self.sim_amt_annuity):,}"
+        self.recalculate_simulation_pd()
+
+    def _sync_income_changed(self):
+        """Cập nhật DTI khi thu nhập thay đổi."""
+        income = max(self.sim_amt_income_total, 1.0)
+        self.sim_dti = round((self.sim_amt_annuity / income) * 100.0, 1)
+        self.sim_amt_income_str = f"{int(self.sim_amt_income_total):,}"
+        self.recalculate_simulation_pd()
+
+    # --- SLIDER HANDLERS (SMOOTH DRAG ON THE FLY + COMMIT ON RELEASE) ---
+
+    @rx.event
+    def set_sim_credit_from_slider(self, val: List[float]):
+        """Cập nhật UI cục bộ bám sát con trỏ chuột khi đang kéo thanh AMT_CREDIT trong khoảng [Min, Max]."""
+        if val:
+            clamped = min(max(float(val[0]), self.sim_credit_slider_min), self.sim_credit_slider_max)
+            if clamped == self.sim_amt_credit:
+                return
+            self.sim_amt_credit = clamped
+            self._sync_credit_or_term_drag()
+
+    @rx.event
+    def set_sim_term_from_slider(self, val: List[float]):
+        """Cập nhật UI cục bộ mượt mà bám sát con trỏ chuột khi đang kéo thanh TERM_MONTHS trong khoảng [3, 60]."""
+        if val:
+            raw_val = min(max(float(val[0]), 3.0), 60.0)
+            snapped_steps = [3, 6, 12, 18, 24, 30, 36, 42, 48, 54, 60]
+            new_term = min(snapped_steps, key=lambda s: abs(s - raw_val))
+            if new_term == self.sim_term_months:
+                return
+            self.sim_term_months = new_term
+            self._sync_credit_or_term_drag()
+
+    @rx.event
+    def set_sim_annuity_from_slider(self, val: List[float]):
+        """Cập nhật UI cục bộ mượt mà khi đang kéo thanh AMT_ANNUITY trong khoảng [Min, Max] (DTI <= 70%)."""
+        if val:
+            clamped = min(max(float(val[0]), self.sim_annuity_slider_min), self.sim_annuity_slider_max)
+            if clamped == self.sim_amt_annuity:
+                return
+            self.sim_amt_annuity = clamped
+            raw_term = (self.sim_amt_credit * (1.0 + self.interest_rate_factor)) / max(self.sim_amt_annuity, 1.0)
+            snapped_steps = [3, 6, 12, 18, 24, 30, 36, 42, 48, 54, 60]
+            self.sim_term_months = min(snapped_steps, key=lambda s: abs(s - raw_term))
+            income = max(self.sim_amt_income_total, 1.0)
+            self.sim_dti = round((self.sim_amt_annuity / income) * 100.0, 1)
+            self.sim_term_months_str = str(int(self.sim_term_months))
+            self.sim_amt_annuity_str = f"{int(self.sim_amt_annuity):,}"
+
+    @rx.event
+    def set_sim_income_from_slider(self, val: List[float]):
+        """Cập nhật UI cục bộ mượt mà khi đang kéo thanh AMT_INCOME_TOTAL trong khoảng [Min, Max]."""
+        if val:
+            clamped = min(max(float(val[0]), self.sim_income_slider_min), self.sim_income_slider_max)
+            if clamped == self.sim_amt_income_total:
+                return
+            self.sim_amt_income_total = clamped
+            income = max(self.sim_amt_income_total, 1.0)
+            self.sim_dti = round((self.sim_amt_annuity / income) * 100.0, 1)
+            self.sim_amt_income_str = f"{int(self.sim_amt_income_total):,}"
+
+    @rx.event
+    def commit_sim_slider(self, val: List[float]):
+        """Kích hoạt Machine Learning re-inference khi người dùng nhả chuột (on_value_commit)."""
+        self.recalculate_simulation_pd()
+
+    @rx.event
+    def set_sim_term_preset(self, months: int):
+        """Click nhanh phím Quick Preset Pill (3m, 6m, 12m, 24m, 36m, 48m, 60m)."""
+        self.sim_term_months = int(months)
+        self._sync_credit_or_term_changed()
+
+    # --- TEXT INPUT HANDLERS (TWO-WAY BINDING) ---
+
+    @rx.event
+    def set_sim_credit_from_input(self, val: str):
+        self.sim_amt_credit_str = val
+        clean = val.replace("$", "").replace(",", "").strip()
+        try:
+            num = float(clean)
+            if num > 0:
+                self.sim_amt_credit = num
+                term = max(self.sim_term_months, 1)
+                self.sim_amt_annuity = round((self.sim_amt_credit / term) * (1.0 + self.interest_rate_factor), 1)
+                self.sim_amt_annuity_str = f"{int(self.sim_amt_annuity):,}"
+                income = max(self.sim_amt_income_total, 1.0)
+                self.sim_dti = round((self.sim_amt_annuity / income) * 100.0, 1)
+                self.recalculate_simulation_pd()
+        except (ValueError, TypeError):
+            pass
+
+    @rx.event
+    def set_sim_term_from_input(self, val: str):
+        self.sim_term_months_str = val
+        clean = val.replace("m", "").replace("mo", "").replace("months", "").strip()
+        try:
+            num = int(clean)
+            if num > 0:
+                self.sim_term_months = num
+                term = max(self.sim_term_months, 1)
+                self.sim_amt_annuity = round((self.sim_amt_credit / term) * (1.0 + self.interest_rate_factor), 1)
+                self.sim_amt_annuity_str = f"{int(self.sim_amt_annuity):,}"
+                income = max(self.sim_amt_income_total, 1.0)
+                self.sim_dti = round((self.sim_amt_annuity / income) * 100.0, 1)
+                self.recalculate_simulation_pd()
+        except (ValueError, TypeError):
+            pass
+
+    @rx.event
+    def set_sim_annuity_from_input(self, val: str):
+        self.sim_amt_annuity_str = val
+        clean = val.replace("$", "").replace(",", "").replace("/ mo", "").strip()
+        try:
+            num = float(clean)
+            if num > 0:
+                self.sim_amt_annuity = num
+                raw_term = (self.sim_amt_credit * (1.0 + self.interest_rate_factor)) / self.sim_amt_annuity
+                snapped_steps = [3, 6, 12, 18, 24, 30, 36, 42, 48, 54, 60]
+                self.sim_term_months = min(snapped_steps, key=lambda s: abs(s - raw_term))
+                self.sim_term_months_str = str(int(self.sim_term_months))
+                income = max(self.sim_amt_income_total, 1.0)
+                self.sim_dti = round((self.sim_amt_annuity / income) * 100.0, 1)
+                self.recalculate_simulation_pd()
+        except (ValueError, TypeError):
+            pass
+
+    @rx.event
+    def set_sim_income_from_input(self, val: str):
+        self.sim_amt_income_str = val
+        clean = val.replace("$", "").replace(",", "").strip()
+        try:
+            num = float(clean)
+            if num > 0:
+                self.sim_amt_income_total = num
+                income = max(self.sim_amt_income_total, 1.0)
+                self.sim_dti = round((self.sim_amt_annuity / income) * 100.0, 1)
+                self.recalculate_simulation_pd()
+        except (ValueError, TypeError):
+            pass
+
+    @rx.event
+    def recalculate_simulation_pd(self):
+        """Chạy suy luận lại xác suất vỡ nợ (PD), Rating Tier và Delta theo thời gian thực (siêu tốc qua cache)."""
+        if not self.selected_client_id:
+            return
+
+        try:
+            engine = get_engine()
+            # Dự đoán siêu tốc qua cached dataframe
+            sim_pd, sim_tier, sim_decision = engine.predict_pd_from_cache(
+                credit=float(self.sim_amt_credit),
+                annuity=float(self.sim_amt_annuity),
+                income=float(self.sim_amt_income_total),
+            )
+            self.sim_pd = round(sim_pd, 4)
+            self.sim_score_percent = round(sim_pd * 100, 2)
+            self.sim_tier = sim_tier
+            self.sim_decision = sim_decision
+
+            delta = round(self.sim_score_percent - self.baseline_score_percent, 2)
+            self.sim_delta_pts = delta
+            if delta > 0.0:
+                self.sim_delta_text = f"▲ +{abs(delta):.2f} pts"
+                self.sim_delta_color = "#EF4444"
+            elif delta < 0.0:
+                self.sim_delta_text = f"▼ -{abs(delta):.2f} pts"
+                self.sim_delta_color = "#10B981"
+            else:
+                self.sim_delta_text = "0.00 pts"
+                self.sim_delta_color = "#94A3B8"
+        except Exception as e:
+            print(f"[recalculate_simulation_pd] Error: {e}")
+
+    @rx.event
+    def ai_auto_optimize(self):
+        """AI Auto-Optimize: Tự động điều chỉnh TERM_MONTHS (tăng lên 36m, 48m) và tinh chỉnh AMT_CREDIT xuống
+        cho đến khi DTI < 40% và PD cải thiện, chuyển trạng thái từ REJECT/WAITING sang APPROVE (non-blocking).
+        """
+        self.is_optimizing = True
+        yield
+
+        try:
+            if not self.selected_client_id:
+                self.is_optimizing = False
+                return
+
+            client_series = get_client_row_data(self.selected_client_id)
+            if client_series is None:
+                self.is_optimizing = False
+                return
+
+            engine = get_engine()
+            base_credit = float(self.baseline_amt_credit) if self.baseline_amt_credit > 0 else float(self.sim_amt_credit)
+            if base_credit <= 0:
+                base_credit = 100000.0
+
+            income = float(self.sim_amt_income_total) if self.sim_amt_income_total > 0 else 50000.0
+
+            # Ưu tiên các kỳ hạn dài hơn để giảm áp lực trả nợ tháng (36m, 48m, 60m, 24m)
+            candidate_terms = [36, 48, 60, 24]
+            credit_factors = [1.0, 0.95, 0.90, 0.85, 0.80, 0.75, 0.70, 0.60]
+
+            best_candidate = None
+            best_pd = 1.0
+
+            for cand_term in candidate_terms:
+                for factor in credit_factors:
+                    cand_credit = round(base_credit * factor, -2)
+                    cand_annuity = round((cand_credit / cand_term) * (1.0 + self.interest_rate_factor), 1)
+                    cand_dti = round((cand_annuity / max(income, 1.0)) * 100.0, 1)
+
+                    # Ràng buộc DTI < 40%
+                    if cand_dti >= 40.0:
+                        continue
+
+                    # Dự đoán nhanh PD
+                    cand_pd, cand_tier, cand_decision = engine.predict_pd_from_cache(
+                        credit=cand_credit,
+                        annuity=cand_annuity,
+                        income=income,
+                    )
+
+                    candidate_info = {
+                        "credit": cand_credit,
+                        "term": cand_term,
+                        "annuity": cand_annuity,
+                        "dti": cand_dti,
+                        "pd": cand_pd,
+                        "tier": cand_tier,
+                        "decision": cand_decision,
+                    }
+
+                    if cand_decision == "APPROVE" or cand_pd <= 0.150:
+                        best_candidate = candidate_info
+                        break
+                    elif cand_pd < best_pd:
+                        best_pd = cand_pd
+                        best_candidate = candidate_info
+
+                if best_candidate and best_candidate.get("decision") == "APPROVE":
+                    break
+
+            if best_candidate:
+                self.sim_amt_credit = float(best_candidate["credit"])
+                self.sim_term_months = int(best_candidate["term"])
+                self.sim_amt_annuity = float(best_candidate["annuity"])
+                self.sim_dti = float(best_candidate["dti"])
+                self.sim_amt_credit_str = f"{int(self.sim_amt_credit):,}"
+                self.sim_term_months_str = str(int(self.sim_term_months))
+                self.sim_amt_annuity_str = f"{int(self.sim_amt_annuity):,}"
+                self.sim_amt_income_str = f"{int(self.sim_amt_income_total):,}"
+                self.recalculate_simulation_pd()
+        finally:
+            self.is_optimizing = False

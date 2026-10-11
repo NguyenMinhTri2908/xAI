@@ -231,6 +231,72 @@ class CreditScoringEngine:
             })
         return results
 
+    def predict_pd_fast(self, client_series: pd.Series) -> Tuple[float, str, str]:
+        """Tính toán nhanh xác suất vỡ nợ (PD), Rating Tier và Policy Decision cho 1 hồ sơ (bỏ qua SHAP) phục vụ Terms Simulator."""
+        df_row = pd.DataFrame([client_series])
+        df_clean = self._align_and_cast_features(df_row)
+        lgb_preds = [model.predict_proba(df_clean)[:, 1][0] for model in self.lgb_models]
+        mean_lgb = float(np.mean(lgb_preds))
+        xgb_preds = [model.predict_proba(df_clean)[:, 1][0] for model in self.xgb_models]
+        mean_xgb = float(np.mean(xgb_preds))
+        w_lgb = self.blend_weights.get("lightgbm", 0.5)
+        w_xgb = self.blend_weights.get("xgboost", 0.5)
+        final_pd = float((mean_lgb * w_lgb) + (mean_xgb * w_xgb))
+        tier, decision = self._determine_credit_tier(final_pd)
+        return final_pd, tier, decision
+
+    def cache_client_features(self, client_series: pd.Series):
+        """Tiền xử lý và lưu cache 891 features đã align cho client được chọn."""
+        df_row = pd.DataFrame([client_series])
+        self._cached_clean_df = self._align_and_cast_features(df_row)
+
+    def predict_pd_from_cache(
+        self,
+        credit: float,
+        annuity: float,
+        income: float,
+        use_fast_lgb: bool = False,
+    ) -> Tuple[float, str, str]:
+        """Dự đoán siêu tốc (<20ms) bằng cách ghi đè trực tiếp các đòn bẩy tài chính lên DataFrame đã cache."""
+        if getattr(self, "_cached_clean_df", None) is None:
+            return 0.0, "Tier A", "APPROVE"
+
+        df_c = self._cached_clean_df.copy()
+        eps = 1e-6
+        df_c.loc[0, "AMT_CREDIT"] = credit
+        df_c.loc[0, "AMT_ANNUITY"] = annuity
+        df_c.loc[0, "AMT_INCOME_TOTAL"] = income
+        df_c.loc[0, "CREDIT_TO_INCOME"] = credit / (income + eps)
+        df_c.loc[0, "ANNUITY_TO_INCOME"] = annuity / (income + eps)
+        df_c.loc[0, "CREDIT_TO_ANNUITY"] = credit / (annuity + eps)
+
+        if "AMT_GOODS_PRICE" in df_c.columns and pd.notna(df_c.loc[0, "AMT_GOODS_PRICE"]):
+            gp = float(df_c.loc[0, "AMT_GOODS_PRICE"])
+            df_c.loc[0, "CREDIT_TO_GOODS_RATIO"] = credit / (gp + eps)
+            df_c.loc[0, "GOODS_CREDIT_DIFF"] = gp - credit
+            df_c.loc[0, "ANNUITY_TO_GOODS_RATIO"] = annuity / (gp + eps)
+
+        if "EMPLOYED_YEARS" in df_c.columns and pd.notna(df_c.loc[0, "EMPLOYED_YEARS"]):
+            try:
+                emp_yrs = float(df_c.loc[0, "EMPLOYED_YEARS"])
+                if emp_yrs > 0:
+                    df_c.loc[0, "INCOME_PER_EMPLOYED_YEAR"] = income / (emp_yrs + eps)
+            except (ValueError, TypeError):
+                pass
+
+        if use_fast_lgb:
+            lgb_preds = [m.predict_proba(df_c)[:, 1][0] for m in self.lgb_models]
+            final_pd = float(np.mean(lgb_preds))
+        else:
+            lgb_preds = [m.predict_proba(df_c)[:, 1][0] for m in self.lgb_models]
+            xgb_preds = [m.predict_proba(df_c)[:, 1][0] for m in self.xgb_models]
+            w_lgb = self.blend_weights.get("lightgbm", 0.5)
+            w_xgb = self.blend_weights.get("xgboost", 0.5)
+            final_pd = float((np.mean(lgb_preds) * w_lgb) + (np.mean(xgb_preds) * w_xgb))
+
+        tier, decision = self._determine_credit_tier(final_pd)
+        return final_pd, tier, decision
+
 
 # ==============================================================================
 # OFFLINE SANITY TEST
