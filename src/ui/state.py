@@ -1,7 +1,7 @@
 import os
 import sys
 from pathlib import Path
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Union
 from .feature_search_state import FeatureSearchState
 from .formatters import format_client_age, format_client_experience
 
@@ -48,6 +48,31 @@ def get_production_dir() -> Path:
     fallback = PROJECT_ROOT / "data" / "production"
     fallback.mkdir(parents=True, exist_ok=True)
     return fallback
+
+
+def get_unique_filepath(directory: Union[Path, str], filename: str) -> Path:
+    """Kiểm tra và trả về đường dẫn file duy nhất không bị trùng lặp trong thư mục data/production.
+    Nếu filename đã tồn tại (ví dụ: application_test.parquet), tự động thêm hậu tố _1, _2, _3...
+    trước phần mở rộng (ví dụ: application_test_1.parquet, application_test_2.parquet).
+    Đảm bảo tuyệt đối KHÔNG BAO GIỜ ghi đè (Never overwrite) lên dữ liệu cũ đã có.
+    """
+    dir_path = Path(directory)
+    dir_path.mkdir(parents=True, exist_ok=True)
+
+    target_path = dir_path / filename
+    if not target_path.exists():
+        return target_path
+
+    stem = target_path.stem
+    suffix = target_path.suffix
+
+    counter = 1
+    while True:
+        candidate_name = f"{stem}_{counter}{suffix}"
+        candidate_path = dir_path / candidate_name
+        if not candidate_path.exists():
+            return candidate_path
+        counter += 1
 
 
 def scan_production_datasets() -> List[Dict[str, Any]]:
@@ -155,6 +180,7 @@ class UnderwritingState(rx.State):
     show_alert: bool = False
     alert_message: str = ""
     alert_type: str = "success"  # "success" | "error"
+    alert_token: int = 0
 
     # Kết quả thẩm định
     current_pd: float = 0.0
@@ -270,13 +296,38 @@ class UnderwritingState(rx.State):
 
     @rx.event
     def set_selected_production_file(self, filename: str):
-        """Người dùng click chọn một dataset trong danh sách Thẻ 1."""
+        """Người dùng click chọn một dataset trong danh sách Thẻ 1: tự động ẩn Alert cũ."""
         self.selected_production_file = str(filename)
+        self.show_alert = False
+        self.alert_token += 1
+
+    @rx.event
+    def reset_alert(self):
+        """Ẩn thanh Alert cũ khi người dùng bắt đầu thao tác chọn hoặc thả file mới."""
+        self.show_alert = False
+        self.alert_token += 1
 
     @rx.event
     def dismiss_alert(self):
-        """Đóng thanh thông báo alert trên cùng."""
+        """Đóng thanh thông báo alert trên cùng bằng nút [x]."""
         self.show_alert = False
+        self.alert_token += 1
+
+    @rx.event(background=True)
+    async def auto_dismiss_alert(self, token: int):
+        """Tự động tắt thanh thông báo Alert sau 5 giây (chạy nền không block UI)."""
+        import asyncio
+        await asyncio.sleep(5)
+        async with self:
+            if self.alert_token == token:
+                self.show_alert = False
+
+    @rx.var
+    def active_dataset_badge_text(self) -> str:
+        """Chuỗi hiển thị trên Tag/Badge Active Dataset của bảng Client Registry."""
+        if not self.is_dataset_loaded or not self.selected_dataset_source:
+            return "Active: None"
+        return f"Active: {self.selected_dataset_source} | {self.total_clients_count:,} Records"
 
     @rx.var
     def has_production_datasets(self) -> bool:
@@ -335,7 +386,9 @@ class UnderwritingState(rx.State):
             self.registry_display_limit = 35
             self.is_dataset_loaded = True
 
-            self.alert_message = f"Loaded {self.total_clients_count:,} records successfully"
+            self.alert_token += 1
+            current_token = self.alert_token
+            self.alert_message = f"✓ Successfully loaded dataset: {self.selected_production_file} ({self.total_clients_count:,} records ready for inspection)"
             self.alert_type = "success"
             self.show_alert = True
             self.status_message = self.alert_message
@@ -344,6 +397,8 @@ class UnderwritingState(rx.State):
                 first_id = self.available_client_ids[0]
                 yield
                 yield self.select_and_evaluate_client(first_id)
+
+            yield UnderwritingState.auto_dismiss_alert(current_token)
         except Exception as e:
             self.alert_message = f"Error loading dataset: {str(e)}"
             self.alert_type = "error"
@@ -357,7 +412,10 @@ class UnderwritingState(rx.State):
         return await self.load_selected_production_dataset()
 
     async def handle_file_upload(self, files: List[rx.UploadFile]):
-        """Xử lý nạp file CSV/Parquet tùy chỉnh do người dùng upload với kiểm tra size 500MB và format."""
+        """Xử lý nạp file CSV/Parquet tùy chỉnh do người dùng upload với kiểm tra size 500MB và format,
+        chạy pipeline tiền xử lý, tự động lưu file đầu ra vào data/production không ghi đè,
+        và re-scan cập nhật Thẻ 1.
+        """
         if not files:
             return
 
@@ -388,9 +446,39 @@ class UnderwritingState(rx.State):
                 self.is_ingesting = False
                 return
 
+            # 3. Chạy pipeline tiền xử lý và feature alignment
             df, source_label = load_dataset_from_upload(file_bytes, file.filename)
-            self.selected_dataset_source = "uploaded"
-            self.active_source_label = source_label
+            if df is None or df.empty:
+                self.alert_message = f"File {file.filename} contained no valid data."
+                self.alert_type = "error"
+                self.show_alert = True
+                self.status_message = self.alert_message
+                self.is_ingesting = False
+                return
+
+            # 4. Tự động lưu kết quả đã xử lý vào thư mục data/production (định dạng .parquet)
+            prod_dir = get_production_dir()
+            os.makedirs(prod_dir, exist_ok=True)
+
+            export_ext = ".parquet" if (fname.endswith(".csv") or fname.endswith(".parquet") or fname.endswith(".pq")) else Path(file.filename).suffix
+            base_export_name = Path(file.filename).stem + export_ext
+
+            # Kiểm tra chống trùng tên file (Auto-increment suffix: _1, _2...)
+            unique_file_path = get_unique_filepath(prod_dir, base_export_name)
+            saved_filename = unique_file_path.name
+
+            # Xuất trực tiếp file đầu ra vào data/production/
+            if export_ext == ".parquet":
+                df.to_parquet(unique_file_path, index=False)
+            else:
+                df.to_csv(unique_file_path, index=False)
+
+            # 5. Cập nhật State nạp dữ liệu
+            active_label = f"{saved_filename} ({len(df):,} records)"
+            set_active_dataset(df, active_label)
+
+            self.selected_dataset_source = saved_filename
+            self.active_source_label = active_label
             self.available_client_ids = get_active_client_ids()
             self.total_clients_count = len(self.available_client_ids)
             self.client_list = get_client_table_summary(100)
@@ -398,7 +486,14 @@ class UnderwritingState(rx.State):
             self.is_dataset_loaded = True
             self.upload_dialog_open = False
 
-            self.alert_message = f"Loaded {self.total_clients_count:,} records successfully"
+            # 6. Tự động re-scan Thẻ 1 và chọn file vừa lưu
+            self.scan_production_dir()
+            self.selected_production_file = saved_filename
+
+            # 7. Bắn Toast Notification / Alert màu xanh và hẹn giờ tự tắt sau 5s
+            self.alert_token += 1
+            current_token = self.alert_token
+            self.alert_message = f"✓ Dataset ingested & saved to data/production as {saved_filename}"
             self.alert_type = "success"
             self.show_alert = True
             self.status_message = self.alert_message
@@ -407,10 +502,8 @@ class UnderwritingState(rx.State):
                 first_id = self.available_client_ids[0]
                 yield
                 yield self.select_and_evaluate_client(first_id)
-            else:
-                self.alert_message = f"File {file.filename} contained no valid data."
-                self.alert_type = "error"
-                self.show_alert = True
+
+            yield UnderwritingState.auto_dismiss_alert(current_token)
         except Exception as e:
             self.alert_message = f"Error processing uploaded file: {str(e)}"
             self.alert_type = "error"

@@ -309,6 +309,8 @@ def custom_upload_card() -> rx.Component:
                 background="#0B0F19",
                 cursor="pointer",
                 width="100%",
+                on_drop=UnderwritingState.reset_alert,
+                on_click=UnderwritingState.reset_alert,
             ),
 
             # Chú thích kỹ thuật thực tế
@@ -388,7 +390,59 @@ def client_registry_table() -> rx.Component:
                     rx.hstack(
                         rx.icon("users", size=16, color="#38BDF8"),
                         rx.heading("Client Registry & Risk Overview", size="3", color="#FFFFFF"),
-                        spacing="2",
+                        # Badge Active Dataset nổi bật với emerald green glow khi load, xám khi chưa load
+                        rx.cond(
+                            UnderwritingState.is_dataset_loaded,
+                            rx.badge(
+                                rx.hstack(
+                                    rx.box(
+                                        width="6px",
+                                        height="6px",
+                                        border_radius="50%",
+                                        background="#10B981",
+                                        box_shadow="0 0 6px rgba(16, 185, 129, 0.9)",
+                                    ),
+                                    rx.text(
+                                        UnderwritingState.active_dataset_badge_text,
+                                        size="1",
+                                        weight="bold",
+                                        color="#A7F3D0",
+                                        font_family="monospace",
+                                    ),
+                                    spacing="1",
+                                    align="center",
+                                ),
+                                variant="surface",
+                                color_scheme="green",
+                                size="1",
+                                style={
+                                    "border": "1px solid rgba(16, 185, 129, 0.4)",
+                                    "background": "rgba(6, 78, 59, 0.45)",
+                                    "box_shadow": "0 0 10px rgba(16, 185, 129, 0.15)",
+                                },
+                            ),
+                            rx.badge(
+                                rx.hstack(
+                                    rx.box(
+                                        width="6px",
+                                        height="6px",
+                                        border_radius="50%",
+                                        background="#64748B",
+                                    ),
+                                    rx.text("Active: None", size="1", weight="bold", color="#94A3B8"),
+                                    spacing="1",
+                                    align="center",
+                                ),
+                                variant="surface",
+                                color_scheme="gray",
+                                size="1",
+                                style={
+                                    "border": "1px solid #334155",
+                                    "background": "rgba(30, 41, 59, 0.5)",
+                                },
+                            ),
+                        ),
+                        spacing="3",
                         align="center",
                     ),
                     rx.text(
@@ -556,14 +610,23 @@ def client_registry_table() -> rx.Component:
                         variant="surface",
                         size="2",
                     ),
-                    # Empty state gọn gàng nhẹ nhàng khi chưa nạp dataset
+                    # Empty state khi chưa có Dataset nào được kích hoạt
                     rx.center(
-                        rx.hstack(
-                            rx.icon("layers", size=18, color="#64748B"),
+                        rx.vstack(
+                            rx.box(
+                                rx.icon("layers", size=24, color="#64748B"),
+                                background="rgba(255, 255, 255, 0.03)",
+                                padding="3",
+                                border_radius="50%",
+                                border="1px dashed #334155",
+                            ),
                             rx.text(
-                                "No dataset loaded. Select a preprocessed dataset above or upload a custom file to view client records.",
+                                "No active dataset loaded. Please select a preprocessed dataset from Box 1 or upload a file in Box 2 to inspect client default risk.",
                                 size="2",
                                 color="#94A3B8",
+                                text_align="center",
+                                max_width="560px",
+                                line_height="1.6",
                             ),
                             spacing="2",
                             align="center",
