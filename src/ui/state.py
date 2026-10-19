@@ -3,7 +3,7 @@ import sys
 from pathlib import Path
 from typing import List, Dict, Any, Optional, Union
 from .feature_search_state import FeatureSearchState
-from .formatters import format_client_age, format_client_experience
+from src.ui.utils.formatters import format_client_age, format_client_experience
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 if str(PROJECT_ROOT) not in sys.path:
