@@ -45,4 +45,5 @@ app.add_page(
     inspection_workbench_page,
     route="/inspection",
     title="Client Inspection Workbench | xAI Credit Scoring",
+    on_load=UnderwritingState.load_demo_clients,
 )

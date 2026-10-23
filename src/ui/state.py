@@ -227,6 +227,8 @@ class UnderwritingState(rx.State):
     sim_delta_text: str = "0.00 pts"
     sim_delta_color: str = "#94A3B8"
     is_optimizing: bool = False
+    optimization_options: List[Dict[str, Any]] = []
+    show_optimization_results: bool = False
 
     def load_demo_clients(self):
         """Khởi động mặc định nạp demo_samples.parquet vào State."""
@@ -238,9 +240,9 @@ class UnderwritingState(rx.State):
             self.total_clients_count = len(self.available_client_ids)
             self.client_list = get_client_table_summary(100)
 
-            if self.available_client_ids and not self.selected_client_id:
-                first_id = self.available_client_ids[0]
-                return self.select_and_evaluate_client(first_id)
+        if self.available_client_ids and (not self.selected_client_id or self.selected_client_id == "None"):
+            first_id = self.available_client_ids[0]
+            self.select_and_evaluate_client(first_id)
 
     # --- DATA INGESTION HANDLERS ---
 
@@ -1036,6 +1038,8 @@ class UnderwritingState(rx.State):
         self.sim_delta_text = "0.00 pts"
         self.sim_delta_color = "#94A3B8"
         self.is_optimizing = False
+        self.show_optimization_results = False
+        self.optimization_options = []
 
         self.sim_amt_credit_str = f"{int(self.sim_amt_credit):,}" if self.sim_amt_credit > 0 else "0"
         self.sim_term_months_str = str(int(self.sim_term_months))
@@ -1242,19 +1246,31 @@ class UnderwritingState(rx.State):
 
     @rx.event
     def ai_auto_optimize(self):
-        """AI Auto-Optimize: Tự động điều chỉnh TERM_MONTHS (tăng lên 36m, 48m) và tinh chỉnh AMT_CREDIT xuống
-        cho đến khi DTI < 40% và PD cải thiện, chuyển trạng thái từ REJECT/WAITING sang APPROVE (non-blocking).
+        """AI Auto-Optimize: Tự động tìm kiếm 3 kịch bản tái cơ cấu tối ưu (Strict On-Demand).
+        1. Ưu tiên số tiền vay: Giữ khoản vay cao nhất có thể (chấp nhận dãn kỳ hạn dài 48m, 60m).
+        2. Ưu tiên thời gian vay: Kỳ hạn ngắn nhất đạt chuẩn duyệt (chấp nhận giảm bớt hạn mức).
+        3. Phương án cân bằng: Hài hòa giữa hạn mức vừa phải và kỳ hạn hợp lý (ví dụ: kỳ hạn 36m, giảm nhẹ hạn mức 10% - 15%).
         """
+        print(f"[DEBUG OPT] >>> Bắt đầu chạy tối ưu cho hồ sơ... selected_client_id={self.selected_client_id}")
         self.is_optimizing = True
         yield
 
         try:
-            if not self.selected_client_id:
-                self.is_optimizing = False
-                return
+            if not self.selected_client_id or self.selected_client_id == "None":
+                print(f"[DEBUG OPT] CẢNH BÁO: selected_client_id rỗng! Thử nạp demo và fallback...")
+                if not self.available_client_ids:
+                    self.load_demo_clients()
+                if self.available_client_ids:
+                    self.select_and_evaluate_client(str(self.available_client_ids[0]))
+                    print(f"[DEBUG OPT] Đã tự động chọn và nạp hồ sơ fallback ID={self.selected_client_id}")
+                else:
+                    print(f"[DEBUG OPT] Không có available_client_ids! Dừng tối ưu.")
+                    self.is_optimizing = False
+                    return
 
             client_series = get_client_row_data(self.selected_client_id)
             if client_series is None:
+                print(f"[DEBUG OPT] get_client_row_data trả về None cho ID: {self.selected_client_id}")
                 self.is_optimizing = False
                 return
 
@@ -1264,13 +1280,14 @@ class UnderwritingState(rx.State):
                 base_credit = 100000.0
 
             income = float(self.sim_amt_income_total) if self.sim_amt_income_total > 0 else 50000.0
+            print(f"[DEBUG OPT] Hồ sơ ID={self.selected_client_id}, base_credit={base_credit}, income={income}, interest_factor={self.interest_rate_factor}")
 
-            # Ưu tiên các kỳ hạn dài hơn để giảm áp lực trả nợ tháng (36m, 48m, 60m, 24m)
-            candidate_terms = [36, 48, 60, 24]
-            credit_factors = [1.0, 0.95, 0.90, 0.85, 0.80, 0.75, 0.70, 0.60]
+            # Khảo sát các mốc kỳ hạn và nấc co cụm hạn mức vay
+            candidate_terms = [12, 18, 24, 30, 36, 42, 48, 60]
+            credit_factors = [1.0, 0.95, 0.90, 0.85, 0.80, 0.75, 0.70, 0.65, 0.60, 0.55, 0.50]
 
-            best_candidate = None
-            best_pd = 1.0
+            approved_candidates = []
+            all_valid_candidates = []
 
             for cand_term in candidate_terms:
                 for factor in credit_factors:
@@ -1278,11 +1295,11 @@ class UnderwritingState(rx.State):
                     cand_annuity = round((cand_credit / cand_term) * (1.0 + self.interest_rate_factor), 1)
                     cand_dti = round((cand_annuity / max(income, 1.0)) * 100.0, 1)
 
-                    # Ràng buộc DTI < 40%
+                    # Ràng buộc điều kiện an toàn: DTI < 40%
                     if cand_dti >= 40.0:
                         continue
 
-                    # Dự đoán nhanh PD
+                    # Dự đoán siêu tốc qua cache model ensemble
                     cand_pd, cand_tier, cand_decision = engine.predict_pd_from_cache(
                         credit=cand_credit,
                         annuity=cand_annuity,
@@ -1290,34 +1307,128 @@ class UnderwritingState(rx.State):
                     )
 
                     candidate_info = {
-                        "credit": cand_credit,
-                        "term": cand_term,
-                        "annuity": cand_annuity,
-                        "dti": cand_dti,
-                        "pd": cand_pd,
-                        "tier": cand_tier,
-                        "decision": cand_decision,
+                        "credit": float(cand_credit),
+                        "term": int(cand_term),
+                        "annuity": float(cand_annuity),
+                        "dti": float(cand_dti),
+                        "pd": float(cand_pd),
+                        "tier": str(cand_tier),
+                        "decision": str(cand_decision),
+                        "factor": float(factor),
+                        "credit_display": f"${int(cand_credit):,}",
+                        "term_display": f"{int(cand_term)} tháng",
+                        "annuity_display": f"${int(cand_annuity):,}/mo",
+                        "dti_display": f"{cand_dti:.1f}%",
+                        "pd_display": f"{cand_pd * 100:.2f}%",
                     }
+                    all_valid_candidates.append(candidate_info)
 
                     if cand_decision == "APPROVE" or cand_pd <= 0.150:
-                        best_candidate = candidate_info
-                        break
-                    elif cand_pd < best_pd:
-                        best_pd = cand_pd
-                        best_candidate = candidate_info
+                        approved_candidates.append(candidate_info)
 
-                if best_candidate and best_candidate.get("decision") == "APPROVE":
-                    break
+            print(f"[DEBUG OPT] Quét xong: approved_candidates={len(approved_candidates)}, all_valid_candidates={len(all_valid_candidates)}")
 
-            if best_candidate:
-                self.sim_amt_credit = float(best_candidate["credit"])
-                self.sim_term_months = int(best_candidate["term"])
-                self.sim_amt_annuity = float(best_candidate["annuity"])
-                self.sim_dti = float(best_candidate["dti"])
-                self.sim_amt_credit_str = f"{int(self.sim_amt_credit):,}"
-                self.sim_term_months_str = str(int(self.sim_term_months))
-                self.sim_amt_annuity_str = f"{int(self.sim_amt_annuity):,}"
-                self.sim_amt_income_str = f"{int(self.sim_amt_income_total):,}"
-                self.recalculate_simulation_pd()
+            pool = approved_candidates if approved_candidates else sorted(all_valid_candidates, key=lambda x: x["pd"])
+            if not pool:
+                print(f"[DEBUG OPT] CẢNH BÁO: Không có ứng viên nào trong pool!")
+                self.optimization_options = []
+                self.show_optimization_results = False
+                return
+
+            selected_options = []
+
+            # 1. Ưu tiên số tiền vay (Max Loan Amount)
+            c1 = sorted(pool, key=lambda x: (-x["credit"], -x["term"], x["pd"]))[0]
+            c1_entry = dict(c1)
+            c1_entry["title"] = "Ưu tiên số tiền vay"
+            c1_entry["subtitle"] = "Tối đa hạn mức giải ngân (kỳ hạn dãn)"
+            c1_entry["badge_icon"] = "coins"
+            c1_entry["badge_color"] = "blue"
+            selected_options.append(c1_entry)
+
+            # 2. Ưu tiên thời gian vay (Shortest Term)
+            rem_for_term = [c for c in pool if (c["term"], c["credit"]) != (c1["term"], c1["credit"])]
+            if not rem_for_term:
+                rem_for_term = pool
+            c2 = sorted(rem_for_term, key=lambda x: (x["term"], -x["credit"], x["pd"]))[0]
+            c2_entry = dict(c2)
+            c2_entry["title"] = "Ưu tiên thời gian vay"
+            c2_entry["subtitle"] = "Tất toán sớm, kỳ hạn ngắn nhất đạt chuẩn duyệt"
+            c2_entry["badge_icon"] = "clock"
+            c2_entry["badge_color"] = "amber"
+            selected_options.append(c2_entry)
+
+            # 3. Phương án cân bằng (Balanced Plan)
+            rem_for_bal = [
+                c for c in pool
+                if (c["term"], c["credit"]) not in [(c1["term"], c1["credit"]), (c2["term"], c2["credit"])]
+            ]
+            if not rem_for_bal:
+                rem_for_bal = rem_for_term
+            if not rem_for_bal:
+                rem_for_bal = pool
+
+            def balanced_score(c):
+                term_diff = abs(c["term"] - 36) / 24.0
+                factor_diff = abs(c["factor"] - 0.85) * 2.0
+                return term_diff + factor_diff + (c["pd"] * 3.0)
+
+            c3 = sorted(rem_for_bal, key=balanced_score)[0]
+            c3_entry = dict(c3)
+            c3_entry["title"] = "Phương án cân bằng"
+            c3_entry["subtitle"] = "Hài hòa giữa hạn mức và thời gian trả góp"
+            c3_entry["badge_icon"] = "scale"
+            c3_entry["badge_color"] = "purple"
+            selected_options.append(c3_entry)
+
+            self.optimization_options = selected_options
+            self.show_optimization_results = True
+
+            print(f"[DEBUG OPT] Số lượng kịch bản tìm được: {len(self.optimization_options)}")
+            print(f"[DEBUG OPT] show_optimization_results = {self.show_optimization_results}")
+            for idx, opt in enumerate(self.optimization_options):
+                print(f"[DEBUG OPT]   Kịch bản {idx+1}: {opt['title']} | {opt['credit_display']} | {opt['term_display']} | DTI: {opt['dti_display']} | PD: {opt['pd_display']}")
+
+        except Exception as e:
+            print(f"[DEBUG OPT] LỖI NGOẠI LỆ trong ai_auto_optimize: {e}")
+            self.show_optimization_results = False
         finally:
             self.is_optimizing = False
+
+    @rx.event
+    def apply_optimization_option(self, option: Any):
+        """Áp dụng kịch bản tối ưu hóa được chọn vào Simulator."""
+        try:
+            print(f"[DEBUG OPT] >>> Bấm Áp dụng kịch bản: {option}")
+            if not option:
+                return
+            if isinstance(option, int) and 0 <= option < len(self.optimization_options):
+                option = self.optimization_options[option]
+            elif isinstance(option, dict):
+                pass
+            else:
+                return
+
+            self.sim_amt_credit = float(option.get("credit", self.sim_amt_credit))
+            self.sim_term_months = int(option.get("term", self.sim_term_months))
+            self.sim_amt_annuity = float(option.get("annuity", self.sim_amt_annuity))
+            self.sim_dti = float(option.get("dti", self.sim_dti))
+
+            self.sim_amt_credit_str = f"{int(self.sim_amt_credit):,}"
+            self.sim_term_months_str = str(int(self.sim_term_months))
+            self.sim_amt_annuity_str = f"{int(self.sim_amt_annuity):,}"
+            self.sim_amt_income_str = f"{int(self.sim_amt_income_total):,}"
+
+            self.recalculate_simulation_pd()
+            print(f"[DEBUG OPT] Đã cập nhật Simulator: credit={self.sim_amt_credit}, term={self.sim_term_months}, annuity={self.sim_amt_annuity}, dti={self.sim_dti}")
+        except Exception as e:
+            print(f"[DEBUG OPT] Lỗi khi apply_optimization_option: {e}")
+            print(f"[apply_optimization_option] Error: {e}")
+
+    @rx.event
+    def close_optimization_results(self):
+        """Đóng/ẩn khung gợi ý kịch bản tối ưu."""
+        self.show_optimization_results = False
+
+    # Alias tương thích ngược
+    auto_optimize_terms = ai_auto_optimize

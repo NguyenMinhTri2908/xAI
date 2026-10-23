@@ -22,6 +22,123 @@ def term_preset_pill(months: int) -> rx.Component:
     )
 
 
+def optimization_scenario_card(opt: rx.Var[dict]) -> rx.Component:
+    """Card hiển thị 1 kịch bản gợi ý tái cơ cấu tối ưu hóa."""
+    return rx.box(
+        rx.vstack(
+            # 1. Tiêu đề định hướng + Badge APPROVE
+            rx.hstack(
+                rx.hstack(
+                    rx.badge(
+                        opt["title"],
+                        color_scheme="blue",
+                        variant="surface",
+                        size="1",
+                        weight="bold",
+                    ),
+                    spacing="2",
+                    align="center",
+                ),
+                rx.spacer(min_width="0", flex="1"),
+                rx.badge(
+                    opt["decision"],
+                    color_scheme="green",
+                    variant="solid",
+                    size="1",
+                ),
+                width="100%",
+                align="center",
+            ),
+            # Mô tả phụ
+            rx.text(
+                opt["subtitle"],
+                size="1",
+                color="#94A3B8",
+                style={"font_size": "11px"},
+            ),
+            # 2. Khối thông số chi tiết (Khoản vay, Kỳ hạn, Trả góp, DTI, PD & Tier)
+            rx.box(
+                rx.vstack(
+                    rx.hstack(
+                        rx.vstack(
+                            rx.text("Khoản vay đề xuất", size="1", color="#64748B", style={"font_size": "10px"}),
+                            rx.text(opt["credit_display"], size="2", weight="bold", color="#38BDF8", font_family="monospace"),
+                            spacing="0",
+                        ),
+                        rx.spacer(min_width="0", flex="1"),
+                        rx.vstack(
+                            rx.text("Kỳ hạn mới", size="1", color="#64748B", style={"font_size": "10px"}),
+                            rx.text(opt["term_display"], size="2", weight="bold", color="#F8FAFC", font_family="monospace"),
+                            spacing="0",
+                            align="end",
+                        ),
+                        width="100%",
+                        align="center",
+                    ),
+                    rx.hstack(
+                        rx.vstack(
+                            rx.text("Trả góp/tháng", size="1", color="#64748B", style={"font_size": "10px"}),
+                            rx.text(opt["annuity_display"], size="1", weight="medium", color="#CBD5E1", font_family="monospace"),
+                            spacing="0",
+                        ),
+                        rx.spacer(min_width="0", flex="1"),
+                        rx.vstack(
+                            rx.text("Tỷ lệ DTI", size="1", color="#64748B", style={"font_size": "10px"}),
+                            rx.text(opt["dti_display"], size="1", weight="bold", color="#A7F3D0", font_family="monospace"),
+                            spacing="0",
+                            align="end",
+                        ),
+                        width="100%",
+                        align="center",
+                    ),
+                    rx.hstack(
+                        rx.text("Rủi ro PD:", size="1", color="#64748B", style={"font_size": "10px"}),
+                        rx.text(opt["pd_display"], size="1", weight="bold", color="#34D399", font_family="monospace"),
+                        rx.badge(opt["tier"], color_scheme="cyan", size="1", variant="surface"),
+                        spacing="2",
+                        align="center",
+                    ),
+                    spacing="2",
+                    width="100%",
+                ),
+                padding="2",
+                background="rgba(15, 23, 42, 0.7)",
+                border="1px solid #1E293B",
+                border_radius="6px",
+                width="100%",
+            ),
+            # 3. Nút Áp dụng kịch bản
+            rx.button(
+                rx.hstack(
+                    rx.icon("check", size=13),
+                    rx.text("Áp dụng", size="1", weight="bold"),
+                    spacing="1",
+                    align="center",
+                ),
+                size="1",
+                variant="solid",
+                color_scheme="blue",
+                width="100%",
+                cursor="pointer",
+                style={
+                    "background": "linear-gradient(135deg, #1D4ED8 0%, #2563EB 100%)",
+                    "color": "#FFFFFF",
+                    "_hover": {"filter": "brightness(1.15)"},
+                },
+                on_click=UnderwritingState.apply_optimization_option(opt),
+            ),
+            spacing="2",
+            width="100%",
+        ),
+        padding="3",
+        background="#0F172A",
+        border="1px solid #334155",
+        border_radius="8px",
+        width="100%",
+        box_shadow="0 2px 4px rgba(0, 0, 0, 0.2)",
+    )
+
+
 def what_if_view() -> rx.Component:
     """Component Risk Mitigation & Terms Simulator theo phong cách Notion/Linear tối giản.
     Tập trung vào clean typography, low clutter, hiển thị 2 chỉ số cốt lõi và delta chênh lệch.
@@ -700,12 +817,52 @@ def what_if_view() -> rx.Component:
                             "filter": "brightness(1.08)",
                         },
                     },
+                    id="ai_auto_optimize_btn",
                     on_click=UnderwritingState.ai_auto_optimize,
                 ),
                 width="100%",
                 min_width="0",
                 align="center",
                 spacing="3",
+            ),
+
+            # 5. KHUNG GỢI Ý TÁI CƠ CẤU (AI OPTIMIZATION PROPOSALS)
+            rx.cond(
+                UnderwritingState.show_optimization_results & (UnderwritingState.optimization_options.length() > 0),
+                rx.vstack(
+                    rx.hstack(
+                        rx.hstack(
+                            rx.icon("sparkles", size=14, color="#A855F7"),
+                            rx.text("Gợi ý Tái cơ cấu Tối ưu", size="2", weight="bold", color="#F8FAFC"),
+                            rx.badge("3 Kịch bản", color_scheme="purple", variant="surface", size="1"),
+                            spacing="2",
+                            align="center",
+                        ),
+                        rx.spacer(min_width="0", flex="1"),
+                        rx.icon_button(
+                            rx.icon("x", size=13),
+                            size="1",
+                            variant="ghost",
+                            color_scheme="gray",
+                            cursor="pointer",
+                            on_click=UnderwritingState.close_optimization_results,
+                        ),
+                        width="100%",
+                        align="center",
+                    ),
+                    rx.foreach(
+                        UnderwritingState.optimization_options,
+                        optimization_scenario_card,
+                    ),
+                    spacing="2",
+                    width="100%",
+                    padding="3",
+                    background="rgba(15, 23, 42, 0.6)",
+                    border="1px solid #334155",
+                    border_radius="10px",
+                    margin_top="1",
+                ),
+                rx.fragment(),
             ),
             spacing="3",
             width="100%",
