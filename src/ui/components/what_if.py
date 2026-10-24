@@ -22,121 +22,440 @@ def term_preset_pill(months: int) -> rx.Component:
     )
 
 
-def optimization_scenario_card(opt: rx.Var[dict]) -> rx.Component:
-    """Card hiển thị 1 kịch bản gợi ý tái cơ cấu tối ưu hóa."""
+def scenario_metrics_grid(opt: rx.Var[dict], is_primary: bool = False) -> rx.Component:
+    """Lưới thông số 2 cột x 2 hàng rõ ràng, ngăn chặn hoàn toàn rớt dòng và giữ delta trên cùng baseline."""
+    val_size = "4" if is_primary else "3"
+
+    return rx.box(
+        # Hàng 1: PROPOSED CREDIT (giá trị + delta cùng hàng) | TENURE (giá trị + delta cùng hàng)
+        rx.hstack(
+            # Col 1: PROPOSED CREDIT
+            rx.vstack(
+                rx.text(
+                    "PROPOSED CREDIT",
+                    size="1",
+                    color="#64748B",
+                    style={
+                        "font_size": "10px",
+                        "font_weight": "600",
+                        "letter_spacing": "0.05em",
+                        "white_space": "nowrap",
+                    },
+                ),
+                rx.hstack(
+                    rx.text(
+                        opt["credit_display"],
+                        size=val_size,
+                        weight="bold",
+                        color="#38BDF8",
+                        font_family="monospace",
+                        style={"white_space": "nowrap"},
+                    ),
+                    rx.cond(
+                        opt["credit_delta_text"] != "",
+                        rx.text(
+                            opt["credit_delta_text"],
+                            size="1",
+                            weight="medium",
+                            color=opt["credit_delta_color"],
+                            font_family="monospace",
+                            style={"white_space": "nowrap"},
+                        ),
+                        rx.fragment(),
+                    ),
+                    align="baseline",
+                    spacing="2",
+                    style={"white_space": "nowrap"},
+                ),
+                spacing="1",
+                align_items="flex-start",
+                flex="1",
+                min_width="0",
+            ),
+            # Col 2: TENURE
+            rx.vstack(
+                rx.text(
+                    "TENURE",
+                    size="1",
+                    color="#64748B",
+                    style={
+                        "font_size": "10px",
+                        "font_weight": "600",
+                        "letter_spacing": "0.05em",
+                        "white_space": "nowrap",
+                    },
+                ),
+                rx.hstack(
+                    rx.text(
+                        opt["term_display"],
+                        size=val_size,
+                        weight="bold",
+                        color="#F8FAFC",
+                        font_family="monospace",
+                        style={"white_space": "nowrap"},
+                    ),
+                    rx.cond(
+                        opt["term_delta_text"] != "",
+                        rx.text(
+                            opt["term_delta_text"],
+                            size="1",
+                            weight="medium",
+                            color=opt["term_delta_color"],
+                            font_family="monospace",
+                            style={"white_space": "nowrap"},
+                        ),
+                        rx.fragment(),
+                    ),
+                    align="baseline",
+                    spacing="2",
+                    style={"white_space": "nowrap"},
+                ),
+                spacing="1",
+                align_items="flex-start",
+                flex="1",
+                min_width="0",
+            ),
+            width="100%",
+            align="start",
+            spacing="4",
+        ),
+        # Hàng 2: MONTHLY ANNUITY (giá trị + delta cùng hàng) | DTI RATIO (giá trị + delta cùng hàng)
+        rx.hstack(
+            # Col 1: MONTHLY ANNUITY
+            rx.vstack(
+                rx.text(
+                    "MONTHLY ANNUITY",
+                    size="1",
+                    color="#64748B",
+                    style={
+                        "font_size": "10px",
+                        "font_weight": "600",
+                        "letter_spacing": "0.05em",
+                        "white_space": "nowrap",
+                    },
+                ),
+                rx.hstack(
+                    rx.text(
+                        opt["annuity_display"],
+                        size=val_size,
+                        weight="bold",
+                        color=opt["annuity_val_color"],
+                        font_family="monospace",
+                        style={"white_space": "nowrap"},
+                    ),
+                    rx.cond(
+                        opt["annuity_delta_text"] != "",
+                        rx.text(
+                            opt["annuity_delta_text"],
+                            size="1",
+                            weight="medium",
+                            color=opt["annuity_delta_color"],
+                            font_family="monospace",
+                            style={"white_space": "nowrap"},
+                        ),
+                        rx.fragment(),
+                    ),
+                    align="baseline",
+                    spacing="2",
+                    style={"white_space": "nowrap"},
+                ),
+                spacing="1",
+                align_items="flex-start",
+                flex="1",
+                min_width="0",
+            ),
+            # Col 2: DTI RATIO
+            rx.vstack(
+                rx.text(
+                    "DTI RATIO",
+                    size="1",
+                    color="#64748B",
+                    style={
+                        "font_size": "10px",
+                        "font_weight": "600",
+                        "letter_spacing": "0.05em",
+                        "white_space": "nowrap",
+                    },
+                ),
+                rx.hstack(
+                    rx.text(
+                        opt["dti_display"],
+                        size=val_size,
+                        weight="bold",
+                        color=opt["dti_val_color"],
+                        font_family="monospace",
+                        style={"white_space": "nowrap"},
+                    ),
+                    rx.cond(
+                        opt["dti_delta_text"] != "",
+                        rx.text(
+                            opt["dti_delta_text"],
+                            size="1",
+                            weight="medium",
+                            color=opt["dti_delta_color"],
+                            font_family="monospace",
+                            style={"white_space": "nowrap"},
+                        ),
+                        rx.fragment(),
+                    ),
+                    align="baseline",
+                    spacing="2",
+                    style={"white_space": "nowrap"},
+                ),
+                spacing="1",
+                align_items="flex-start",
+                flex="1",
+                min_width="0",
+            ),
+            width="100%",
+            align="start",
+            spacing="4",
+        ),
+        display="flex",
+        flex_direction="column",
+        gap="12px",
+        width="100%",
+    )
+
+
+def recommended_proposal_card(opt: rx.Var[dict]) -> rx.Component:
+    """Card kịch bản AI chính: Recommended Proposal."""
     return rx.box(
         rx.vstack(
-            # 1. Tiêu đề định hướng + Badge APPROVE
+            # Header: Sparkles icon + Tiêu đề Recommended Proposal
             rx.hstack(
-                rx.hstack(
-                    rx.badge(
-                        opt["title"],
-                        color_scheme="blue",
-                        variant="surface",
-                        size="1",
-                        weight="bold",
-                    ),
-                    spacing="2",
-                    align="center",
+                rx.icon("sparkles", size=18, color="#A78BFA"),
+                rx.text(
+                    "Recommended Proposal",
+                    size="3",
+                    weight="bold",
+                    color="#F8FAFC",
+                    style={"font_size": "15px", "font_weight": "600"},
                 ),
-                rx.spacer(min_width="0", flex="1"),
-                rx.badge(
-                    opt["decision"],
-                    color_scheme="green",
-                    variant="solid",
-                    size="1",
-                ),
-                width="100%",
+                spacing="2",
                 align="center",
-            ),
-            # Mô tả phụ
-            rx.text(
-                opt["subtitle"],
-                size="1",
-                color="#94A3B8",
-                style={"font_size": "11px"},
-            ),
-            # 2. Khối thông số chi tiết (Khoản vay, Kỳ hạn, Trả góp, DTI, PD & Tier)
-            rx.box(
-                rx.vstack(
-                    rx.hstack(
-                        rx.vstack(
-                            rx.text("Khoản vay đề xuất", size="1", color="#64748B", style={"font_size": "10px"}),
-                            rx.text(opt["credit_display"], size="2", weight="bold", color="#38BDF8", font_family="monospace"),
-                            spacing="0",
-                        ),
-                        rx.spacer(min_width="0", flex="1"),
-                        rx.vstack(
-                            rx.text("Kỳ hạn mới", size="1", color="#64748B", style={"font_size": "10px"}),
-                            rx.text(opt["term_display"], size="2", weight="bold", color="#F8FAFC", font_family="monospace"),
-                            spacing="0",
-                            align="end",
-                        ),
-                        width="100%",
-                        align="center",
-                    ),
-                    rx.hstack(
-                        rx.vstack(
-                            rx.text("Trả góp/tháng", size="1", color="#64748B", style={"font_size": "10px"}),
-                            rx.text(opt["annuity_display"], size="1", weight="medium", color="#CBD5E1", font_family="monospace"),
-                            spacing="0",
-                        ),
-                        rx.spacer(min_width="0", flex="1"),
-                        rx.vstack(
-                            rx.text("Tỷ lệ DTI", size="1", color="#64748B", style={"font_size": "10px"}),
-                            rx.text(opt["dti_display"], size="1", weight="bold", color="#A7F3D0", font_family="monospace"),
-                            spacing="0",
-                            align="end",
-                        ),
-                        width="100%",
-                        align="center",
-                    ),
-                    rx.hstack(
-                        rx.text("Rủi ro PD:", size="1", color="#64748B", style={"font_size": "10px"}),
-                        rx.text(opt["pd_display"], size="1", weight="bold", color="#34D399", font_family="monospace"),
-                        rx.badge(opt["tier"], color_scheme="cyan", size="1", variant="surface"),
-                        spacing="2",
-                        align="center",
-                    ),
-                    spacing="2",
-                    width="100%",
-                ),
-                padding="2",
-                background="rgba(15, 23, 42, 0.7)",
-                border="1px solid #1E293B",
-                border_radius="6px",
                 width="100%",
             ),
-            # 3. Nút Áp dụng kịch bản
-            rx.button(
-                rx.hstack(
-                    rx.icon("check", size=13),
-                    rx.text("Áp dụng", size="1", weight="bold"),
-                    spacing="1",
-                    align="center",
+            # Lưới thông số 2x2
+            scenario_metrics_grid(opt, is_primary=True),
+            # Divider phân tách
+            rx.divider(border_color="#1E293B", margin_y="1"),
+            # Khối Predicted PD
+            rx.vstack(
+                rx.text(
+                    "Predicted PD",
+                    size="2",
+                    weight="bold",
+                    color="#F8FAFC",
+                    style={"font_size": "14px", "font_weight": "600"},
                 ),
-                size="1",
+                rx.hstack(
+                    rx.text(
+                        opt["pd_display"],
+                        size="6",
+                        weight="bold",
+                        color="#34D399",
+                        font_family="monospace",
+                        style={"white_space": "nowrap", "letter_spacing": "-0.02em", "font_size": "24px"},
+                    ),
+                    rx.cond(
+                        opt["pd_delta_text"] != "",
+                        rx.text(
+                            opt["pd_delta_text"],
+                            size="2",
+                            weight="bold",
+                            color=opt["pd_delta_color"],
+                            font_family="monospace",
+                            style={"white_space": "nowrap", "font_size": "14px"},
+                        ),
+                        rx.fragment(),
+                    ),
+                    align="baseline",
+                    spacing="2",
+                    style={"white_space": "nowrap"},
+                ),
+                spacing="1",
+                align_items="flex-start",
+                width="100%",
+            ),
+            # Nút Apply Recommended Proposal
+            rx.button(
+                "Apply Recommended Proposal",
+                size="3",
                 variant="solid",
-                color_scheme="blue",
                 width="100%",
                 cursor="pointer",
                 style={
-                    "background": "linear-gradient(135deg, #1D4ED8 0%, #2563EB 100%)",
+                    "background": "linear-gradient(135deg, #6366F1 0%, #4F46E5 100%)",
                     "color": "#FFFFFF",
-                    "_hover": {"filter": "brightness(1.15)"},
+                    "font_weight": "600",
+                    "font_size": "14px",
+                    "border_radius": "8px",
+                    "height": "40px",
+                    "box_shadow": "0 2px 10px rgba(99, 102, 241, 0.3)",
+                    "transition": "all 0.15s ease",
+                    "_hover": {
+                        "filter": "brightness(1.1)",
+                        "box_shadow": "0 4px 14px rgba(99, 102, 241, 0.4)",
+                    },
                 },
                 on_click=UnderwritingState.apply_optimization_option(opt),
             ),
-            spacing="2",
+            spacing="3",
             width="100%",
         ),
-        padding="3",
-        background="#0F172A",
-        border="1px solid #334155",
-        border_radius="8px",
+        padding="4",
+        background="#0D1322",
+        border="1px solid #1E293B",
+        border_radius="12px",
+        width="100%",
+        box_shadow="0 4px 12px rgba(0, 0, 0, 0.3)",
+    )
+
+
+def alternative_options_trigger() -> rx.Component:
+    """Nút đóng/mở (Collapsible Trigger) cho các phương án thay thế, chỉ hiển thị đúng 1 icon chevron."""
+    return rx.button(
+        rx.hstack(
+            rx.text(
+                rx.cond(
+                    UnderwritingState.show_alternative_options,
+                    "Hide alternative options",
+                    "View alternative options",
+                ),
+                size="2",
+                weight="medium",
+                color="#94A3B8",
+                style={"font_size": "13px"},
+            ),
+            rx.icon(
+                rx.cond(
+                    UnderwritingState.show_alternative_options,
+                    "chevron-up",
+                    "chevron-down",
+                ),
+                size=14,
+                color="#94A3B8",
+            ),
+            spacing="2",
+            align="center",
+            justify="center",
+        ),
+        variant="surface",
+        color_scheme="gray",
+        width="100%",
+        cursor="pointer",
+        on_click=UnderwritingState.toggle_alternative_options,
+        style={
+            "background": "#0F172A",
+            "border": "1px solid #1E293B",
+            "border_radius": "8px",
+            "height": "36px",
+            "color": "#94A3B8",
+            "transition": "all 0.15s ease",
+            "_hover": {
+                "background": "#1E293B",
+                "color": "#F8FAFC",
+                "border_color": "#334155",
+            },
+        },
+    )
+
+
+def secondary_scenario_card(opt: rx.Var[dict]) -> rx.Component:
+    """Card hiển thị 1 kịch bản phụ (Shortest Tenure, Balanced Compromise)."""
+    return rx.box(
+        rx.vstack(
+            # 1. Header trên cùng 1 hàng: Tiêu đề (trái) + Nút [Apply Option] (phải)
+            rx.hstack(
+                rx.text(
+                    opt["title"],
+                    size="2",
+                    weight="bold",
+                    color="#F8FAFC",
+                    style={"font_weight": "600", "font_size": "14px", "white_space": "nowrap"},
+                ),
+                rx.button(
+                    "Apply Option",
+                    size="1",
+                    variant="surface",
+                    cursor="pointer",
+                    style={
+                        "background": "#1E293B",
+                        "border": "1px solid #334155",
+                        "color": "#F8FAFC",
+                        "font_size": "11px",
+                        "font_weight": "500",
+                        "padding": "0 10px",
+                        "height": "26px",
+                        "border_radius": "6px",
+                        "transition": "all 0.15s ease",
+                        "_hover": {
+                            "background": "#334155",
+                            "border_color": "#475569",
+                        },
+                    },
+                    on_click=UnderwritingState.apply_optimization_option(opt),
+                ),
+                width="100%",
+                justify="between",
+                align="center",
+            ),
+            # 2. Lưới thông số 2x2
+            scenario_metrics_grid(opt, is_primary=False),
+            # 3. Chân thẻ hiển thị rủi ro (PREDICTED PD)
+            rx.hstack(
+                rx.text(
+                    "PREDICTED PD",
+                    size="1",
+                    color="#64748B",
+                    style={
+                        "font_size": "10px",
+                        "font_weight": "600",
+                        "letter_spacing": "0.05em",
+                        "white_space": "nowrap",
+                    },
+                ),
+                rx.text(
+                    opt["pd_display"],
+                    size="2",
+                    weight="bold",
+                    color=opt["pd_color"],
+                    font_family="monospace",
+                    style={"white_space": "nowrap"},
+                ),
+                rx.cond(
+                    opt["pd_delta_text"] != "",
+                    rx.text(
+                        opt["pd_delta_text"],
+                        size="1",
+                        weight="medium",
+                        color=opt["pd_delta_color"],
+                        font_family="monospace",
+                        style={"white_space": "nowrap"},
+                    ),
+                    rx.fragment(),
+                ),
+                align="baseline",
+                spacing="2",
+                width="100%",
+                padding_top="1",
+                style={"white_space": "nowrap"},
+            ),
+            spacing="3",
+            width="100%",
+        ),
+        padding="3.5",
+        background="#0D1322",
+        border="1px solid #1E293B",
+        border_radius="10px",
         width="100%",
         box_shadow="0 2px 4px rgba(0, 0, 0, 0.2)",
     )
+
+
+# Alias tương thích ngược
+optimization_scenario_card = secondary_scenario_card
 
 
 def what_if_view() -> rx.Component:
@@ -830,36 +1149,25 @@ def what_if_view() -> rx.Component:
             rx.cond(
                 UnderwritingState.show_optimization_results & (UnderwritingState.optimization_options.length() > 0),
                 rx.vstack(
-                    rx.hstack(
-                        rx.hstack(
-                            rx.icon("sparkles", size=14, color="#A855F7"),
-                            rx.text("Gợi ý Tái cơ cấu Tối ưu", size="2", weight="bold", color="#F8FAFC"),
-                            rx.badge("3 Kịch bản", color_scheme="purple", variant="surface", size="1"),
-                            spacing="2",
-                            align="center",
+                    # 1. Thẻ chính: Recommended Proposal
+                    recommended_proposal_card(UnderwritingState.recommended_option),
+                    # 2. Nút đóng/mở kịch bản phụ (Collapsible Trigger)
+                    alternative_options_trigger(),
+                    # 3. Danh sách kịch bản phụ: Shortest Tenure & Balanced Compromise
+                    rx.cond(
+                        UnderwritingState.show_alternative_options,
+                        rx.vstack(
+                            rx.foreach(
+                                UnderwritingState.alternative_options,
+                                secondary_scenario_card,
+                            ),
+                            spacing="3",
+                            width="100%",
                         ),
-                        rx.spacer(min_width="0", flex="1"),
-                        rx.icon_button(
-                            rx.icon("x", size=13),
-                            size="1",
-                            variant="ghost",
-                            color_scheme="gray",
-                            cursor="pointer",
-                            on_click=UnderwritingState.close_optimization_results,
-                        ),
-                        width="100%",
-                        align="center",
+                        rx.fragment(),
                     ),
-                    rx.foreach(
-                        UnderwritingState.optimization_options,
-                        optimization_scenario_card,
-                    ),
-                    spacing="2",
+                    spacing="3",
                     width="100%",
-                    padding="3",
-                    background="rgba(15, 23, 42, 0.6)",
-                    border="1px solid #334155",
-                    border_radius="10px",
                     margin_top="1",
                 ),
                 rx.fragment(),
