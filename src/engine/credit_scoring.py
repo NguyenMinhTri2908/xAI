@@ -246,9 +246,9 @@ class CreditScoringEngine:
         return final_pd, tier, decision
 
     def cache_client_features(self, client_series: pd.Series):
-        """Tiền xử lý và lưu cache 891 features đã align cho client được chọn."""
-        df_row = pd.DataFrame([client_series])
-        self._cached_clean_df = self._align_and_cast_features(df_row)
+        """Tiền xử lý và lưu cache 891 features đã align cho client được chọn (luôn reset index về 0)."""
+        df_row = pd.DataFrame([client_series]).reset_index(drop=True)
+        self._cached_clean_df = self._align_and_cast_features(df_row).reset_index(drop=True)
 
     def predict_pd_from_cache(
         self,
@@ -262,25 +262,26 @@ class CreditScoringEngine:
             return 0.0, "Tier A", "APPROVE"
 
         df_c = self._cached_clean_df.copy()
+        target_idx = df_c.index[0]
         eps = 1e-6
-        df_c.loc[0, "AMT_CREDIT"] = credit
-        df_c.loc[0, "AMT_ANNUITY"] = annuity
-        df_c.loc[0, "AMT_INCOME_TOTAL"] = income
-        df_c.loc[0, "CREDIT_TO_INCOME"] = credit / (income + eps)
-        df_c.loc[0, "ANNUITY_TO_INCOME"] = annuity / (income + eps)
-        df_c.loc[0, "CREDIT_TO_ANNUITY"] = credit / (annuity + eps)
+        df_c.loc[target_idx, "AMT_CREDIT"] = credit
+        df_c.loc[target_idx, "AMT_ANNUITY"] = annuity
+        df_c.loc[target_idx, "AMT_INCOME_TOTAL"] = income
+        df_c.loc[target_idx, "CREDIT_TO_INCOME"] = credit / (income + eps)
+        df_c.loc[target_idx, "ANNUITY_TO_INCOME"] = annuity / (income + eps)
+        df_c.loc[target_idx, "CREDIT_TO_ANNUITY"] = credit / (annuity + eps)
 
-        if "AMT_GOODS_PRICE" in df_c.columns and pd.notna(df_c.loc[0, "AMT_GOODS_PRICE"]):
-            gp = float(df_c.loc[0, "AMT_GOODS_PRICE"])
-            df_c.loc[0, "CREDIT_TO_GOODS_RATIO"] = credit / (gp + eps)
-            df_c.loc[0, "GOODS_CREDIT_DIFF"] = gp - credit
-            df_c.loc[0, "ANNUITY_TO_GOODS_RATIO"] = annuity / (gp + eps)
+        if "AMT_GOODS_PRICE" in df_c.columns and pd.notna(df_c.loc[target_idx, "AMT_GOODS_PRICE"]):
+            gp = float(df_c.loc[target_idx, "AMT_GOODS_PRICE"])
+            df_c.loc[target_idx, "CREDIT_TO_GOODS_RATIO"] = credit / (gp + eps)
+            df_c.loc[target_idx, "GOODS_CREDIT_DIFF"] = gp - credit
+            df_c.loc[target_idx, "ANNUITY_TO_GOODS_RATIO"] = annuity / (gp + eps)
 
-        if "EMPLOYED_YEARS" in df_c.columns and pd.notna(df_c.loc[0, "EMPLOYED_YEARS"]):
+        if "EMPLOYED_YEARS" in df_c.columns and pd.notna(df_c.loc[target_idx, "EMPLOYED_YEARS"]):
             try:
-                emp_yrs = float(df_c.loc[0, "EMPLOYED_YEARS"])
+                emp_yrs = float(df_c.loc[target_idx, "EMPLOYED_YEARS"])
                 if emp_yrs > 0:
-                    df_c.loc[0, "INCOME_PER_EMPLOYED_YEAR"] = income / (emp_yrs + eps)
+                    df_c.loc[target_idx, "INCOME_PER_EMPLOYED_YEAR"] = income / (emp_yrs + eps)
             except (ValueError, TypeError):
                 pass
 

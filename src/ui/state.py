@@ -1275,6 +1275,7 @@ class UnderwritingState(rx.State):
 
             delta = round(self.sim_score_percent - self.baseline_score_percent, 2)
             self.sim_delta_pts = delta
+            print(f"[recalculate_simulation_pd] Client ID={self.selected_client_id} | Cached features: {getattr(engine, '_cached_clean_df', None) is not None} | Output PD={sim_pd:.4f} ({type(sim_pd).__name__}) | Baseline PD={self.baseline_pd:.4f} | Delta={delta:+.2f} pts")
             if delta > 0.0:
                 self.sim_delta_text = f"▲ +{abs(delta):.2f} pts"
                 self.sim_delta_color = "#EF4444"
