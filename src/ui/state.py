@@ -259,16 +259,31 @@ class UnderwritingState(rx.State):
     sim_delta_text: str = "0.00 pts"
     sim_delta_color: str = "#94A3B8"
     is_optimizing: bool = False
+    is_loading_alternatives: bool = False
+    alternatives_loaded: bool = False
     optimization_options: List[Dict[str, Any]] = []
     recommended_option: Dict[str, Any] = DEFAULT_RECOMMENDED_OPTION
     alternative_options: List[Dict[str, Any]] = []
     show_optimization_results: bool = False
-    show_alternative_options: bool = True
+    show_alternative_options: bool = False
 
     @rx.event
     def toggle_alternative_options(self):
-        """Đóng/mở danh sách phương án kịch bản thay thế."""
-        self.show_alternative_options = not self.show_alternative_options
+        """Lazy load hoặc đóng/mở danh sách phương án kịch bản thay thế."""
+        if not self.show_alternative_options:
+            if not self.alternatives_loaded:
+                self.is_loading_alternatives = True
+                self.show_alternative_options = True
+                yield
+                self._compute_alternative_options()
+                self.alternatives_loaded = True
+                self.is_loading_alternatives = False
+            else:
+                self.show_alternative_options = True
+        else:
+            self.show_alternative_options = False
+
+    load_or_toggle_alternatives = toggle_alternative_options
 
     def load_demo_clients(self):
         """Khởi động mặc định nạp demo_samples.parquet vào State."""
@@ -1078,11 +1093,13 @@ class UnderwritingState(rx.State):
         self.sim_delta_text = "0.00 pts"
         self.sim_delta_color = "#94A3B8"
         self.is_optimizing = False
+        self.is_loading_alternatives = False
+        self.alternatives_loaded = False
         self.show_optimization_results = False
         self.optimization_options = []
         self.recommended_option = dict(DEFAULT_RECOMMENDED_OPTION)
         self.alternative_options = []
-        self.show_alternative_options = True
+        self.show_alternative_options = False
 
         self.sim_amt_credit_str = f"{int(self.sim_amt_credit):,}" if self.sim_amt_credit > 0 else "0"
         self.sim_term_months_str = str(int(self.sim_term_months))
@@ -1288,12 +1305,218 @@ class UnderwritingState(rx.State):
         except Exception as e:
             print(f"[recalculate_simulation_pd] Error: {e}")
 
+    def _find_candidate_pool(self) -> List[Dict[str, Any]]:
+        """Khảo sát không gian kỳ hạn và hạn mức để tìm tập ứng viên hợp lệ."""
+        engine = get_engine()
+        base_credit = float(self.baseline_amt_credit) if self.baseline_amt_credit > 0 else float(self.sim_amt_credit)
+        if base_credit <= 0:
+            base_credit = 100000.0
+
+        income = float(self.sim_amt_income_total) if self.sim_amt_income_total > 0 else 50000.0
+
+        candidate_terms = [12, 18, 24, 30, 36, 42, 48, 60]
+        credit_factors = [1.0, 0.95, 0.90, 0.85, 0.80, 0.75, 0.70, 0.65, 0.60, 0.55, 0.50]
+
+        approved_candidates = []
+        all_valid_candidates = []
+
+        for cand_term in candidate_terms:
+            for factor in credit_factors:
+                cand_credit = round(base_credit * factor, -2)
+                cand_annuity = round((cand_credit / cand_term) * (1.0 + self.interest_rate_factor), 1)
+                cand_dti = round((cand_annuity / max(income, 1.0)) * 100.0, 1)
+
+                # Ràng buộc điều kiện an toàn: DTI < 40%
+                if cand_dti >= 40.0:
+                    continue
+
+                # Dự đoán siêu tốc qua cache model ensemble
+                cand_pd, cand_tier, cand_decision = engine.predict_pd_from_cache(
+                    credit=cand_credit,
+                    annuity=cand_annuity,
+                    income=income,
+                )
+
+                candidate_info = {
+                    "credit": float(cand_credit),
+                    "term": int(cand_term),
+                    "annuity": float(cand_annuity),
+                    "dti": float(cand_dti),
+                    "pd": float(cand_pd),
+                    "tier": str(cand_tier),
+                    "decision": str(cand_decision),
+                    "factor": float(factor),
+                    "credit_display": f"${int(cand_credit):,}",
+                    "term_display": f"{int(cand_term)} tháng",
+                    "annuity_display": f"${int(cand_annuity):,}/mo",
+                    "dti_display": f"{cand_dti:.1f}%",
+                    "pd_display": f"{cand_pd * 100:.2f}%",
+                }
+                all_valid_candidates.append(candidate_info)
+
+                if cand_decision == "APPROVE" or cand_pd <= 0.150:
+                    approved_candidates.append(candidate_info)
+
+        pool = approved_candidates if approved_candidates else sorted(all_valid_candidates, key=lambda x: x["pd"])
+        return pool
+
+    def _build_optimization_entry(self, c: Dict[str, Any], title: str, opt_type: str) -> Dict[str, Any]:
+        """Tạo đối tượng hiển thị chuẩn cho kịch bản tối ưu hóa."""
+        base_credit_val = float(self.baseline_amt_credit) if self.baseline_amt_credit > 0 else (float(self.sim_amt_credit) if self.sim_amt_credit > 0 else 100000.0)
+        base_term_val = int(self.baseline_term_months) if self.baseline_term_months > 0 else (int(self.sim_term_months) if self.sim_term_months > 0 else 12)
+        base_annuity_val = float(self.baseline_amt_annuity) if self.baseline_amt_annuity > 0 else (float(self.sim_amt_annuity) if self.sim_amt_annuity > 0 else 1000.0)
+        base_dti_val = float(self.baseline_dti) if self.baseline_dti > 0 else (float(self.sim_dti) if self.sim_dti > 0 else 30.0)
+        base_pd_percent_val = float(self.baseline_score_percent) if self.baseline_score_percent > 0 else (float(self.current_score_percent) if self.current_score_percent > 0 else 10.0)
+
+        cand_credit = float(c["credit"])
+        diff_credit = cand_credit - base_credit_val
+        credit_display = f"${int(cand_credit):,}"
+        if diff_credit > 0:
+            credit_delta_text = f"(+${int(abs(diff_credit)):,})"
+            credit_delta_color = "#38BDF8"
+        elif diff_credit < 0:
+            credit_delta_text = f"(-${int(abs(diff_credit)):,})"
+            credit_delta_color = "#94A3B8"
+        else:
+            credit_delta_text = "(0)"
+            credit_delta_color = "#64748B"
+
+        cand_term = int(c["term"])
+        diff_term = cand_term - base_term_val
+        term_display = f"{cand_term} Months"
+        if diff_term > 0:
+            term_delta_text = f"(+{diff_term}m)"
+            term_delta_color = "#94A3B8"
+        elif diff_term < 0:
+            term_delta_text = f"(-{abs(diff_term)}m)"
+            term_delta_color = "#94A3B8"
+        else:
+            term_delta_text = "(0)"
+            term_delta_color = "#64748B"
+
+        cand_annuity = float(c["annuity"])
+        diff_annuity = cand_annuity - base_annuity_val
+        annuity_display = f"${int(cand_annuity):,} / mo"
+        if diff_annuity < -1.0:
+            annuity_val_color = "#F8FAFC"
+            annuity_delta_text = f"(-${int(abs(diff_annuity)):,} / mo)"
+            annuity_delta_color = "#34D399"
+        elif diff_annuity > 1.0:
+            annuity_val_color = "#F87171"
+            annuity_delta_text = f"(+${int(abs(diff_annuity)):,})"
+            annuity_delta_color = "#F87171"
+        else:
+            annuity_val_color = "#F8FAFC"
+            annuity_delta_text = "(0)"
+            annuity_delta_color = "#64748B"
+
+        cand_dti = float(c["dti"])
+        diff_dti = round(cand_dti - base_dti_val, 1)
+        dti_display = f"{cand_dti:.1f}%"
+        if diff_dti < -0.05:
+            dti_val_color = "#34D399"
+            dti_delta_text = f"({diff_dti:+.1f}%)"
+            dti_delta_color = "#34D399"
+        elif diff_dti > 0.05:
+            dti_val_color = "#F87171"
+            dti_delta_text = f"({diff_dti:+.1f}%)"
+            dti_delta_color = "#F87171"
+        else:
+            dti_val_color = "#F8FAFC"
+            dti_delta_text = "(0.0%)"
+            dti_delta_color = "#64748B"
+
+        cand_pd = float(c["pd"])
+        cand_pd_percent = cand_pd * 100.0
+        diff_pd = round(cand_pd_percent - base_pd_percent_val, 2)
+        pd_display = f"{cand_pd_percent:.2f}%"
+        if diff_pd < -0.005:
+            pd_color = "#34D399"
+            pd_delta_text = f"({diff_pd:+.2f}%)"
+            pd_delta_color = "#34D399"
+        elif diff_pd > 0.005:
+            pd_color = "#F87171"
+            pd_delta_text = f"({diff_pd:+.2f}%)"
+            pd_delta_color = "#F87171"
+        else:
+            pd_color = "#F8FAFC"
+            pd_delta_text = "(0.00%)"
+            pd_delta_color = "#64748B"
+
+        entry = dict(c)
+        entry.update({
+            "title": title,
+            "opt_type": opt_type,
+            "credit_display": credit_display,
+            "credit_delta_text": credit_delta_text,
+            "credit_delta_color": credit_delta_color,
+            "term_display": term_display,
+            "term_delta_text": term_delta_text,
+            "term_delta_color": term_delta_color,
+            "annuity_display": annuity_display,
+            "annuity_val_color": annuity_val_color,
+            "annuity_delta_text": annuity_delta_text,
+            "annuity_delta_color": annuity_delta_color,
+            "dti_display": dti_display,
+            "dti_val_color": dti_val_color,
+            "dti_delta_text": dti_delta_text,
+            "dti_delta_color": dti_delta_color,
+            "pd_display": pd_display,
+            "pd_color": pd_color,
+            "pd_delta_text": pd_delta_text,
+            "pd_delta_color": pd_delta_color,
+        })
+        return entry
+
+    def _compute_alternative_options(self):
+        """Tính toán 2 phương án phụ (Shortest Tenure & Balanced Compromise) theo cơ chế Lazy Loading."""
+        try:
+            pool = self._find_candidate_pool()
+            if not pool:
+                self.alternative_options = []
+                return
+
+            c1 = self.recommended_option
+            c1_term = int(c1.get("term", 0))
+            c1_credit = float(c1.get("credit", 0.0))
+
+            # 2. Shortest Tenure
+            rem_for_term = [c for c in pool if (c["term"], c["credit"]) != (c1_term, c1_credit)]
+            if not rem_for_term:
+                rem_for_term = pool
+            c2 = sorted(rem_for_term, key=lambda x: (x["term"], -x["credit"], x["pd"]))[0]
+            c2_entry = self._build_optimization_entry(c2, "Shortest Tenure", "shortest_tenure")
+
+            # 3. Balanced Compromise
+            rem_for_bal = [
+                c for c in pool
+                if (c["term"], c["credit"]) not in [(c1_term, c1_credit), (c2["term"], c2["credit"])]
+            ]
+            if not rem_for_bal:
+                rem_for_bal = rem_for_term
+            if not rem_for_bal:
+                rem_for_bal = pool
+
+            def balanced_score(c):
+                term_diff = abs(c["term"] - 36) / 24.0
+                factor_diff = abs(c["factor"] - 0.85) * 2.0
+                return term_diff + factor_diff + (c["pd"] * 3.0)
+
+            c3 = sorted(rem_for_bal, key=balanced_score)[0]
+            c3_entry = self._build_optimization_entry(c3, "Balanced Compromise", "balanced_compromise")
+
+            self.alternative_options = [c2_entry, c3_entry]
+            self.optimization_options = [self.recommended_option, c2_entry, c3_entry]
+            print(f"[DEBUG OPT] Lazy Loaded {len(self.alternative_options)} alternative options successfully.")
+        except Exception as e:
+            print(f"[DEBUG OPT] Lỗi khi _compute_alternative_options: {e}")
+            self.alternative_options = []
+
     @rx.event
     def ai_auto_optimize(self):
-        """AI Auto-Optimize: Tự động tìm kiếm 3 kịch bản tái cơ cấu tối ưu (Strict On-Demand).
-        1. Ưu tiên số tiền vay: Giữ khoản vay cao nhất có thể (chấp nhận dãn kỳ hạn dài 48m, 60m).
-        2. Ưu tiên thời gian vay: Kỳ hạn ngắn nhất đạt chuẩn duyệt (chấp nhận giảm bớt hạn mức).
-        3. Phương án cân bằng: Hài hòa giữa hạn mức vừa phải và kỳ hạn hợp lý (ví dụ: kỳ hạn 36m, giảm nhẹ hạn mức 10% - 15%).
+        """AI Auto-Optimize: Tự động tìm kiếm kịch bản tái cơ cấu tối ưu (Strict On-Demand - Lazy Loading).
+        Khi kích hoạt: CHỈ tìm nghiệm cho DUY NHẤT 1 phương án chính (Recommended Proposal).
+        Hai phương án phụ sẽ được tính toán khi người dùng nhấn xem thêm (Lazy Loading).
         """
         print(f"[DEBUG OPT] >>> Bắt đầu chạy tối ưu cho hồ sơ... selected_client_id={self.selected_client_id}")
         self.is_optimizing = True
@@ -1318,216 +1541,29 @@ class UnderwritingState(rx.State):
                 self.is_optimizing = False
                 return
 
-            engine = get_engine()
-            base_credit = float(self.baseline_amt_credit) if self.baseline_amt_credit > 0 else float(self.sim_amt_credit)
-            if base_credit <= 0:
-                base_credit = 100000.0
-
-            income = float(self.sim_amt_income_total) if self.sim_amt_income_total > 0 else 50000.0
-            print(f"[DEBUG OPT] Hồ sơ ID={self.selected_client_id}, base_credit={base_credit}, income={income}, interest_factor={self.interest_rate_factor}")
-
-            # Khảo sát các mốc kỳ hạn và nấc co cụm hạn mức vay
-            candidate_terms = [12, 18, 24, 30, 36, 42, 48, 60]
-            credit_factors = [1.0, 0.95, 0.90, 0.85, 0.80, 0.75, 0.70, 0.65, 0.60, 0.55, 0.50]
-
-            approved_candidates = []
-            all_valid_candidates = []
-
-            for cand_term in candidate_terms:
-                for factor in credit_factors:
-                    cand_credit = round(base_credit * factor, -2)
-                    cand_annuity = round((cand_credit / cand_term) * (1.0 + self.interest_rate_factor), 1)
-                    cand_dti = round((cand_annuity / max(income, 1.0)) * 100.0, 1)
-
-                    # Ràng buộc điều kiện an toàn: DTI < 40%
-                    if cand_dti >= 40.0:
-                        continue
-
-                    # Dự đoán siêu tốc qua cache model ensemble
-                    cand_pd, cand_tier, cand_decision = engine.predict_pd_from_cache(
-                        credit=cand_credit,
-                        annuity=cand_annuity,
-                        income=income,
-                    )
-
-                    candidate_info = {
-                        "credit": float(cand_credit),
-                        "term": int(cand_term),
-                        "annuity": float(cand_annuity),
-                        "dti": float(cand_dti),
-                        "pd": float(cand_pd),
-                        "tier": str(cand_tier),
-                        "decision": str(cand_decision),
-                        "factor": float(factor),
-                        "credit_display": f"${int(cand_credit):,}",
-                        "term_display": f"{int(cand_term)} tháng",
-                        "annuity_display": f"${int(cand_annuity):,}/mo",
-                        "dti_display": f"{cand_dti:.1f}%",
-                        "pd_display": f"{cand_pd * 100:.2f}%",
-                    }
-                    all_valid_candidates.append(candidate_info)
-
-                    if cand_decision == "APPROVE" or cand_pd <= 0.150:
-                        approved_candidates.append(candidate_info)
-
-            print(f"[DEBUG OPT] Quét xong: approved_candidates={len(approved_candidates)}, all_valid_candidates={len(all_valid_candidates)}")
-
-            pool = approved_candidates if approved_candidates else sorted(all_valid_candidates, key=lambda x: x["pd"])
+            pool = self._find_candidate_pool()
             if not pool:
                 print(f"[DEBUG OPT] CẢNH BÁO: Không có ứng viên nào trong pool!")
                 self.optimization_options = []
                 self.recommended_option = dict(DEFAULT_RECOMMENDED_OPTION)
                 self.alternative_options = []
                 self.show_optimization_results = False
+                self.alternatives_loaded = False
+                self.show_alternative_options = False
                 return
 
-            base_credit_val = float(base_credit)
-            base_term_val = int(self.baseline_term_months) if self.baseline_term_months > 0 else (int(self.sim_term_months) if self.sim_term_months > 0 else 12)
-            base_annuity_val = float(self.baseline_amt_annuity) if self.baseline_amt_annuity > 0 else (float(self.sim_amt_annuity) if self.sim_amt_annuity > 0 else 1000.0)
-            base_dti_val = float(self.baseline_dti) if self.baseline_dti > 0 else (float(self.sim_dti) if self.sim_dti > 0 else 30.0)
-            base_pd_percent_val = float(self.baseline_score_percent) if self.baseline_score_percent > 0 else (float(self.current_score_percent) if self.current_score_percent > 0 else 10.0)
-
-            def build_entry(c, title, opt_type):
-                cand_credit = float(c["credit"])
-                diff_credit = cand_credit - base_credit_val
-                credit_display = f"${int(cand_credit):,}"
-                if diff_credit > 0:
-                    credit_delta_text = f"(+${int(abs(diff_credit)):,})"
-                    credit_delta_color = "#38BDF8"
-                elif diff_credit < 0:
-                    credit_delta_text = f"(-${int(abs(diff_credit)):,})"
-                    credit_delta_color = "#94A3B8"
-                else:
-                    credit_delta_text = "(0)"
-                    credit_delta_color = "#64748B"
-
-                cand_term = int(c["term"])
-                diff_term = cand_term - base_term_val
-                term_display = f"{cand_term} Months"
-                if diff_term > 0:
-                    term_delta_text = f"(+{diff_term}m)"
-                    term_delta_color = "#94A3B8"
-                elif diff_term < 0:
-                    term_delta_text = f"(-{abs(diff_term)}m)"
-                    term_delta_color = "#94A3B8"
-                else:
-                    term_delta_text = "(0)"
-                    term_delta_color = "#64748B"
-
-                cand_annuity = float(c["annuity"])
-                diff_annuity = cand_annuity - base_annuity_val
-                annuity_display = f"${int(cand_annuity):,} / mo"
-                if diff_annuity < -1.0:
-                    annuity_val_color = "#F8FAFC"
-                    annuity_delta_text = f"(-${int(abs(diff_annuity)):,} / mo)"
-                    annuity_delta_color = "#34D399"
-                elif diff_annuity > 1.0:
-                    annuity_val_color = "#F87171"
-                    annuity_delta_text = f"(+${int(abs(diff_annuity)):,})"
-                    annuity_delta_color = "#F87171"
-                else:
-                    annuity_val_color = "#F8FAFC"
-                    annuity_delta_text = "(0)"
-                    annuity_delta_color = "#64748B"
-
-                cand_dti = float(c["dti"])
-                diff_dti = round(cand_dti - base_dti_val, 1)
-                dti_display = f"{cand_dti:.1f}%"
-                if diff_dti < -0.05:
-                    dti_val_color = "#34D399"
-                    dti_delta_text = f"({diff_dti:+.1f}%)"
-                    dti_delta_color = "#34D399"
-                elif diff_dti > 0.05:
-                    dti_val_color = "#F87171"
-                    dti_delta_text = f"({diff_dti:+.1f}%)"
-                    dti_delta_color = "#F87171"
-                else:
-                    dti_val_color = "#F8FAFC"
-                    dti_delta_text = "(0.0%)"
-                    dti_delta_color = "#64748B"
-
-                cand_pd = float(c["pd"])
-                cand_pd_percent = cand_pd * 100.0
-                diff_pd = round(cand_pd_percent - base_pd_percent_val, 2)
-                pd_display = f"{cand_pd_percent:.2f}%"
-                if diff_pd < -0.005:
-                    pd_color = "#34D399"
-                    pd_delta_text = f"({diff_pd:+.2f}%)"
-                    pd_delta_color = "#34D399"
-                elif diff_pd > 0.005:
-                    pd_color = "#F87171"
-                    pd_delta_text = f"({diff_pd:+.2f}%)"
-                    pd_delta_color = "#F87171"
-                else:
-                    pd_color = "#F8FAFC"
-                    pd_delta_text = "(0.00%)"
-                    pd_delta_color = "#64748B"
-
-                entry = dict(c)
-                entry.update({
-                    "title": title,
-                    "opt_type": opt_type,
-                    "credit_display": credit_display,
-                    "credit_delta_text": credit_delta_text,
-                    "credit_delta_color": credit_delta_color,
-                    "term_display": term_display,
-                    "term_delta_text": term_delta_text,
-                    "term_delta_color": term_delta_color,
-                    "annuity_display": annuity_display,
-                    "annuity_val_color": annuity_val_color,
-                    "annuity_delta_text": annuity_delta_text,
-                    "annuity_delta_color": annuity_delta_color,
-                    "dti_display": dti_display,
-                    "dti_val_color": dti_val_color,
-                    "dti_delta_text": dti_delta_text,
-                    "dti_delta_color": dti_delta_color,
-                    "pd_display": pd_display,
-                    "pd_color": pd_color,
-                    "pd_delta_text": pd_delta_text,
-                    "pd_delta_color": pd_delta_color,
-                })
-                return entry
-
-            # 1. Recommended Proposal
+            # CHỈ chạy thuật toán tìm nghiệm cho DUY NHẤT 1 phương án chính (Recommended Proposal)
             c1 = sorted(pool, key=lambda x: (-x["credit"], -x["term"], x["pd"]))[0]
-            c1_entry = build_entry(c1, "Recommended Proposal", "recommended")
-
-            # 2. Shortest Tenure
-            rem_for_term = [c for c in pool if (c["term"], c["credit"]) != (c1["term"], c1["credit"])]
-            if not rem_for_term:
-                rem_for_term = pool
-            c2 = sorted(rem_for_term, key=lambda x: (x["term"], -x["credit"], x["pd"]))[0]
-            c2_entry = build_entry(c2, "Shortest Tenure", "shortest_tenure")
-
-            # 3. Balanced Compromise
-            rem_for_bal = [
-                c for c in pool
-                if (c["term"], c["credit"]) not in [(c1["term"], c1["credit"]), (c2["term"], c2["credit"])]
-            ]
-            if not rem_for_bal:
-                rem_for_bal = rem_for_term
-            if not rem_for_bal:
-                rem_for_bal = pool
-
-            def balanced_score(c):
-                term_diff = abs(c["term"] - 36) / 24.0
-                factor_diff = abs(c["factor"] - 0.85) * 2.0
-                return term_diff + factor_diff + (c["pd"] * 3.0)
-
-            c3 = sorted(rem_for_bal, key=balanced_score)[0]
-            c3_entry = build_entry(c3, "Balanced Compromise", "balanced_compromise")
+            c1_entry = self._build_optimization_entry(c1, "Recommended Proposal", "recommended")
 
             self.recommended_option = c1_entry
-            self.alternative_options = [c2_entry, c3_entry]
-            self.optimization_options = [c1_entry, c2_entry, c3_entry]
+            self.optimization_options = [c1_entry]
+            self.alternative_options = []
+            self.alternatives_loaded = False
+            self.show_alternative_options = False
             self.show_optimization_results = True
-            self.show_alternative_options = True
 
-            print(f"[DEBUG OPT] Số lượng kịch bản tìm được: {len(self.optimization_options)}")
-            print(f"[DEBUG OPT] show_optimization_results = {self.show_optimization_results}")
-            for idx, opt in enumerate(self.optimization_options):
-                print(f"[DEBUG OPT]   Kịch bản {idx+1}: {opt['title']} | {opt['credit_display']} | {opt['term_display']} | DTI: {opt['dti_display']} | PD: {opt['pd_display']}")
-
+            print(f"[DEBUG OPT] Đã tìm xong Recommended Option: {c1_entry['title']} | {c1_entry['credit_display']} | {c1_entry['term_display']} | PD: {c1_entry['pd_display']}")
         except Exception as e:
             print(f"[DEBUG OPT] LỖI NGOẠI LỆ trong ai_auto_optimize: {e}")
             self.show_optimization_results = False
