@@ -457,118 +457,213 @@ def what_if_view() -> rx.Component:
     """
     return rx.card(
         rx.vstack(
-            # 1. HEADER TỐI GIẢN (Đưa về 1 hàng duy nhất, loại bỏ icon thừa và status badge)
-            rx.vstack(
+            # 1. HEADER KHỐI SIMULATOR ĐỒNG BỘ: Tiêu đề "Simulator" bên trái & Badge Quyết định mô phỏng bên phải
+            rx.hstack(
                 rx.text(
-                    "Risk Mitigation & Terms Simulator",
+                    "Simulator",
                     size="3",
                     weight="bold",
                     color="#F8FAFC",
                     line_height="1.2",
                 ),
-                rx.text(
-                    "Restructure loan terms and evaluate real-time credit risk impact.",
-                    size="1",
-                    color="#64748B",
-                    line_height="1.2",
-                    white_space="nowrap",
-                    overflow="hidden",
-                    text_overflow="ellipsis",
+                rx.badge(
+                    UnderwritingState.sim_decision_status,
+                    variant="surface",
+                    color_scheme=rx.cond(
+                        UnderwritingState.sim_decision_status == "APPROVED",
+                        "green",
+                        "red",
+                    ),
+                    size="2",
+                    style={
+                        "color": UnderwritingState.sim_decision_color,
+                        "font_weight": "bold",
+                        "font_family": "monospace",
+                        "letter_spacing": "0.05em",
+                    },
                 ),
-                spacing="1",
-                align_items="flex-start",
+                justify="between",
+                align="center",
                 width="100%",
             ),
 
-            # 2. METRICS CARD TINH GỌN (2 chỉ số cốt lõi: Probability of Default & DTI Ratio)
+            # 2. METRICS CARD TÍCH HỢP DEFERRED CALCULATION & FEASIBILITY GUARDRAIL
             rx.box(
-                rx.hstack(
-                    # Metric 1: Probability of Default (PD)
-                    rx.vstack(
+                rx.cond(
+                    UnderwritingState.is_sim_calculating,
+                    # Trạng thái chờ: Khi người dùng đang kéo slider
+                    rx.hstack(
+                        rx.spinner(size="2", color="#38BDF8"),
                         rx.text(
-                            "Probability of Default (PD)",
-                            size="1",
+                            "Calculating terms & pricing...",
+                            size="2",
                             color="#94A3B8",
+                            font_family="monospace",
                             weight="medium",
                         ),
-                        rx.cond(
-                            UnderwritingState.is_simulated_changed,
-                            # Trạng thái điều chỉnh (Simulated): hiển thị PD mới kèm delta (+/-...% pts)
-                            rx.hstack(
+                        spacing="3",
+                        align="center",
+                        justify="center",
+                        width="100%",
+                        height="44px",
+                    ),
+                    # Trạng thái hiển thị 3 cột thông số cân đối
+                    rx.vstack(
+                        rx.hstack(
+                            # Cột 1: Probability of Default (PD)
+                            rx.vstack(
                                 rx.text(
-                                    UnderwritingState.pd_display_value,
-                                    size="3",
-                                    weight="bold",
-                                    color="#F8FAFC",
-                                    font_family="monospace",
+                                    "Probability of Default (PD)",
+                                    size="1",
+                                    color="#94A3B8",
+                                    weight="medium",
                                 ),
                                 rx.cond(
-                                    UnderwritingState.pd_delta_badge_text != "",
+                                    UnderwritingState.is_simulated_changed,
+                                    # Trạng thái điều chỉnh (Simulated): hiển thị PD mới kèm delta
+                                    rx.hstack(
+                                        rx.text(
+                                            UnderwritingState.pd_display_value,
+                                            size="3",
+                                            weight="bold",
+                                            color="#F8FAFC",
+                                            font_family="monospace",
+                                        ),
+                                        rx.cond(
+                                            UnderwritingState.pd_delta_badge_text != "",
+                                            rx.text(
+                                                UnderwritingState.pd_delta_badge_text,
+                                                size="1",
+                                                weight="bold",
+                                                color=UnderwritingState.pd_delta_color,
+                                                font_family="monospace",
+                                            ),
+                                            rx.fragment(),
+                                        ),
+                                        spacing="2",
+                                        align="center",
+                                    ),
+                                    # Trạng thái ban đầu: hiển thị baseline
+                                    rx.hstack(
+                                        rx.text(
+                                            f"{UnderwritingState.baseline_score_percent:.2f}%",
+                                            size="3",
+                                            weight="bold",
+                                            color="#F8FAFC",
+                                            font_family="monospace",
+                                        ),
+                                        rx.text(
+                                            "(Baseline)",
+                                            size="1",
+                                            color="#64748B",
+                                            font_family="monospace",
+                                        ),
+                                        spacing="2",
+                                        align="center",
+                                    ),
+                                ),
+                                spacing="1",
+                                align_items="flex-start",
+                                flex="1",
+                            ),
+                            rx.box(width="1px", height="28px", background="#1E293B"),
+
+                            # Cột 2: Offered Rate (RBP)
+                            rx.vstack(
+                                rx.text(
+                                    "Offered Rate (RBP)",
+                                    size="1",
+                                    color="#94A3B8",
+                                    weight="medium",
+                                ),
+                                rx.hstack(
                                     rx.text(
-                                        UnderwritingState.pd_delta_badge_text,
-                                        size="1",
+                                        UnderwritingState.sim_rate_display,
+                                        size="3",
                                         weight="bold",
-                                        color=UnderwritingState.pd_delta_color,
+                                        color="#38BDF8",
                                         font_family="monospace",
                                     ),
-                                    rx.fragment(),
+                                    rx.cond(
+                                        UnderwritingState.sim_rate_delta_text != "",
+                                        rx.text(
+                                            UnderwritingState.sim_rate_delta_text,
+                                            size="1",
+                                            weight="bold",
+                                            color=UnderwritingState.sim_rate_delta_color,
+                                            font_family="monospace",
+                                        ),
+                                        rx.fragment(),
+                                    ),
+                                    spacing="2",
+                                    align="center",
                                 ),
-                                spacing="2",
-                                align="center",
+                                spacing="1",
+                                align_items="flex-start",
+                                flex="1",
+                                padding_left="4",
                             ),
-                            # Trạng thái ban đầu: hiển thị baseline kèm nhãn nhỏ mờ (Baseline)
-                            rx.hstack(
+                            rx.box(width="1px", height="28px", background="#1E293B"),
+
+                            # Cột 3: DTI Ratio
+                            rx.vstack(
                                 rx.text(
-                                    f"{UnderwritingState.baseline_score_percent:.2f}%",
+                                    "DTI Ratio",
+                                    size="1",
+                                    color="#94A3B8",
+                                    weight="medium",
+                                ),
+                                rx.text(
+                                    UnderwritingState.sim_dti_display,
                                     size="3",
                                     weight="bold",
-                                    color="#F8FAFC",
+                                    color=rx.cond(UnderwritingState.sim_dti > 50.0, "#F59E0B", "#F8FAFC"),
                                     font_family="monospace",
                                 ),
-                                rx.text(
-                                    "(Baseline)",
-                                    size="1",
-                                    color="#64748B",
-                                    font_family="monospace",
-                                ),
-                                spacing="2",
-                                align="center",
+                                spacing="1",
+                                align_items="flex-start",
+                                flex="1",
+                                padding_left="4",
                             ),
+                            width="100%",
+                            align="center",
                         ),
+                        # Cảnh báo Feasibility Guardrail nếu DTI > 50%
+                        rx.cond(
+                            UnderwritingState.sim_dti > 50.0,
+                            rx.hstack(
+                                rx.icon("triangle-alert", size=13, color="#F59E0B"),
+                                rx.text(
+                                    "Warning: Monthly payment exceeds 50% DTI threshold",
+                                    size="1",
+                                    color="#F59E0B",
+                                    font_family="monospace",
+                                    weight="medium",
+                                ),
+                                spacing="1",
+                                align="center",
+                                padding_top="1",
+                            ),
+                            rx.fragment(),
+                        ),
+                        width="100%",
                         spacing="1",
                         align_items="flex-start",
                     ),
-                    rx.spacer(),
-                    # Đường phân tách dọc tinh tế
-                    rx.box(width="1px", height="28px", background="#1E293B"),
-                    rx.spacer(),
-                    # Metric 2: DTI Ratio (Chỉ giữ lại tỷ lệ %, bỏ các badge Tier / Safe)
-                    rx.vstack(
-                        rx.text(
-                            "DTI Ratio",
-                            size="1",
-                            color="#94A3B8",
-                            weight="medium",
-                        ),
-                        rx.text(
-                            UnderwritingState.sim_dti_display,
-                            size="3",
-                            weight="bold",
-                            color="#F8FAFC",
-                            font_family="monospace",
-                        ),
-                        spacing="1",
-                        align_items="flex-start",
-                    ),
-                    width="100%",
-                    align="center",
-                    padding_x="4",
-                    padding_y="3",
                 ),
                 width="100%",
                 background="#0B0F19",
-                border="1px solid #1E293B",
+                border=rx.cond(
+                    UnderwritingState.is_scenario_viable,
+                    "1px solid #1E293B",
+                    "1px solid #F59E0B",
+                ),
                 border_radius="8px",
+                padding_x="4",
+                padding_y="3",
+                min_height="62px",
+                display="flex",
+                align_items="center",
             ),
 
             # 3. HYBRID CONTROLS: 4 BỘ ĐIỀU KHIỂN KÈM NHÃN DELTA CHÊNH LỆCH

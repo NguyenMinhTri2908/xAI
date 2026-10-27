@@ -2,8 +2,8 @@ import os
 from pathlib import Path
 
 # 1. Base Project & Source Directory
-BASE_DIR = Path(__file__).resolve().parent.parent
-SRC_DIR = Path(__file__).resolve().parent
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+SRC_DIR = Path(__file__).resolve().parent.parent
 
 # 2. Model Directory: Lưu TRỰC TIẾP trong src/models/
 MODEL_DIR = os.path.join(SRC_DIR, "models")
@@ -20,3 +20,6 @@ DATA_PRODUCTION_DIR = os.path.join(BASE_DIR, "data", "production")
 # 4. Production Serving Outputs
 MASTER_TEST_PARQUET = os.path.join(DATA_PRODUCTION_DIR, "test_features_master.parquet")
 DEMO_SAMPLES_PARQUET = os.path.join(DATA_PRODUCTION_DIR, "demo_samples.parquet")
+
+# 5. Pricing Configuration
+from .pricing_config import RetailPricingConfig, retail_pricing_config

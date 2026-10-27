@@ -14,6 +14,8 @@ import pandas as pd
 import pyarrow.parquet as pq
 from src.config import DEMO_SAMPLES_PARQUET
 from src.engine.credit_scoring import CreditScoringEngine
+from src.pricing.pricing_engine import pricing_engine
+from src.config.pricing_config import retail_pricing_config
 from src.data_processing.ingestion_service import (
     load_dataset_from_source,
     load_dataset_from_upload,
@@ -235,6 +237,14 @@ class UnderwritingState(rx.State):
     baseline_score_percent: float = 0.0
     baseline_tier: str = "None"
     baseline_decision: str = "None"
+    baseline_offered_rate: float = 12.0
+    sim_offered_rate: float = 12.0
+    baseline_rate_display: str = "12.00%"
+    baseline_decision_status: str = "APPROVED"
+    baseline_decision_color: str = "#34D399"
+    credit_decision_status: str = "APPROVED"
+    credit_decision_color: str = "#34D399"
+    credit_decision_text: str = "Approved under Risk Appetite"
 
     # Simulation active levers
     sim_amt_credit: float = 0.0
@@ -243,6 +253,14 @@ class UnderwritingState(rx.State):
     sim_amt_income_total: float = 0.0
     sim_dti: float = 0.0
     interest_rate_factor: float = 0.08
+    is_sim_calculating: bool = False
+    sim_rate_display: str = "12.00%"
+    sim_rate_delta_text: str = ""
+    sim_rate_delta_color: str = "#94A3B8"
+    sim_decision_status: str = "APPROVED"
+    sim_decision_color: str = "#34D399"
+    sim_credit_decision: str = "APPROVED"
+    sim_credit_decision_color: str = "#34D399"
 
     # Two-way bound string variables for text input fields
     sim_amt_credit_str: str = "0"
@@ -685,10 +703,14 @@ class UnderwritingState(rx.State):
     @rx.var
     def pd_display(self) -> str:
         if not self.selected_client_id or self.current_decision == "None":
-            return "None"
+            return "0.00%"
         pd_val = float(self.current_pd)
         pd_pct = pd_val * 100 if pd_val <= 1.0 else pd_val
-        return f"{pd_pct:.1f}%"
+        return f"{pd_pct:.2f}%"
+
+    @rx.var
+    def baseline_pd_display(self) -> str:
+        return f"{self.baseline_score_percent:.2f}%"
 
     @rx.var
     def decision_color(self) -> str:
@@ -842,6 +864,38 @@ class UnderwritingState(rx.State):
         self.baseline_tier = self.current_tier
         self.baseline_decision = self.current_decision
 
+        pd_dec = float(self.baseline_score_percent) / 100.0
+        client_term = int(getattr(self, "baseline_term_months", 24))
+
+        # 1. Tính toán lãi suất RBP
+        p_res = pricing_engine.compute_baseline_pricing(pd_dec, client_term)
+        self.baseline_offered_rate = p_res["applied_rate_percent"]
+        self.sim_offered_rate = self.baseline_offered_rate
+        self.baseline_rate_display = p_res["applied_rate_display"]
+        self.sim_rate_display = self.baseline_rate_display
+        self.sim_rate_delta_text = ""
+        self.sim_rate_delta_color = "#94A3B8"
+
+        # 2. Đánh giá quyết định tín dụng theo Cut-off cho Baseline
+        cutoff = float(getattr(retail_pricing_config, "default_cutoff_pd", 0.065))
+        if pd_dec <= cutoff and float(self.baseline_dti) <= 50.0:
+            self.baseline_decision_status = "APPROVED"
+            self.baseline_decision_color = "#34D399"
+            self.credit_decision_text = "Approved under Risk Appetite"
+        else:
+            self.baseline_decision_status = "DECLINED"
+            self.baseline_decision_color = "#F87171"
+            self.credit_decision_text = "Declined due to Cut-off / DTI Threshold"
+
+        self.credit_decision_status = self.baseline_decision_status
+        self.credit_decision_color = self.baseline_decision_color
+
+        self.sim_decision_status = self.baseline_decision_status
+        self.sim_decision_color = self.baseline_decision_color
+        self.sim_credit_decision = self.sim_decision_status
+        self.sim_credit_decision_color = self.sim_decision_color
+        self.is_sim_calculating = False
+
         if self.baseline_amt_credit > 0 and self.baseline_term_months > 0 and self.baseline_amt_annuity > 0:
             implied_factor = ((self.baseline_amt_annuity * self.baseline_term_months) / self.baseline_amt_credit) - 1.0
             if 0.0 <= implied_factor <= 0.35:
@@ -853,7 +907,7 @@ class UnderwritingState(rx.State):
 
         # Tiền xử lý và lưu cache 891 features cho client hiện tại
         try:
-            engine.cache_client_features(client_series)
+            engine.cache_client_features(client_series, str(client_id))
         except Exception as e:
             print(f"[cache_client_features] Warning: {e}")
 
@@ -989,6 +1043,16 @@ class UnderwritingState(rx.State):
             return "#F59E0B"
         return "#EF4444"
 
+    @rx.var
+    def is_scenario_viable(self) -> bool:
+        """Kiểm tra phương án mô phỏng có khả thi hay không (DTI <= 50% và PD không tăng quá 2.0 pts so với baseline)."""
+        try:
+            dti_ok = float(self.sim_dti) <= 50.0
+            pd_ok = float(self.sim_score_percent) <= (float(self.baseline_score_percent) + 2.0)
+            return dti_ok and pd_ok
+        except (ValueError, TypeError):
+            return True
+
     # --- METRICS & DELTA COMPUTED PROPERTIES ---
 
     @rx.var
@@ -1089,6 +1153,15 @@ class UnderwritingState(rx.State):
         self.sim_score_percent = float(self.baseline_score_percent)
         self.sim_tier = str(self.baseline_tier)
         self.sim_decision = str(self.baseline_decision)
+        self.sim_offered_rate = float(self.baseline_offered_rate)
+        self.sim_rate_display = str(self.baseline_rate_display)
+        self.sim_rate_delta_text = ""
+        self.sim_rate_delta_color = "#94A3B8"
+        self.sim_decision_status = str(self.baseline_decision_status)
+        self.sim_decision_color = str(self.baseline_decision_color)
+        self.sim_credit_decision = self.sim_decision_status
+        self.sim_credit_decision_color = self.sim_decision_color
+        self.is_sim_calculating = False
         self.sim_delta_pts = 0.0
         self.sim_delta_text = "0.00 pts"
         self.sim_delta_color = "#94A3B8"
@@ -1150,6 +1223,7 @@ class UnderwritingState(rx.State):
             if clamped == self.sim_amt_credit:
                 return
             self.sim_amt_credit = clamped
+            self.is_sim_calculating = True
             self._sync_credit_or_term_drag()
 
     @rx.event
@@ -1162,6 +1236,7 @@ class UnderwritingState(rx.State):
             if new_term == self.sim_term_months:
                 return
             self.sim_term_months = new_term
+            self.is_sim_calculating = True
             self._sync_credit_or_term_drag()
 
     @rx.event
@@ -1172,6 +1247,7 @@ class UnderwritingState(rx.State):
             if clamped == self.sim_amt_annuity:
                 return
             self.sim_amt_annuity = clamped
+            self.is_sim_calculating = True
             raw_term = (self.sim_amt_credit * (1.0 + self.interest_rate_factor)) / max(self.sim_amt_annuity, 1.0)
             snapped_steps = [3, 6, 12, 18, 24, 30, 36, 42, 48, 54, 60]
             self.sim_term_months = min(snapped_steps, key=lambda s: abs(s - raw_term))
@@ -1188,6 +1264,7 @@ class UnderwritingState(rx.State):
             if clamped == self.sim_amt_income_total:
                 return
             self.sim_amt_income_total = clamped
+            self.is_sim_calculating = True
             income = max(self.sim_amt_income_total, 1.0)
             self.sim_dti = round((self.sim_amt_annuity / income) * 100.0, 1)
             self.sim_amt_income_str = f"{int(self.sim_amt_income_total):,}"
@@ -1273,26 +1350,54 @@ class UnderwritingState(rx.State):
 
     @rx.event
     def recalculate_simulation_pd(self):
-        """Chạy suy luận lại xác suất vỡ nợ (PD), Rating Tier và Delta theo thời gian thực (siêu tốc qua cache)."""
+        """Chạy suy luận lại xác suất vỡ nợ (PD), Rating Tier, Lãi suất RBP và Quyết định tín dụng theo thời gian thực (siêu tốc qua cache)."""
         if not self.selected_client_id:
+            self.is_sim_calculating = False
             return
 
         try:
             engine = get_engine()
+            # 1. Đảm bảo cache đặc trưng luôn sẵn sàng cho client hiện tại
+            if (getattr(engine, "_cached_clean_df", None) is None or getattr(engine, "_cached_client_id", None) != str(self.selected_client_id)) and self.selected_client_id:
+                client_series = get_client_row_data(self.selected_client_id)
+                if client_series is not None:
+                    engine.cache_client_features(client_series, str(self.selected_client_id))
+
+            # 2. Lấy các tham số truyền vào predict_pd_from_cache an toàn
+            credit = float(self.sim_amt_credit)
+            annuity = float(self.sim_amt_annuity)
+            income = float(self.sim_amt_income_total)
+            if credit <= 0:
+                credit = float(self.baseline_amt_credit) if float(self.baseline_amt_credit) > 0 else 100000.0
+            if annuity <= 0:
+                annuity = float(self.baseline_amt_annuity) if float(self.baseline_amt_annuity) > 0 else 5000.0
+            if income <= 0:
+                income = float(self.baseline_amt_income_total) if float(self.baseline_amt_income_total) > 0 else 50000.0
+
             # Dự đoán siêu tốc qua cached dataframe
             sim_pd, sim_tier, sim_decision = engine.predict_pd_from_cache(
-                credit=float(self.sim_amt_credit),
-                annuity=float(self.sim_amt_annuity),
-                income=float(self.sim_amt_income_total),
+                credit=credit,
+                annuity=annuity,
+                income=income,
             )
-            self.sim_pd = round(sim_pd, 4)
-            self.sim_score_percent = round(sim_pd * 100, 2)
+
+            # Fallback an toàn nếu model trả về None hoặc <= 0.0001: KHÔNG gán đè 0.0 mà fallback giữ nguyên baseline PD thập phân
+            baseline_pd_dec = float(self.baseline_score_percent) / 100.0 if self.baseline_score_percent > 0 else (float(self.baseline_pd) if self.baseline_pd > 0 else 0.0377)
+            import math
+            if sim_pd is None or math.isnan(float(sim_pd)) or float(sim_pd) <= 0.0001:
+                print(f"[recalculate_simulation_pd] Warning: sim_pd was {sim_pd}, falling back to baseline {baseline_pd_dec}")
+                sim_pd = baseline_pd_dec
+                sim_tier = self.baseline_tier if self.baseline_tier != "None" else "Tier A"
+                sim_decision = self.baseline_decision if self.baseline_decision != "None" else "APPROVE"
+
+            self.sim_pd = float(sim_pd)
+            self.sim_score_percent = round(self.sim_pd * 100.0, 2)
             self.sim_tier = sim_tier
             self.sim_decision = sim_decision
 
             delta = round(self.sim_score_percent - self.baseline_score_percent, 2)
             self.sim_delta_pts = delta
-            print(f"[recalculate_simulation_pd] Client ID={self.selected_client_id} | Cached features: {getattr(engine, '_cached_clean_df', None) is not None} | Output PD={sim_pd:.4f} ({type(sim_pd).__name__}) | Baseline PD={self.baseline_pd:.4f} | Delta={delta:+.2f} pts")
+
             if delta > 0.0:
                 self.sim_delta_text = f"▲ +{abs(delta):.2f} pts"
                 self.sim_delta_color = "#EF4444"
@@ -1302,8 +1407,66 @@ class UnderwritingState(rx.State):
             else:
                 self.sim_delta_text = "0.00 pts"
                 self.sim_delta_color = "#94A3B8"
+
+            # 3. Chuỗi tính toán RBP và Quyết định cho What-If
+            pricing_res = pricing_engine.compute_baseline_pricing(
+                self.sim_pd,
+                int(self.sim_term_months),
+            )
+            self.sim_offered_rate = pricing_res["applied_rate_percent"]
+            self.sim_rate_display = pricing_res["applied_rate_display"]
+
+            # Tính toán Delta lãi suất so với baseline_offered_rate
+            diff_rate = round(self.sim_offered_rate - self.baseline_offered_rate, 2)
+            if abs(diff_rate) < 0.01:
+                self.sim_rate_delta_text = ""
+            else:
+                sign = "+" if diff_rate > 0 else ""
+                self.sim_rate_delta_text = f"({sign}{diff_rate:.2f}%)"
+                self.sim_rate_delta_color = "#F87171" if diff_rate > 0 else "#34D399"
+
+            # 4. Đánh giá trạng thái mô phỏng
+            cutoff = float(getattr(retail_pricing_config, "default_cutoff_pd", 0.065))
+            if float(self.sim_pd) <= cutoff and float(self.sim_dti) <= 50.0:
+                self.sim_decision_status = "APPROVED"
+                self.sim_decision_color = "#34D399"
+            else:
+                self.sim_decision_status = "DECLINED"
+                self.sim_decision_color = "#F87171"
+
+            self.sim_credit_decision = self.sim_decision_status
+            self.sim_credit_decision_color = self.sim_decision_color
+
+            print(f"[recalculate_simulation_pd] Client ID={self.selected_client_id} | Output sim_pd={self.sim_pd:.4f} ({self.sim_score_percent}%) | Baseline PD={self.baseline_pd:.4f} ({self.baseline_score_percent}%) | Delta={delta:+.2f} pts | Decision={self.sim_decision_status}")
+
         except Exception as e:
             print(f"[recalculate_simulation_pd] Error: {e}")
+            baseline_pd_dec = float(self.baseline_score_percent) / 100.0 if self.baseline_score_percent > 0 else (float(self.baseline_pd) if self.baseline_pd > 0 else 0.0377)
+            self.sim_pd = float(baseline_pd_dec)
+            self.sim_score_percent = round(self.sim_pd * 100.0, 2)
+            self.sim_delta_pts = 0.0
+            self.sim_delta_text = "0.00 pts"
+            self.sim_delta_color = "#94A3B8"
+            cutoff = float(getattr(retail_pricing_config, "default_cutoff_pd", 0.065))
+            if float(self.sim_pd) <= cutoff and float(self.sim_dti) <= 50.0:
+                self.sim_decision_status = "APPROVED"
+                self.sim_decision_color = "#34D399"
+            else:
+                self.sim_decision_status = "DECLINED"
+                self.sim_decision_color = "#F87171"
+            self.sim_credit_decision = self.sim_decision_status
+            self.sim_credit_decision_color = self.sim_decision_color
+            try:
+                pricing_res = pricing_engine.compute_baseline_pricing(
+                    self.sim_pd,
+                    int(self.sim_term_months),
+                )
+                self.sim_offered_rate = pricing_res["applied_rate_percent"]
+                self.sim_rate_display = pricing_res["applied_rate_display"]
+            except Exception:
+                pass
+        finally:
+            self.is_sim_calculating = False
 
     def _find_candidate_pool(self) -> List[Dict[str, Any]]:
         """Khảo sát không gian kỳ hạn và hạn mức để tìm tập ứng viên hợp lệ."""

@@ -12,7 +12,7 @@ import joblib
 import numpy as np
 import pandas as pd
 import shap
-from typing import Dict, Any, Tuple, List
+from typing import Dict, Any, Tuple, List, Optional
 
 from src.config import MODEL_DIR, CONFIG_PATH, SCHEMA_PATH, BENCHMARK_PATH
 
@@ -245,10 +245,12 @@ class CreditScoringEngine:
         tier, decision = self._determine_credit_tier(final_pd)
         return final_pd, tier, decision
 
-    def cache_client_features(self, client_series: pd.Series):
+    def cache_client_features(self, client_series: pd.Series, client_id: Optional[str] = None):
         """Tiền xử lý và lưu cache 891 features đã align cho client được chọn (luôn reset index về 0)."""
         df_row = pd.DataFrame([client_series]).reset_index(drop=True)
         self._cached_clean_df = self._align_and_cast_features(df_row).reset_index(drop=True)
+        cid = client_id or str(client_series.get("SK_ID_CURR", client_series.get("ID", "")))
+        self._cached_client_id = str(cid) if cid else None
 
     def predict_pd_from_cache(
         self,
@@ -256,47 +258,54 @@ class CreditScoringEngine:
         annuity: float,
         income: float,
         use_fast_lgb: bool = False,
-    ) -> Tuple[float, str, str]:
+    ) -> Tuple[Optional[float], str, str]:
         """Dự đoán siêu tốc (<20ms) bằng cách ghi đè trực tiếp các đòn bẩy tài chính lên DataFrame đã cache."""
         if getattr(self, "_cached_clean_df", None) is None:
-            return 0.0, "Tier A", "APPROVE"
+            return None, "None", "None"
 
-        df_c = self._cached_clean_df.copy()
-        target_idx = df_c.index[0]
-        eps = 1e-6
-        df_c.loc[target_idx, "AMT_CREDIT"] = credit
-        df_c.loc[target_idx, "AMT_ANNUITY"] = annuity
-        df_c.loc[target_idx, "AMT_INCOME_TOTAL"] = income
-        df_c.loc[target_idx, "CREDIT_TO_INCOME"] = credit / (income + eps)
-        df_c.loc[target_idx, "ANNUITY_TO_INCOME"] = annuity / (income + eps)
-        df_c.loc[target_idx, "CREDIT_TO_ANNUITY"] = credit / (annuity + eps)
+        try:
+            df_c = self._cached_clean_df.copy()
+            target_idx = df_c.index[0]
+            eps = 1e-6
+            df_c.loc[target_idx, "AMT_CREDIT"] = float(credit)
+            df_c.loc[target_idx, "AMT_ANNUITY"] = float(annuity)
+            df_c.loc[target_idx, "AMT_INCOME_TOTAL"] = float(income)
+            df_c.loc[target_idx, "CREDIT_TO_INCOME"] = float(credit) / (float(income) + eps)
+            df_c.loc[target_idx, "ANNUITY_TO_INCOME"] = float(annuity) / (float(income) + eps)
+            df_c.loc[target_idx, "CREDIT_TO_ANNUITY"] = float(credit) / (float(annuity) + eps)
 
-        if "AMT_GOODS_PRICE" in df_c.columns and pd.notna(df_c.loc[target_idx, "AMT_GOODS_PRICE"]):
-            gp = float(df_c.loc[target_idx, "AMT_GOODS_PRICE"])
-            df_c.loc[target_idx, "CREDIT_TO_GOODS_RATIO"] = credit / (gp + eps)
-            df_c.loc[target_idx, "GOODS_CREDIT_DIFF"] = gp - credit
-            df_c.loc[target_idx, "ANNUITY_TO_GOODS_RATIO"] = annuity / (gp + eps)
+            if "AMT_GOODS_PRICE" in df_c.columns and pd.notna(df_c.loc[target_idx, "AMT_GOODS_PRICE"]):
+                gp = float(df_c.loc[target_idx, "AMT_GOODS_PRICE"])
+                df_c.loc[target_idx, "CREDIT_TO_GOODS_RATIO"] = float(credit) / (gp + eps)
+                df_c.loc[target_idx, "GOODS_CREDIT_DIFF"] = gp - float(credit)
+                df_c.loc[target_idx, "ANNUITY_TO_GOODS_RATIO"] = float(annuity) / (gp + eps)
 
-        if "EMPLOYED_YEARS" in df_c.columns and pd.notna(df_c.loc[target_idx, "EMPLOYED_YEARS"]):
-            try:
-                emp_yrs = float(df_c.loc[target_idx, "EMPLOYED_YEARS"])
-                if emp_yrs > 0:
-                    df_c.loc[target_idx, "INCOME_PER_EMPLOYED_YEAR"] = income / (emp_yrs + eps)
-            except (ValueError, TypeError):
-                pass
+            if "EMPLOYED_YEARS" in df_c.columns and pd.notna(df_c.loc[target_idx, "EMPLOYED_YEARS"]):
+                try:
+                    emp_yrs = float(df_c.loc[target_idx, "EMPLOYED_YEARS"])
+                    if emp_yrs > 0:
+                        df_c.loc[target_idx, "INCOME_PER_EMPLOYED_YEAR"] = float(income) / (emp_yrs + eps)
+                except (ValueError, TypeError):
+                    pass
 
-        if use_fast_lgb:
-            lgb_preds = [m.predict_proba(df_c)[:, 1][0] for m in self.lgb_models]
-            final_pd = float(np.mean(lgb_preds))
-        else:
-            lgb_preds = [m.predict_proba(df_c)[:, 1][0] for m in self.lgb_models]
-            xgb_preds = [m.predict_proba(df_c)[:, 1][0] for m in self.xgb_models]
-            w_lgb = self.blend_weights.get("lightgbm", 0.5)
-            w_xgb = self.blend_weights.get("xgboost", 0.5)
-            final_pd = float((np.mean(lgb_preds) * w_lgb) + (np.mean(xgb_preds) * w_xgb))
+            if use_fast_lgb:
+                lgb_preds = [m.predict_proba(df_c)[:, 1][0] for m in self.lgb_models]
+                final_pd = float(np.mean(lgb_preds))
+            else:
+                lgb_preds = [m.predict_proba(df_c)[:, 1][0] for m in self.lgb_models]
+                xgb_preds = [m.predict_proba(df_c)[:, 1][0] for m in self.xgb_models]
+                w_lgb = self.blend_weights.get("lightgbm", 0.5)
+                w_xgb = self.blend_weights.get("xgboost", 0.5)
+                final_pd = float((np.mean(lgb_preds) * w_lgb) + (np.mean(xgb_preds) * w_xgb))
 
-        tier, decision = self._determine_credit_tier(final_pd)
-        return final_pd, tier, decision
+            if np.isnan(final_pd) or final_pd <= 0.0001:
+                return None, "None", "None"
+
+            tier, decision = self._determine_credit_tier(final_pd)
+            return final_pd, tier, decision
+        except Exception as e:
+            print(f"[predict_pd_from_cache] Error: {e}")
+            return None, "None", "None"
 
 
 # ==============================================================================

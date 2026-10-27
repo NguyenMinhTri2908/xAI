@@ -381,15 +381,16 @@ def loan_terms_card() -> rx.Component:
     )
 
 
-def ai_recommendation_card() -> rx.Component:
-    """Card 3 (Phải): Đánh giá & Khuyến nghị mô hình AI."""
+def recommendation_card() -> rx.Component:
+    """Card 3 (Phải): Recommendation (PD & Offered Rate RBP kèm Credit Decision Badge)."""
     return rx.card(
         rx.vstack(
+            # Header: Tiêu đề "Recommendation" bên trái & Badge APPROVED/DECLINED sát mép phải
             rx.hstack(
                 rx.hstack(
                     rx.icon("sparkles", size=16, color="#9CA3AF"),
                     rx.text(
-                        "AI Recommendation",
+                        "Recommendation",
                         size="3",
                         font_weight="600",
                         color="#9CA3AF",
@@ -399,80 +400,61 @@ def ai_recommendation_card() -> rx.Component:
                 ),
                 rx.spacer(),
                 rx.badge(
-                    rx.cond(
-                        UnderwritingState.current_tier != "None",
-                        f"Tier {UnderwritingState.current_tier}",
-                        "Tier N/A",
-                    ),
-                    color_scheme="gray",
+                    UnderwritingState.baseline_decision_status,
                     variant="surface",
-                    size="1",
+                    color_scheme=rx.cond(
+                        UnderwritingState.baseline_decision_status == "APPROVED",
+                        "green",
+                        "red",
+                    ),
+                    size="2",
+                    style={
+                        "color": UnderwritingState.baseline_decision_color,
+                        "font_weight": "bold",
+                        "font_family": "monospace",
+                        "letter_spacing": "0.05em",
+                    },
                 ),
                 width="100%",
                 align="center",
             ),
             rx.divider(border_color="#1E293B", margin_y="1"),
-            rx.grid(
+            # Bố cục 2 cột song song cân xứng
+            rx.hstack(
+                # Cột bên trái — Xác suất vỡ nợ (Probability of Default - PD)
                 rx.vstack(
                     rx.text("PROBABILITY OF DEFAULT", size="1", color="#9CA3AF", weight="medium"),
                     rx.text(
                         UnderwritingState.pd_display,
                         size="4",
                         weight="bold",
-                        color=UnderwritingState.decision_color,
+                        color="#FFFFFF",
+                        font_family="monospace",
                     ),
-                    rx.text("Threshold: 16.0% (±1.0%)", size="1", color="#64748B", weight="medium"),
                     spacing="1",
                     align_items="flex-start",
+                    flex="1",
                 ),
+                # Vạch phân cách: Một đường kẻ dọc mờ tinh tế ngăn cách giữa hai cột
+                rx.box(width="1px", height="32px", background="#1E293B", align_self="center"),
+                # Cột bên phải — Lãi suất đề xuất (Offered Rate RBP)
                 rx.vstack(
-                    rx.text("SUGGESTED ACTION", size="1", color="#9CA3AF", weight="medium"),
-                    rx.box(
-                        rx.hstack(
-                            rx.icon(
-                                rx.cond(
-                                    UnderwritingState.decision_color == "#10B981",
-                                    "check-circle-2",
-                                    rx.cond(
-                                        UnderwritingState.decision_color == "#F59E0B",
-                                        "clock",
-                                        "alert-triangle",
-                                    ),
-                                ),
-                                size=14,
-                                color=UnderwritingState.decision_color,
-                            ),
-                            rx.text(
-                                UnderwritingState.current_decision,
-                                size="2",
-                                weight="bold",
-                                color=UnderwritingState.decision_color,
-                            ),
-                            spacing="2",
-                            align="center",
-                        ),
-                        background=UnderwritingState.decision_bg_color,
-                        border=f"1px solid {UnderwritingState.decision_color}",
-                        border_radius="6px",
-                        padding_x="2.5",
-                        padding_y="1",
-                        display="inline-flex",
-                    ),
+                    rx.text("OFFERED RATE (RBP)", size="1", color="#9CA3AF", weight="medium"),
                     rx.text(
-                        rx.cond(
-                            UnderwritingState.decision_color == "#F59E0B",
-                            "Requires committee evaluation",
-                            "Policy benchmark aligned",
-                        ),
-                        size="1",
-                        color="#64748B",
+                        UnderwritingState.baseline_rate_display,
+                        size="4",
+                        weight="bold",
+                        color="#38BDF8",
+                        font_family="monospace",
                     ),
                     spacing="1",
                     align_items="flex-start",
+                    flex="1",
+                    padding_left="3",
                 ),
-                columns="2",
-                spacing="3",
                 width="100%",
+                align="center",
+                spacing="3",
             ),
             spacing="3",
             width="100%",
@@ -484,6 +466,9 @@ def ai_recommendation_card() -> rx.Component:
         flex="1",
         width="100%",
     )
+
+
+ai_recommendation_card = recommendation_card
 
 
 def action_bar_view() -> rx.Component:
