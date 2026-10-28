@@ -15,6 +15,7 @@ import shap
 from typing import Dict, Any, Tuple, List, Optional
 
 from src.config import MODEL_DIR, CONFIG_PATH, SCHEMA_PATH, BENCHMARK_PATH
+from src.config.pricing_config import retail_pricing_config
 
 
 class CreditScoringEngine:
@@ -112,16 +113,19 @@ class CreditScoringEngine:
 
     def _determine_credit_tier(self, pd_score: float) -> Tuple[str, str]:
         """
-        Risk tier stratification and policy decision based on 16.0% (±1.0%) cut-off:
-        - PD <= 15.0%: Low/Moderate Risk -> APPROVE (Tier A / Tier B)
-        - 15.0% < PD <= 17.0%: Gray Zone / Ambiguous Risk -> WAITING / COMMITTEE REVIEW (Tier C)
-        - PD > 17.0%: High Risk -> DECLINE (Tier D)
+        Phân tầng xếp hạng rủi ro (Credit Tier) và khuyến nghị chính sách đồng bộ với RetailPricingConfig:
+        Ngưỡng Cut-off tối ưu T* = 6.80% (0.0680), kiểm soát Bad Rate danh mục <= 2.96%:
+        - PD <= 3.40%: Tier A (Super Prime / Rủi ro thấp) -> APPROVE
+        - 3.40% < PD <= 6.80%: Tier B (Prime / Thỏa mãn khẩu vị rủi ro) -> APPROVE
+        - 6.80% < PD <= 10.20%: Tier C (Vùng xám / Cần hội đồng phê duyệt) -> WAITING / COMMITTEE REVIEW
+        - PD > 10.20%: Tier D (High Risk / Vượt ngưỡng rủi ro) -> DECLINE
         """
-        if pd_score <= 0.05:
+        cutoff = retail_pricing_config.default_cutoff_pd
+        if pd_score <= cutoff * 0.5:
             return "Tier A", "APPROVE"
-        elif pd_score <= 0.150:
+        elif pd_score <= cutoff:
             return "Tier B", "APPROVE"
-        elif 0.150 < pd_score <= 0.170:
+        elif pd_score <= cutoff * 1.5:
             return "Tier C", "WAITING / COMMITTEE REVIEW"
         else:
             return "Tier D", "DECLINE"

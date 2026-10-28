@@ -1,5 +1,6 @@
 import reflex as rx
 from src.ui.state import UnderwritingState
+from src.config.pricing_config import retail_pricing_config
 
 
 def term_preset_pill(months: int) -> rx.Component:
@@ -216,43 +217,82 @@ def recommended_proposal_card(opt: rx.Var[dict]) -> rx.Component:
             scenario_metrics_grid(opt, is_primary=True),
             # Divider phân tách
             rx.divider(border_color="#1E293B", margin_y="1"),
-            # Khối Predicted PD
-            rx.vstack(
-                rx.text(
-                    "Predicted PD",
-                    size="2",
-                    weight="bold",
-                    color="#F8FAFC",
-                    style={"font_size": "14px", "font_weight": "600"},
-                ),
-                rx.hstack(
+            # Khối Predicted PD & Offered Rate RBP
+            rx.hstack(
+                rx.vstack(
                     rx.text(
-                        opt["pd_display"],
-                        size="6",
-                        weight="bold",
-                        color="#34D399",
-                        font_family="monospace",
-                        style={"white_space": "nowrap", "letter_spacing": "-0.02em", "font_size": "24px"},
+                        "PREDICTED PD",
+                        size="1",
+                        color="#64748B",
+                        style={"font_size": "10px", "font_weight": "600", "letter_spacing": "0.05em", "white_space": "nowrap"},
                     ),
-                    rx.cond(
-                        opt["pd_delta_text"] != "",
+                    rx.hstack(
                         rx.text(
-                            opt["pd_delta_text"],
-                            size="2",
+                            opt["pd_display"],
+                            size="5",
                             weight="bold",
-                            color=opt["pd_delta_color"],
+                            color="#34D399",
                             font_family="monospace",
-                            style={"white_space": "nowrap", "font_size": "14px"},
+                            style={"white_space": "nowrap", "letter_spacing": "-0.02em", "font_size": "20px"},
                         ),
-                        rx.fragment(),
+                        rx.cond(
+                            opt["pd_delta_text"] != "",
+                            rx.text(
+                                opt["pd_delta_text"],
+                                size="1",
+                                weight="bold",
+                                color=opt["pd_delta_color"],
+                                font_family="monospace",
+                                style={"white_space": "nowrap", "font_size": "12px"},
+                            ),
+                            rx.fragment(),
+                        ),
+                        align="baseline",
+                        spacing="1",
                     ),
-                    align="baseline",
-                    spacing="2",
-                    style={"white_space": "nowrap"},
+                    spacing="1",
+                    align_items="flex-start",
+                    flex="1",
                 ),
-                spacing="1",
-                align_items="flex-start",
+                rx.box(width="1px", height="32px", background="#1E293B"),
+                rx.vstack(
+                    rx.text(
+                        "OFFERED RATE (RBP)",
+                        size="1",
+                        color="#64748B",
+                        style={"font_size": "10px", "font_weight": "600", "letter_spacing": "0.05em", "white_space": "nowrap"},
+                    ),
+                    rx.hstack(
+                        rx.text(
+                            opt["rate_display"],
+                            size="5",
+                            weight="bold",
+                            color="#38BDF8",
+                            font_family="monospace",
+                            style={"white_space": "nowrap", "letter_spacing": "-0.02em", "font_size": "20px"},
+                        ),
+                        rx.cond(
+                            opt["rate_delta_text"] != "",
+                            rx.text(
+                                opt["rate_delta_text"],
+                                size="1",
+                                weight="bold",
+                                color=opt["rate_delta_color"],
+                                font_family="monospace",
+                                style={"white_space": "nowrap", "font_size": "12px"},
+                            ),
+                            rx.fragment(),
+                        ),
+                        align="baseline",
+                        spacing="1",
+                    ),
+                    spacing="1",
+                    align_items="flex-start",
+                    flex="1",
+                    padding_left="2",
+                ),
                 width="100%",
+                align="center",
             ),
             # Nút Apply Recommended Proposal
             rx.button(
@@ -396,41 +436,68 @@ def secondary_scenario_card(opt: rx.Var[dict]) -> rx.Component:
             ),
             # 2. Lưới thông số 2x2
             scenario_metrics_grid(opt, is_primary=False),
-            # 3. Chân thẻ hiển thị rủi ro (PREDICTED PD)
+            # 3. Chân thẻ hiển thị rủi ro (PREDICTED PD & OFFERED RATE)
             rx.hstack(
-                rx.text(
-                    "PREDICTED PD",
-                    size="1",
-                    color="#64748B",
-                    style={
-                        "font_size": "10px",
-                        "font_weight": "600",
-                        "letter_spacing": "0.05em",
-                        "white_space": "nowrap",
-                    },
-                ),
-                rx.text(
-                    opt["pd_display"],
-                    size="2",
-                    weight="bold",
-                    color=opt["pd_color"],
-                    font_family="monospace",
-                    style={"white_space": "nowrap"},
-                ),
-                rx.cond(
-                    opt["pd_delta_text"] != "",
+                rx.hstack(
                     rx.text(
-                        opt["pd_delta_text"],
+                        "PREDICTED PD",
                         size="1",
-                        weight="medium",
-                        color=opt["pd_delta_color"],
+                        color="#64748B",
+                        style={
+                            "font_size": "10px",
+                            "font_weight": "600",
+                            "letter_spacing": "0.05em",
+                            "white_space": "nowrap",
+                        },
+                    ),
+                    rx.text(
+                        opt["pd_display"],
+                        size="2",
+                        weight="bold",
+                        color=opt["pd_color"],
                         font_family="monospace",
                         style={"white_space": "nowrap"},
                     ),
-                    rx.fragment(),
+                    rx.cond(
+                        opt["pd_delta_text"] != "",
+                        rx.text(
+                            opt["pd_delta_text"],
+                            size="1",
+                            weight="medium",
+                            color=opt["pd_delta_color"],
+                            font_family="monospace",
+                            style={"white_space": "nowrap"},
+                        ),
+                        rx.fragment(),
+                    ),
+                    align="baseline",
+                    spacing="1",
                 ),
-                align="baseline",
-                spacing="2",
+                rx.spacer(),
+                rx.hstack(
+                    rx.text(
+                        "RATE",
+                        size="1",
+                        color="#64748B",
+                        style={
+                            "font_size": "10px",
+                            "font_weight": "600",
+                            "letter_spacing": "0.05em",
+                            "white_space": "nowrap",
+                        },
+                    ),
+                    rx.text(
+                        opt["rate_display"],
+                        size="2",
+                        weight="bold",
+                        color="#38BDF8",
+                        font_family="monospace",
+                        style={"white_space": "nowrap"},
+                    ),
+                    align="baseline",
+                    spacing="1",
+                ),
+                align="center",
                 width="100%",
                 padding_top="1",
                 style={"white_space": "nowrap"},
@@ -617,7 +684,7 @@ def what_if_view() -> rx.Component:
                                     UnderwritingState.sim_dti_display,
                                     size="3",
                                     weight="bold",
-                                    color=rx.cond(UnderwritingState.sim_dti > 50.0, "#F59E0B", "#F8FAFC"),
+                                    color=rx.cond(UnderwritingState.is_sim_dti_exceeded, "#F59E0B", "#F8FAFC"),
                                     font_family="monospace",
                                 ),
                                 spacing="1",
@@ -628,13 +695,13 @@ def what_if_view() -> rx.Component:
                             width="100%",
                             align="center",
                         ),
-                        # Cảnh báo Feasibility Guardrail nếu DTI > 50%
+                        # Cảnh báo Feasibility Guardrail nếu DTI vượt max_dti_limit
                         rx.cond(
-                            UnderwritingState.sim_dti > 50.0,
+                            UnderwritingState.is_sim_dti_exceeded,
                             rx.hstack(
                                 rx.icon("triangle-alert", size=13, color="#F59E0B"),
                                 rx.text(
-                                    "Warning: Monthly payment exceeds 50% DTI threshold",
+                                    f"Warning: Monthly payment exceeds {int(retail_pricing_config.max_dti_limit)}% DTI threshold",
                                     size="1",
                                     color="#F59E0B",
                                     font_family="monospace",

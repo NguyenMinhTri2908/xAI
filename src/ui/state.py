@@ -1,7 +1,7 @@
 import os
 import sys
 from pathlib import Path
-from typing import List, Dict, Any, Optional, Union
+from typing import List, Dict, Any, Union
 from .feature_search_state import FeatureSearchState
 from src.ui.utils.formatters import format_client_age, format_client_experience
 
@@ -12,7 +12,6 @@ if str(PROJECT_ROOT) not in sys.path:
 import reflex as rx
 import pandas as pd
 import pyarrow.parquet as pq
-from src.config import DEMO_SAMPLES_PARQUET
 from src.engine.credit_scoring import CreditScoringEngine
 from src.pricing.pricing_engine import pricing_engine
 from src.config.pricing_config import retail_pricing_config
@@ -24,7 +23,6 @@ from src.data_processing.ingestion_service import (
     get_active_client_ids,
     get_client_row_data,
     get_client_table_summary,
-    get_active_source_name
 )
 
 _ENGINE = None
@@ -185,6 +183,10 @@ DEFAULT_RECOMMENDED_OPTION: Dict[str, Any] = {
     "pd_color": "#34D399",
     "pd_delta_text": "",
     "pd_delta_color": "#34D399",
+    "offered_rate": 12.0,
+    "rate_display": "12.00%",
+    "rate_delta_text": "",
+    "rate_delta_color": "#94A3B8",
 }
 
 
@@ -876,16 +878,14 @@ class UnderwritingState(rx.State):
         self.sim_rate_delta_text = ""
         self.sim_rate_delta_color = "#94A3B8"
 
-        # 2. Đánh giá quyết định tín dụng theo Cut-off cho Baseline
-        cutoff = float(getattr(retail_pricing_config, "default_cutoff_pd", 0.065))
-        if pd_dec <= cutoff and float(self.baseline_dti) <= 50.0:
-            self.baseline_decision_status = "APPROVED"
-            self.baseline_decision_color = "#34D399"
-            self.credit_decision_text = "Approved under Risk Appetite"
-        else:
-            self.baseline_decision_status = "DECLINED"
-            self.baseline_decision_color = "#F87171"
-            self.credit_decision_text = "Declined due to Cut-off / DTI Threshold"
+        # 2. Đánh giá quyết định tín dụng theo Cut-off & DTI cho Baseline qua Pricing Engine tập trung
+        eval_res = pricing_engine.evaluate_credit_decision(
+            pd_decimal=pd_dec,
+            dti_percent=float(self.baseline_dti),
+        )
+        self.baseline_decision_status = eval_res["decision"]
+        self.baseline_decision_color = eval_res["color"]
+        self.credit_decision_text = eval_res["status_text"]
 
         self.credit_decision_status = self.baseline_decision_status
         self.credit_decision_color = self.baseline_decision_color
@@ -1039,15 +1039,20 @@ class UnderwritingState(rx.State):
     def sim_dti_color(self) -> str:
         if self.sim_dti <= 35.0:
             return "#10B981"
-        elif self.sim_dti <= 50.0:
+        elif self.sim_dti <= retail_pricing_config.max_dti_limit:
             return "#F59E0B"
         return "#EF4444"
 
     @rx.var
+    def is_sim_dti_exceeded(self) -> bool:
+        """Kiểm tra tỷ lệ DTI mô phỏng có vượt trần cho phép (max_dti_limit) hay không."""
+        return float(self.sim_dti) > retail_pricing_config.max_dti_limit
+
+    @rx.var
     def is_scenario_viable(self) -> bool:
-        """Kiểm tra phương án mô phỏng có khả thi hay không (DTI <= 50% và PD không tăng quá 2.0 pts so với baseline)."""
+        """Kiểm tra phương án mô phỏng có khả thi hay không (DTI <= max_dti_limit và PD không tăng quá 2.0 pts so với baseline)."""
         try:
-            dti_ok = float(self.sim_dti) <= 50.0
+            dti_ok = float(self.sim_dti) <= retail_pricing_config.max_dti_limit
             pd_ok = float(self.sim_score_percent) <= (float(self.baseline_score_percent) + 2.0)
             return dti_ok and pd_ok
         except (ValueError, TypeError):
@@ -1425,15 +1430,13 @@ class UnderwritingState(rx.State):
                 self.sim_rate_delta_text = f"({sign}{diff_rate:.2f}%)"
                 self.sim_rate_delta_color = "#F87171" if diff_rate > 0 else "#34D399"
 
-            # 4. Đánh giá trạng thái mô phỏng
-            cutoff = float(getattr(retail_pricing_config, "default_cutoff_pd", 0.065))
-            if float(self.sim_pd) <= cutoff and float(self.sim_dti) <= 50.0:
-                self.sim_decision_status = "APPROVED"
-                self.sim_decision_color = "#34D399"
-            else:
-                self.sim_decision_status = "DECLINED"
-                self.sim_decision_color = "#F87171"
-
+            # 4. Đánh giá trạng thái mô phỏng tập trung qua Pricing Engine
+            eval_res = pricing_engine.evaluate_credit_decision(
+                pd_decimal=float(self.sim_pd),
+                dti_percent=float(self.sim_dti),
+            )
+            self.sim_decision_status = eval_res["decision"]
+            self.sim_decision_color = eval_res["color"]
             self.sim_credit_decision = self.sim_decision_status
             self.sim_credit_decision_color = self.sim_decision_color
 
@@ -1447,13 +1450,12 @@ class UnderwritingState(rx.State):
             self.sim_delta_pts = 0.0
             self.sim_delta_text = "0.00 pts"
             self.sim_delta_color = "#94A3B8"
-            cutoff = float(getattr(retail_pricing_config, "default_cutoff_pd", 0.065))
-            if float(self.sim_pd) <= cutoff and float(self.sim_dti) <= 50.0:
-                self.sim_decision_status = "APPROVED"
-                self.sim_decision_color = "#34D399"
-            else:
-                self.sim_decision_status = "DECLINED"
-                self.sim_decision_color = "#F87171"
+            eval_res = pricing_engine.evaluate_credit_decision(
+                pd_decimal=float(self.sim_pd),
+                dti_percent=float(self.sim_dti),
+            )
+            self.sim_decision_status = eval_res["decision"]
+            self.sim_decision_color = eval_res["color"]
             self.sim_credit_decision = self.sim_decision_status
             self.sim_credit_decision_color = self.sim_decision_color
             try:
@@ -1489,15 +1491,29 @@ class UnderwritingState(rx.State):
                 cand_annuity = round((cand_credit / cand_term) * (1.0 + self.interest_rate_factor), 1)
                 cand_dti = round((cand_annuity / max(income, 1.0)) * 100.0, 1)
 
-                # Ràng buộc điều kiện an toàn: DTI < 40%
-                if cand_dti >= 40.0:
+                # Ràng buộc điều kiện khả thi lành mạnh: DTI <= target_dti_healthy (40.0%)
+                if cand_dti > retail_pricing_config.target_dti_healthy:
                     continue
 
                 # Dự đoán siêu tốc qua cache model ensemble
-                cand_pd, cand_tier, cand_decision = engine.predict_pd_from_cache(
+                cand_pd, cand_tier, _ = engine.predict_pd_from_cache(
                     credit=cand_credit,
                     annuity=cand_annuity,
                     income=income,
+                )
+                if cand_pd is None or cand_pd <= 0:
+                    continue
+
+                # Đánh giá thẩm định thống nhất qua evaluate_credit_decision
+                eval_cand = pricing_engine.evaluate_credit_decision(
+                    pd_decimal=float(cand_pd),
+                    dti_percent=float(cand_dti),
+                )
+
+                # Tính toán định giá RBP trực tiếp cho từng phương án ứng viên
+                pricing_cand = pricing_engine.compute_baseline_pricing(
+                    pd_decimal=float(cand_pd),
+                    term_months=int(cand_term),
                 )
 
                 candidate_info = {
@@ -1507,7 +1523,11 @@ class UnderwritingState(rx.State):
                     "dti": float(cand_dti),
                     "pd": float(cand_pd),
                     "tier": str(cand_tier),
-                    "decision": str(cand_decision),
+                    "decision": eval_cand["decision"],
+                    "is_approved": eval_cand["is_approved"],
+                    "reason_code": eval_cand["reason_code"],
+                    "offered_rate": pricing_cand["applied_rate_percent"],
+                    "rate_display": pricing_cand["applied_rate_display"],
                     "factor": float(factor),
                     "credit_display": f"${int(cand_credit):,}",
                     "term_display": f"{int(cand_term)} tháng",
@@ -1517,7 +1537,8 @@ class UnderwritingState(rx.State):
                 }
                 all_valid_candidates.append(candidate_info)
 
-                if cand_decision == "APPROVE" or cand_pd <= 0.150:
+                # Bộ lọc khả thi cứng (Hard Feasibility Filter): PD <= default_cutoff_pd & DTI <= max_dti_limit
+                if eval_cand["is_approved"]:
                     approved_candidates.append(candidate_info)
 
         pool = approved_candidates if approved_candidates else sorted(all_valid_candidates, key=lambda x: x["pd"])
@@ -1606,10 +1627,27 @@ class UnderwritingState(rx.State):
             pd_delta_text = "(0.00%)"
             pd_delta_color = "#64748B"
 
+        cand_rate = float(c.get("offered_rate", 12.0))
+        diff_rate = round(cand_rate - self.baseline_offered_rate, 2)
+        rate_display = c.get("rate_display", f"{cand_rate:.2f}%")
+        if diff_rate > 0.01:
+            rate_delta_text = f"(+{diff_rate:.2f}%)"
+            rate_delta_color = "#F87171"
+        elif diff_rate < -0.01:
+            rate_delta_text = f"({diff_rate:.2f}%)"
+            rate_delta_color = "#34D399"
+        else:
+            rate_delta_text = "(0.00%)"
+            rate_delta_color = "#64748B"
+
         entry = dict(c)
         entry.update({
             "title": title,
             "opt_type": opt_type,
+            "offered_rate": cand_rate,
+            "rate_display": rate_display,
+            "rate_delta_text": rate_delta_text,
+            "rate_delta_color": rate_delta_color,
             "credit_display": credit_display,
             "credit_delta_text": credit_delta_text,
             "credit_delta_color": credit_delta_color,

@@ -7,6 +7,7 @@ from src.config import (
     MASTER_TEST_PARQUET,
     DATA_RAW_DIR
 )
+from src.config.pricing_config import retail_pricing_config
 from src.data_processing.main_pipeline import transform_application_for_inference
 
 RAW_APPLICATION_CSV = os.path.join(DATA_RAW_DIR, "application_test.csv")
@@ -217,12 +218,13 @@ def format_df_to_summary_records(sub_df: pd.DataFrame, compute_pd: bool = True) 
             tier = pred.get("tier", "N/A")
             decision = pred.get("decision", "N/A")
             pd_val = pred.get("pd_val", 0.0)
-            if pd_val <= 0.15:
-                pd_color = "#10B981"  # Xanh lá (Low risk)
-            elif pd_val <= 0.17:
-                pd_color = "#F59E0B"  # Vàng hổ phách (Gray zone)
+            cutoff = retail_pricing_config.default_cutoff_pd
+            if pd_val <= cutoff:
+                pd_color = "#10B981"  # Xanh lá (Within Cut-off)
+            elif pd_val <= cutoff * 1.5:
+                pd_color = "#F59E0B"  # Vàng hổ phách (Near Cut-off / Gray Zone)
             else:
-                pd_color = "#EF4444"  # Đỏ (High risk)
+                pd_color = "#EF4444"  # Đỏ (Above Cut-off)
 
         records.append({
             "SK_ID_CURR": sk_id,
