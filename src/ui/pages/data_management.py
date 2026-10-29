@@ -1,5 +1,5 @@
 import reflex as rx
-from src.ui.state import UnderwritingState
+from src.state import UnderwritingState
 
 
 def data_management_navbar() -> rx.Component:

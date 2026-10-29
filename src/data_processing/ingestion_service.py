@@ -158,16 +158,7 @@ def get_client_row_data(client_id: str) -> Optional[pd.Series]:
     return matches.iloc[0]
 
 
-_SCORING_ENGINE = None
-
-
-def get_scoring_engine():
-    """Singleton engine cache để tránh tải lại model mỗi lần hiển thị bảng."""
-    global _SCORING_ENGINE
-    if _SCORING_ENGINE is None:
-        from src.engine.credit_scoring import CreditScoringEngine
-        _SCORING_ENGINE = CreditScoringEngine()
-    return _SCORING_ENGINE
+from src.engine.credit_scoring import get_scoring_engine
 
 
 def format_df_to_summary_records(sub_df: pd.DataFrame, compute_pd: bool = True) -> List[Dict[str, Any]]:

@@ -17,6 +17,16 @@ from typing import Dict, Any, Tuple, List, Optional
 from src.config import MODEL_DIR, CONFIG_PATH, SCHEMA_PATH, BENCHMARK_PATH
 from src.config.pricing_config import retail_pricing_config
 
+_SCORING_ENGINE_INSTANCE: Optional["CreditScoringEngine"] = None
+
+
+def get_scoring_engine() -> "CreditScoringEngine":
+    """Singleton getter trả về phiên bản duy nhất của CreditScoringEngine trong toàn bộ hệ thống."""
+    global _SCORING_ENGINE_INSTANCE
+    if _SCORING_ENGINE_INSTANCE is None:
+        _SCORING_ENGINE_INSTANCE = CreditScoringEngine()
+    return _SCORING_ENGINE_INSTANCE
+
 
 class CreditScoringEngine:
     """

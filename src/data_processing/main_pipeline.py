@@ -7,9 +7,9 @@ import pandas as pd
 try:
     from src.config import BENCHMARK_PATH
 except Exception:
-    BENCHMARK_PATH = os.path.join(os.path.dirname(__file__), "..", "models", "train_benchmarks.json")
+    BENCHMARK_PATH = os.path.join(os.path.dirname(__file__), "..", "config", "metadata", "train_benchmarks.json")
 if not os.path.exists(BENCHMARK_PATH):
-    BENCHMARK_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "models", "train_benchmarks.json"))
+    BENCHMARK_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "config", "metadata", "train_benchmarks.json"))
 
 FAIR_PROHIBITED_COLUMNS = [
     'CODE_GENDER', 'NAME_FAMILY_STATUS', 'CNT_CHILDREN', 'CNT_FAM_MEMBERS',

@@ -1,6 +1,6 @@
 import reflex as rx
 from ..feature_search_state import FeatureSearchState
-from src.ui.drawer_state import FeatureDrawerState
+from src.state import FeatureDrawerState
 
 
 def table_badge(table_name: str) -> rx.Component:

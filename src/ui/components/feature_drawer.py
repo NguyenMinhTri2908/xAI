@@ -1,5 +1,5 @@
 import reflex as rx
-from src.ui.drawer_state import FeatureDrawerState
+from src.state import FeatureDrawerState
 
 
 def property_row(icon_name: str, label: str, value_component: rx.Component) -> rx.Component:

@@ -1,5 +1,5 @@
 import reflex as rx
-from src.ui.state import UnderwritingState
+from src.state import UnderwritingState
 
 # Import các components con
 from src.ui.components.shap_card import shap_card_view

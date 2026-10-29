@@ -1,1 +1,1 @@
-from src.ui.app import app
+"""UI Package."""

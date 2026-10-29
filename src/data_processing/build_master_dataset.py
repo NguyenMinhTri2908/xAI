@@ -11,6 +11,7 @@ warnings.filterwarnings('ignore', category=pd.errors.PerformanceWarning)
 from src.config import (
     CONFIG_PATH,
     SCHEMA_PATH,
+    FEATURE_DICT_PATH,
     DATA_RAW_DIR,
     DATA_PRODUCTION_DIR,
     MASTER_TEST_PARQUET,
@@ -44,7 +45,6 @@ RAW_BUREAU_MAP_PATH = os.path.join(DATA_RAW_DIR, "bureau.csv")
 PROD_DIR = DATA_PRODUCTION_DIR
 OUTPUT_MASTER_PATH = MASTER_TEST_PARQUET
 OUTPUT_DEMO_PATH = DEMO_SAMPLES_PARQUET
-FEATURE_DICT_PATH = os.path.join(BASE_DIR, "src/models/feature_dictionary.json")
 
 FAIR_PROHIBITED_COLUMNS = [
     'CODE_GENDER', 'NAME_FAMILY_STATUS', 'CNT_CHILDREN', 'CNT_FAM_MEMBERS',

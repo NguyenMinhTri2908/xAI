@@ -5,9 +5,7 @@ from src.ui.pages.data_management import data_management_page
 from src.ui.pages.inspection_workbench import inspection_workbench_page
 
 # Đăng ký tường minh toàn bộ Application States vào State Registry
-from src.ui.state import UnderwritingState
-from src.ui.drawer_state import FeatureDrawerState
-from src.ui.feature_search_state import FeatureSearchState
+from src.state import UnderwritingState, FeatureDrawerState, FeatureSearchState
 
 # Re-export index để tương thích ngược
 index = data_management_page
