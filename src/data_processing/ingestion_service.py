@@ -155,7 +155,7 @@ def get_client_row_data(client_id: str) -> Optional[pd.Series]:
 
     if matches.empty:
         return None
-    return matches.iloc[0]
+    return matches.iloc[0].copy()
 
 
 from src.engine.credit_scoring import get_scoring_engine
@@ -217,15 +217,29 @@ def format_df_to_summary_records(sub_df: pd.DataFrame, compute_pd: bool = True) 
             else:
                 pd_color = "#EF4444"  # Đỏ (Above Cut-off)
 
+        term_str = "N/A"
+        if credit_num > 0 and annuity_num > 0:
+            term_approx = round((credit_num * 1.08) / annuity_num)
+            term_str = f"{int(term_approx)}m"
+
+        decision_color_scheme = (
+            "green"
+            if decision in ("APPROVE", "APPROVED")
+            else ("amber" if any(w in str(decision).upper() for w in ("WAIT", "REVIEW", "COMMITTEE")) else "red")
+        )
+
         records.append({
             "SK_ID_CURR": sk_id,
             "INCOME_DISPLAY": income_str,
             "CREDIT_DISPLAY": credit_str,
+            "AMT_CREDIT_DISPLAY": credit_str,
             "ANNUITY_DISPLAY": annuity_str,
+            "TERM_DISPLAY": term_str,
             "PD_DISPLAY": pd_display,
             "TIER": tier,
             "DECISION": decision,
             "PD_COLOR": pd_color,
+            "DECISION_COLOR": decision_color_scheme,
         })
 
     return records

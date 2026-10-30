@@ -245,20 +245,6 @@ class CreditScoringEngine:
             })
         return results
 
-    def predict_pd_fast(self, client_series: pd.Series) -> Tuple[float, str, str]:
-        """Tính toán nhanh xác suất vỡ nợ (PD), Rating Tier và Policy Decision cho 1 hồ sơ (bỏ qua SHAP) phục vụ Terms Simulator."""
-        df_row = pd.DataFrame([client_series])
-        df_clean = self._align_and_cast_features(df_row)
-        lgb_preds = [model.predict_proba(df_clean)[:, 1][0] for model in self.lgb_models]
-        mean_lgb = float(np.mean(lgb_preds))
-        xgb_preds = [model.predict_proba(df_clean)[:, 1][0] for model in self.xgb_models]
-        mean_xgb = float(np.mean(xgb_preds))
-        w_lgb = self.blend_weights.get("lightgbm", 0.5)
-        w_xgb = self.blend_weights.get("xgboost", 0.5)
-        final_pd = float((mean_lgb * w_lgb) + (mean_xgb * w_xgb))
-        tier, decision = self._determine_credit_tier(final_pd)
-        return final_pd, tier, decision
-
     def cache_client_features(self, client_series: pd.Series, client_id: Optional[str] = None):
         """Tiền xử lý và lưu cache 891 features đã align cho client được chọn (luôn reset index về 0)."""
         df_row = pd.DataFrame([client_series]).reset_index(drop=True)

@@ -4,7 +4,7 @@ import pandas as pd
 from .dataset_state import DatasetState
 from .feature_search_state import FeatureSearchState
 from src.ui.utils.formatters import format_client_age, format_client_experience
-from src.engine.credit_scoring import CreditScoringEngine, get_scoring_engine
+from src.engine.credit_scoring import get_scoring_engine
 from src.pricing.pricing_engine import pricing_engine
 from src.data_processing.ingestion_service import (
     get_client_row_data,
@@ -53,6 +53,21 @@ class InspectionState(DatasetState):
     credit_decision_color: str = "#34D399"
     credit_decision_text: str = "Approved under Risk Appetite"
     interest_rate_factor: float = 0.08
+    underwriter_notes: str = ""
+
+    def set_underwriter_notes(self, text: str):
+        self.underwriter_notes = text
+
+    @rx.event
+    def record_decision(self, decision_type: str):
+        """Lưu quyết định của chuyên viên thẩm định và hiển thị thông báo."""
+        self.alert_token += 1
+        current_token = self.alert_token
+        status_label = "Approved with Conditions" if decision_type == "CONDITIONAL" else "Declined"
+        self.alert_message = f"✓ Decision recorded: {status_label} for Client #{self.selected_client_id}"
+        self.alert_type = "success" if decision_type == "CONDITIONAL" else "error"
+        self.show_alert = True
+        return self.auto_dismiss_alert(current_token)
 
     @rx.event
     def inspect_client(self, client_id: str):
@@ -204,10 +219,23 @@ class InspectionState(DatasetState):
         self.selected_client_id = str(client_id)
         self.is_loading = True
 
-        client_series = get_client_row_data(client_id)
-        if client_series is None:
+        # Clean Reset toàn bộ trạng thái AI Optimizer cũ chống rò rỉ dữ liệu giữa các hồ sơ
+        self.is_optimizing = False
+        self.is_baseline_optimal = False
+        self.show_optimization_results = False
+        self.recommended_option = None
+        self.alternative_options = []
+        self.optimization_options = []
+        self.visible_proposals_count = 2
+        self.status_message = ""
+
+        raw_series = get_client_row_data(client_id)
+        if raw_series is None:
             self.is_loading = False
             return
+
+        # Đảm bảo tính bất biến (Immutability): Tạo bản sao độc lập (Deep Copy)
+        client_series = raw_series.copy()
 
         # 1. Trích xuất AMT_CREDIT
         credit_val = client_series.get("AMT_CREDIT", None)

@@ -483,7 +483,7 @@ def client_registry_table() -> rx.Component:
                             rx.cond(
                                 UnderwritingState.total_clients_count == 1,
                                 "1 Client",
-                                f"{UnderwritingState.total_clients_count:,} Clients",
+                                UnderwritingState.total_clients_count.to_string() + " Clients",
                             ),
                             "0 Clients",
                         ),

@@ -105,7 +105,7 @@ def simulator_metrics_card() -> rx.Component:
                             # Trạng thái ban đầu: hiển thị baseline
                             rx.hstack(
                                 rx.text(
-                                    f"{UnderwritingState.baseline_score_percent:.2f}%",
+                                    UnderwritingState.baseline_pd_display,
                                     size="3",
                                     weight="bold",
                                     color="#F8FAFC",

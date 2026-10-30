@@ -9,7 +9,6 @@ Risk Mitigation & Terms Simulator theo phong cách Notion/Linear tối giản.
 """
 
 import reflex as rx
-from src.state import UnderwritingState
 from src.ui.components.what_if_metrics import (
     simulator_header_badge,
     simulator_metrics_card,
@@ -30,6 +29,8 @@ from src.ui.components.what_if_proposals import (
     alternative_options_trigger,
     secondary_scenario_card,
     optimization_scenario_card,
+    optimal_baseline_alert,
+    compact_alternative_card,
 )
 
 
@@ -93,25 +94,6 @@ __all__ = [
     "income_lever_control",
     "action_footer_controls",
     "ai_optimization_section",
-]
-
-
-__all__ = [
-    "what_if_view",
-    "terms_simulator_view",
-    "term_preset_pill",
-    "scenario_metrics_grid",
-    "recommended_proposal_card",
-    "alternative_options_trigger",
-    "secondary_scenario_card",
-    "optimization_scenario_card",
-    "simulator_header_badge",
-    "simulator_metrics_card",
-    "simulator_levers_container",
-    "credit_lever_control",
-    "term_lever_control",
-    "annuity_lever_control",
-    "income_lever_control",
-    "action_footer_controls",
-    "ai_optimization_section",
+    "optimal_baseline_alert",
+    "compact_alternative_card",
 ]

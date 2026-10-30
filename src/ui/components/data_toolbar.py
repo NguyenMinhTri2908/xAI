@@ -165,7 +165,7 @@ def data_ingestion_toolbar() -> rx.Component:
                     rx.cond(
                         UnderwritingState.total_clients_count == 1,
                         "Single Record (1/1)",
-                        f"{UnderwritingState.current_client_index_display} of {UnderwritingState.total_clients_count:,}",
+                        UnderwritingState.current_client_index_display + " of " + UnderwritingState.total_clients_count.to_string(),
                     ),
                     variant="surface",
                     color_scheme="gray",

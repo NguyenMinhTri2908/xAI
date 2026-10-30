@@ -345,10 +345,14 @@ class SimulatorState(InspectionState):
             self.alternatives_loaded = False
         if hasattr(self, "show_optimization_results"):
             self.show_optimization_results = False
+        if hasattr(self, "is_baseline_optimal"):
+            self.is_baseline_optimal = False
+        if hasattr(self, "visible_proposals_count"):
+            self.visible_proposals_count = 2
         if hasattr(self, "optimization_options"):
             self.optimization_options = []
         if hasattr(self, "recommended_option"):
-            self.recommended_option = dict(DEFAULT_RECOMMENDED_OPTION)
+            self.recommended_option = None
         if hasattr(self, "alternative_options"):
             self.alternative_options = []
         if hasattr(self, "show_alternative_options"):
@@ -457,12 +461,7 @@ class SimulatorState(InspectionState):
             num = float(clean)
             if num > 0:
                 self.sim_amt_credit = num
-                term = max(self.sim_term_months, 1)
-                self.sim_amt_annuity = round((self.sim_amt_credit / term) * (1.0 + self.interest_rate_factor), 1)
-                self.sim_amt_annuity_str = f"{int(self.sim_amt_annuity):,}"
-                income = max(self.sim_amt_income_total, 1.0)
-                self.sim_dti = round((self.sim_amt_annuity / income) * 100.0, 1)
-                self.recalculate_simulation_pd()
+                self._sync_credit_or_term_changed()
         except (ValueError, TypeError):
             pass
 
@@ -474,12 +473,7 @@ class SimulatorState(InspectionState):
             num = int(clean)
             if num > 0:
                 self.sim_term_months = num
-                term = max(self.sim_term_months, 1)
-                self.sim_amt_annuity = round((self.sim_amt_credit / term) * (1.0 + self.interest_rate_factor), 1)
-                self.sim_amt_annuity_str = f"{int(self.sim_amt_annuity):,}"
-                income = max(self.sim_amt_income_total, 1.0)
-                self.sim_dti = round((self.sim_amt_annuity / income) * 100.0, 1)
-                self.recalculate_simulation_pd()
+                self._sync_credit_or_term_changed()
         except (ValueError, TypeError):
             pass
 

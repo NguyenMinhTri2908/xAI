@@ -26,25 +26,27 @@ DEFAULT_SOURCE_LABEL = "All Data Sources"
 DEFAULT_IMPACT_LABEL = "All Impact Directions"
 
 
+def _get_feature_dict() -> Dict[str, Dict[str, str]]:
+    """Lấy dữ liệu từ điển tính năng từ cache bộ nhớ module-level để tránh phình to State."""
+    global _CACHED_RAW_FEATURE_DICT
+    if not _CACHED_RAW_FEATURE_DICT:
+        _CACHED_RAW_FEATURE_DICT = _load_cached_feature_dict()
+    return _CACHED_RAW_FEATURE_DICT
+
+
 class FeatureSearchState(rx.State):
     """Manages feature search, data source filtering, and real-time SHAP attribution."""
 
-    raw_feature_dict: Dict[str, Dict[str, str]] = _CACHED_RAW_FEATURE_DICT
     client_shap: Dict[str, float] = {}
     search_query: str = ""
     selected_source: str = DEFAULT_SOURCE_LABEL
     selected_impact: str = DEFAULT_IMPACT_LABEL
     display_limit: int = 25
 
-    def _ensure_dict_loaded(self):
-        """Hàm trợ giúp nội bộ: Đảm bảo metadata luôn được nạp nếu chưa có trong RAM."""
-        if not self.raw_feature_dict:
-            self.raw_feature_dict = _CACHED_RAW_FEATURE_DICT or _load_cached_feature_dict()
-
     @rx.event
     async def load_feature_dictionary(self):
         """Loads feature dictionary from disk and syncs client SHAP values."""
-        self._ensure_dict_loaded()
+        _get_feature_dict()
 
         # Import cục bộ để tránh circular import giữa State và feature_search_state.py
         from src.state import UnderwritingState
@@ -57,13 +59,13 @@ class FeatureSearchState(rx.State):
     def update_client_shap(self, shap_dict: Dict[str, float]):
         """Event handler nhận SHAP đồng thời tự động nạp từ điển nếu chưa có."""
         self.client_shap = shap_dict
-        # Tự động nạp dữ liệu metadata ngay khi hồ sơ khách hàng được chọn
-        self._ensure_dict_loaded()
+        _get_feature_dict()
 
     @rx.var
     def available_sources(self) -> List[str]:
         """Returns unique list of raw tables/data sources."""
-        sources = sorted(list({v.get("table", "Unknown") for v in self.raw_feature_dict.values()}))
+        f_dict = _get_feature_dict()
+        sources = sorted(list({v.get("table", "Unknown") for v in f_dict.values()}))
         return [DEFAULT_SOURCE_LABEL] + sources
 
     @rx.var
@@ -81,7 +83,8 @@ class FeatureSearchState(rx.State):
         results: List[Dict[str, Any]] = []
         query = self.search_query.strip().lower()
 
-        for feat_name, meta in self.raw_feature_dict.items():
+        f_dict = _get_feature_dict()
+        for feat_name, meta in f_dict.items():
             tbl = meta.get("table", "Unknown")
             desc = meta.get("description", "")
             shap_val = float(self.client_shap.get(feat_name, 0.0))

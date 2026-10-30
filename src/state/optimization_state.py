@@ -3,9 +3,10 @@
 Manages AI loan restructuring, candidate search, and alternative loan term proposals.
 Delegates heavy calculation algorithms to src.services.restructuring_service.
 """
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 import reflex as rx
 
+from src.config.pricing_config import retail_pricing_config
 from src.state.simulator_state import SimulatorState
 from src.engine.credit_scoring import get_scoring_engine
 from src.data_processing.ingestion_service import get_client_row_data
@@ -19,14 +20,35 @@ from src.services.restructuring_service import (
 class OptimizationState(SimulatorState):
     """Sub-state managing loan restructuring optimization and alternative proposals."""
 
-    is_optimizing: bool = False
-    is_loading_alternatives: bool = False
-    alternatives_loaded: bool = False
-    optimization_options: List[Dict[str, str]] = []
-    recommended_option: Optional[Dict[str, str]] = None
-    alternative_options: List[Dict[str, str]] = []
-    show_optimization_results: bool = False
-    show_alternative_options: bool = False
+    @rx.var
+    def has_more_proposals(self) -> bool:
+        """Kiểm tra xem còn phương án thay thế chưa được hiển thị không."""
+        return len(self.alternative_options) > self.visible_proposals_count
+
+    @rx.var
+    def visible_alternative_options(self) -> List[Dict[str, Any]]:
+        """Danh sách phương án phụ được phép hiển thị theo cơ chế phân trang show more."""
+        return self.alternative_options[: self.visible_proposals_count]
+
+    @rx.var
+    def visible_proposals_count_display(self) -> str:
+        """Chuỗi hiển thị tiến độ số lượng phương án hiển thị."""
+        total = len(self.alternative_options)
+        visible = min(self.visible_proposals_count, total)
+        return f"Showing {visible} of {total}"
+
+    @property
+    def recommended_proposal(self) -> Optional[Dict[str, Any]]:
+        return self.recommended_option
+
+    @property
+    def alternative_proposals(self) -> List[Dict[str, Any]]:
+        return self.alternative_options
+
+    @rx.event
+    def show_more_proposals(self):
+        """Bung thêm 3 phương án khả thi tiếp theo."""
+        self.visible_proposals_count += 3
 
     @property
     def selected_client_idx(self) -> str:
@@ -37,12 +59,14 @@ class OptimizationState(SimulatorState):
         self,
         base_credit: float,
         income: float,
+        base_term: int = 12,
     ) -> List[Dict]:
         """Generate feasible restructuring candidates via pure domain service."""
         return generate_candidate_pool(
             engine=get_scoring_engine(),
             base_credit=base_credit,
             income=income,
+            base_term=base_term,
             interest_rate_factor=self.interest_rate_factor,
         )
 
@@ -57,7 +81,7 @@ class OptimizationState(SimulatorState):
         baseline_offered_rate: float,
         title: str,
         opt_type: str,
-    ) -> Dict[str, str]:
+    ) -> Dict[str, Any]:
         """Construct a UI-ready optimization option dictionary via pure domain service."""
         return build_optimization_entry(
             c=c,
@@ -80,9 +104,9 @@ class OptimizationState(SimulatorState):
         base_dti: float,
         base_pd_percent: float,
         baseline_offered_rate: float,
-    ) -> List[Dict[str, str]]:
+    ) -> List[Dict[str, Any]]:
         """Compute alternative restructuring options via pure domain service."""
-        return compute_alternative_proposals(
+        proposals = compute_alternative_proposals(
             pool=pool,
             recommended_option=self.recommended_option or {},
             base_credit_val=base_credit,
@@ -92,6 +116,7 @@ class OptimizationState(SimulatorState):
             base_pd_percent_val=base_pd_percent,
             baseline_offered_rate=baseline_offered_rate,
         )
+        return [p for p in proposals if p]
 
     @rx.event
     def toggle_alternative_options(self):
@@ -102,6 +127,19 @@ class OptimizationState(SimulatorState):
             and not self.alternatives_loaded
             and bool(self.selected_client_id)
         ):
+            income = float(self.baseline_amt_income_total or 0.0)
+            base_credit = float(self.baseline_amt_credit or 0.0)
+            base_term = int(self.baseline_term_months or 0)
+            base_annuity = float(self.baseline_amt_annuity or 0.0)
+            base_dti = float(self.baseline_dti or 0.0)
+            base_pd_percent = float(self.baseline_score_percent or (self.baseline_pd * 100.0 if self.baseline_pd else 0.0))
+            baseline_offered_rate = float(self.baseline_offered_rate or 0.0)
+
+            # Early exit: Kiểm tra tính hợp lệ của dữ liệu cơ sở
+            if base_credit <= 0.0 or income <= 0.0 or base_term <= 0:
+                self.is_loading_alternatives = False
+                return
+
             self.is_loading_alternatives = True
             yield
 
@@ -114,15 +152,7 @@ class OptimizationState(SimulatorState):
                 except Exception as e:
                     print(f"[Alternatives] Warning caching features: {e}")
 
-            income = float(self.baseline_amt_income_total or self.sim_amt_income_total or 50000.0)
-            base_credit = float(self.baseline_amt_credit or self.sim_amt_credit or 100000.0)
-            base_term = int(self.baseline_term_months or self.sim_term_months or 12)
-            base_annuity = float(self.baseline_amt_annuity or self.sim_amt_annuity or 5000.0)
-            base_dti = float(self.sim_dti or self.baseline_dti or 0.0)
-            base_pd_percent = float(self.sim_score_percent or self.baseline_score_percent or 0.0)
-            baseline_offered_rate = float(self.baseline_offered_rate or self.sim_offered_rate or 12.0)
-
-            pool = self._find_candidate_pool(base_credit, income)
+            pool = self._find_candidate_pool(base_credit, income, base_term)
             self.alternative_options = self._compute_alternative_options(
                 pool=pool,
                 base_credit=base_credit,
@@ -148,7 +178,49 @@ class OptimizationState(SimulatorState):
                 self.show_alert = True
                 return
 
+        # 1. Trích xuất chính xác dữ liệu cơ sở của khách hàng (Không gán số ma fallback 100k/50k/12m)
+        income = float(self.baseline_amt_income_total or 0.0)
+        base_credit = float(self.baseline_amt_credit or 0.0)
+        base_term = int(self.baseline_term_months or 0)
+        base_annuity = float(self.baseline_amt_annuity or 0.0)
+        base_dti = float(self.baseline_dti or 0.0)
+        base_pd_percent = float(self.baseline_score_percent or (self.baseline_pd * 100.0 if self.baseline_pd else 0.0))
+        baseline_offered_rate = float(self.baseline_offered_rate or 0.0)
+
+        # 2. Fail-fast / Early Exit: Dừng ngay nếu hồ sơ cơ sở thiếu hoặc không hợp lệ
+        if base_credit <= 0.0 or income <= 0.0 or base_term <= 0:
+            self.is_optimizing = False
+            self.alert_message = "Cannot run AI Optimization: Baseline client profile data (Credit, Income, or Term) is missing or invalid."
+            self.alert_type = "error"
+            self.show_alert = True
+            return
+
+        # 3. Phân nhánh Fast-path: Nếu hồ sơ đã APPROVED thì báo ngay "Hồ sơ đã tối ưu, không cần cơ cấu"
+        cutoff_pd = retail_pricing_config.default_cutoff_pd
+        cutoff_percent = cutoff_pd * 100.0
+        is_already_approved = (
+            (base_pd_percent <= cutoff_percent and base_dti <= retail_pricing_config.target_dti_healthy)
+            or (
+                self.baseline_decision in ("APPROVED", "APPROVE")
+                and self.baseline_decision_status != "DECLINED"
+                and base_pd_percent <= cutoff_percent
+            )
+        )
+
+        if is_already_approved:
+            self.is_optimizing = False
+            self.is_baseline_optimal = True
+            self.recommended_option = None
+            self.alternative_options = []
+            self.optimization_options = []
+            self.show_optimization_results = True
+            self.status_message = "Hồ sơ hiện tại đã đáp ứng hoàn hảo khẩu vị rủi ro. Không yêu cầu tái cơ cấu."
+            return
+
+        # 4. Bắt đầu tìm kiếm phương án cứu hồ sơ DECLINED
+        self.is_baseline_optimal = False
         self.is_optimizing = True
+        self.visible_proposals_count = 2
         self.optimization_options = []
         self.recommended_option = None
         self.alternative_options = []
@@ -167,15 +239,7 @@ class OptimizationState(SimulatorState):
             except Exception as e:
                 print(f"[AI Auto-Optimize] Warning caching features: {e}")
 
-        income = float(self.baseline_amt_income_total or self.sim_amt_income_total or 50000.0)
-        base_credit = float(self.baseline_amt_credit or self.sim_amt_credit or 100000.0)
-        base_term = int(self.baseline_term_months or self.sim_term_months or 12)
-        base_annuity = float(self.baseline_amt_annuity or self.sim_amt_annuity or 5000.0)
-        base_dti = float(self.sim_dti or self.baseline_dti or 0.0)
-        base_pd_percent = float(self.sim_score_percent or self.baseline_score_percent or 0.0)
-        baseline_offered_rate = float(self.baseline_offered_rate or self.sim_offered_rate or 12.0)
-
-        pool = self._find_candidate_pool(base_credit, income)
+        pool = self._find_candidate_pool(base_credit=base_credit, income=income, base_term=base_term)
         print(f"[AI Auto-Optimize] Candidate pool size: {len(pool)}")
 
         if not pool:
@@ -184,6 +248,7 @@ class OptimizationState(SimulatorState):
             self.status_message = "No restructuring terms meet the risk appetite criteria for this client."
             return
 
+        # 5. Phân bổ theo thứ hạng: Top 1 -> Recommended, Top 2..N -> Alternatives
         best = pool[0]
         self.recommended_option = self._build_optimization_entry(
             c=best,
@@ -193,15 +258,33 @@ class OptimizationState(SimulatorState):
             base_dti=base_dti,
             base_pd_percent=base_pd_percent,
             baseline_offered_rate=baseline_offered_rate,
-            title="AI Recommended Restructuring",
+            title="Recommended Proposal",
             opt_type="recommended",
         )
-        self.optimization_options = [self.recommended_option]
+
+        formatted_alts = []
+        for idx, alt in enumerate(pool[1:]):
+            rank_num = idx + 2
+            alt_entry = self._build_optimization_entry(
+                c=alt,
+                base_credit=base_credit,
+                base_term=base_term,
+                base_annuity=base_annuity,
+                base_dti=base_dti,
+                base_pd_percent=base_pd_percent,
+                baseline_offered_rate=baseline_offered_rate,
+                title=f"Option #{rank_num}",
+                opt_type=f"option_{rank_num}",
+            )
+            formatted_alts.append(alt_entry)
+
+        self.alternative_options = formatted_alts
+        self.optimization_options = [self.recommended_option] + formatted_alts
         self.is_optimizing = False
         self.show_optimization_results = True
 
     @rx.event
-    def apply_optimization_option(self, option: Optional[Dict[str, str]] = None):
+    def apply_optimization_option(self, option: Optional[Dict[str, Any]] = None):
         """Apply an optimization option's loan parameters to the simulator."""
         target = option or self.recommended_option
         if not target:
@@ -225,6 +308,7 @@ class OptimizationState(SimulatorState):
     def close_optimization_results(self):
         """Dismiss optimization results modal or card."""
         self.show_optimization_results = False
+        self.is_baseline_optimal = False
 
     # Backwards compatibility alias
     auto_optimize_terms = ai_auto_optimize

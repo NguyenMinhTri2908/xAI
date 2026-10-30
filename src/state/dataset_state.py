@@ -12,7 +12,6 @@ from .base_state import (
     INITIAL_SELECTED_FILE,
 )
 from src.data_processing.ingestion_service import (
-    load_dataset_from_source,
     load_dataset_from_upload,
     set_active_dataset,
     get_active_dataset,

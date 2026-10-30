@@ -1,7 +1,7 @@
 import os
 import sys
 from pathlib import Path
-from typing import List, Dict, Any, Union
+from typing import List, Dict, Any, Union, Optional
 import reflex as rx
 import pandas as pd
 import pyarrow.parquet as pq
@@ -178,6 +178,18 @@ class BaseUnderwritingState(rx.State):
     # Dialog state
     upload_dialog_open: bool = False
     uploaded_file_name: str = ""
+
+    # AI Optimization & Restructuring State (Shared across State hierarchy)
+    is_optimizing: bool = False
+    is_baseline_optimal: bool = False
+    visible_proposals_count: int = 2
+    is_loading_alternatives: bool = False
+    alternatives_loaded: bool = False
+    optimization_options: List[Dict[str, Any]] = []
+    recommended_option: Optional[Dict[str, Any]] = None
+    alternative_options: List[Dict[str, Any]] = []
+    show_optimization_results: bool = False
+    show_alternative_options: bool = False
 
     @rx.event
     def reset_alert(self):

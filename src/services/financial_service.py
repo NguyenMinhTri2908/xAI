@@ -9,7 +9,7 @@ Cung cấp các hàm thuần túy (Pure Functions) phục vụ tính toán các 
 Không phụ thuộc vào Reflex State hoặc WebSocket context.
 """
 
-from typing import Tuple, Dict, Any
+from typing import Dict, Any
 
 
 def compute_derived_financials(

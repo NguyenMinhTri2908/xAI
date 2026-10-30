@@ -22,6 +22,7 @@ def generate_candidate_pool(
     engine: Any,
     base_credit: float,
     income: float,
+    base_term: int = 12,
     interest_rate_factor: float = 0.08,
     candidate_terms: List[int] = None,
     credit_factors: List[float] = None,
@@ -29,18 +30,23 @@ def generate_candidate_pool(
     """
     Khảo sát không gian kỳ hạn và hạn mức để tìm tập ứng viên hợp lệ.
     Áp dụng Hard Feasibility Filter dựa trên default_cutoff_pd và target_dti_healthy.
+    Sắp xếp các ứng viên đã được duyệt theo hàm mục tiêu tối ưu hóa đa chỉ tiêu:
+    Ưu tiên bảo toàn hạn mức gốc và giữ kỳ hạn gần nhất với kỳ hạn ban đầu của khách hàng.
     """
-    if base_credit <= 0:
-        base_credit = 100000.0
-    if income <= 0:
-        income = 50000.0
+    # 1. Early exit / Fail-fast: Tuyệt đối không suy luận trên dữ liệu giả lập/ma
+    if base_credit <= 0.0 or income <= 0.0:
+        return []
 
-    terms = candidate_terms or DEFAULT_CANDIDATE_TERMS
+    # 2. Khởi tạo không gian tìm kiếm kỳ hạn (bổ sung kỳ hạn gốc của khách hàng nếu chưa có)
+    terms = list(candidate_terms or DEFAULT_CANDIDATE_TERMS)
+    if base_term > 0 and int(base_term) not in terms:
+        terms.append(int(base_term))
+        terms.sort()
     factors = credit_factors or DEFAULT_CREDIT_FACTORS
 
     approved_candidates: List[Dict[str, Any]] = []
-    all_valid_candidates: List[Dict[str, Any]] = []
 
+    # 3. Vòng 1: Tìm kiếm trong vùng DTI lành mạnh (<= 40.0%)
     for cand_term in terms:
         for factor in factors:
             cand_credit = round(base_credit * factor, -2)
@@ -66,39 +72,35 @@ def generate_candidate_pool(
                 dti_percent=float(cand_dti),
             )
 
-            # Tính toán định giá RBP trực tiếp cho từng phương án ứng viên
-            pricing_cand = pricing_engine.compute_baseline_pricing(
-                pd_decimal=float(cand_pd),
-                term_months=int(cand_term),
-            )
-
-            candidate_info = {
-                "credit": float(cand_credit),
-                "term": int(cand_term),
-                "annuity": float(cand_annuity),
-                "dti": float(cand_dti),
-                "pd": float(cand_pd),
-                "tier": str(cand_tier),
-                "decision": eval_cand["decision"],
-                "is_approved": eval_cand["is_approved"],
-                "reason_code": eval_cand["reason_code"],
-                "offered_rate": pricing_cand["applied_rate_percent"],
-                "rate_display": pricing_cand["applied_rate_display"],
-                "factor": float(factor),
-                "credit_display": f"${int(cand_credit):,}",
-                "term_display": f"{int(cand_term)} tháng",
-                "annuity_display": f"${int(cand_annuity):,}/mo",
-                "dti_display": f"{cand_dti:.1f}%",
-                "pd_display": f"{cand_pd * 100:.2f}%",
-            }
-            all_valid_candidates.append(candidate_info)
-
-            # Bộ lọc khả thi cứng (Hard Feasibility Filter): PD <= default_cutoff_pd & DTI <= max_dti_limit
+            # Chỉ giữ các ứng viên THỰC SỰ ĐƯỢC DUYỆT (is_approved == True)
             if eval_cand["is_approved"]:
+                pricing_cand = pricing_engine.compute_baseline_pricing(
+                    pd_decimal=float(cand_pd),
+                    term_months=int(cand_term),
+                )
+                candidate_info = {
+                    "credit": float(cand_credit),
+                    "term": int(cand_term),
+                    "annuity": float(cand_annuity),
+                    "dti": float(cand_dti),
+                    "pd": float(cand_pd),
+                    "tier": str(cand_tier),
+                    "decision": eval_cand["decision"],
+                    "is_approved": True,
+                    "reason_code": eval_cand["reason_code"],
+                    "offered_rate": pricing_cand["applied_rate_percent"],
+                    "rate_display": pricing_cand["applied_rate_display"],
+                    "factor": float(factor),
+                    "credit_display": f"${int(cand_credit):,}",
+                    "term_display": f"{int(cand_term)} tháng",
+                    "annuity_display": f"${int(cand_annuity):,}/mo",
+                    "dti_display": f"{cand_dti:.1f}%",
+                    "pd_display": f"{cand_pd * 100:.2f}%",
+                }
                 approved_candidates.append(candidate_info)
 
-    # Nếu không có ứng viên nào dưới mức DTI lành mạnh (40%), thử nới lỏng theo trần DTI tối đa (50%)
-    if not all_valid_candidates:
+    # 4. Vòng 2: Nếu chưa có phương án nào, thử nới lỏng theo trần DTI tối đa (<= 50.0%)
+    if not approved_candidates:
         for cand_term in terms:
             for factor in factors:
                 cand_credit = round(base_credit * factor, -2)
@@ -120,35 +122,60 @@ def generate_candidate_pool(
                     pd_decimal=float(cand_pd),
                     dti_percent=float(cand_dti),
                 )
-                pricing_cand = pricing_engine.compute_baseline_pricing(
-                    pd_decimal=float(cand_pd),
-                    term_months=int(cand_term),
-                )
-                candidate_info = {
-                    "credit": float(cand_credit),
-                    "term": int(cand_term),
-                    "annuity": float(cand_annuity),
-                    "dti": float(cand_dti),
-                    "pd": float(cand_pd),
-                    "tier": str(cand_tier),
-                    "decision": eval_cand["decision"],
-                    "is_approved": eval_cand["is_approved"],
-                    "reason_code": eval_cand["reason_code"],
-                    "offered_rate": pricing_cand["applied_rate_percent"],
-                    "rate_display": pricing_cand["applied_rate_display"],
-                    "factor": float(factor),
-                    "credit_display": f"${int(cand_credit):,}",
-                    "term_display": f"{int(cand_term)} tháng",
-                    "annuity_display": f"${int(cand_annuity):,}/mo",
-                    "dti_display": f"{cand_dti:.1f}%",
-                    "pd_display": f"{cand_pd * 100:.2f}%",
-                }
-                all_valid_candidates.append(candidate_info)
                 if eval_cand["is_approved"]:
+                    pricing_cand = pricing_engine.compute_baseline_pricing(
+                        pd_decimal=float(cand_pd),
+                        term_months=int(cand_term),
+                    )
+                    candidate_info = {
+                        "credit": float(cand_credit),
+                        "term": int(cand_term),
+                        "annuity": float(cand_annuity),
+                        "dti": float(cand_dti),
+                        "pd": float(cand_pd),
+                        "tier": str(cand_tier),
+                        "decision": eval_cand["decision"],
+                        "is_approved": True,
+                        "reason_code": eval_cand["reason_code"],
+                        "offered_rate": pricing_cand["applied_rate_percent"],
+                        "rate_display": pricing_cand["applied_rate_display"],
+                        "factor": float(factor),
+                        "credit_display": f"${int(cand_credit):,}",
+                        "term_display": f"{int(cand_term)} tháng",
+                        "annuity_display": f"${int(cand_annuity):,}/mo",
+                        "dti_display": f"{cand_dti:.1f}%",
+                        "pd_display": f"{cand_pd * 100:.2f}%",
+                    }
                     approved_candidates.append(candidate_info)
 
-    pool = approved_candidates if approved_candidates else sorted(all_valid_candidates, key=lambda x: x["pd"])
-    return pool
+    # 5. Nếu hoàn toàn không thể cứu được hồ sơ, trả về rỗng (tuyệt đối không trả về kịch bản DECLINED)
+    if not approved_candidates:
+        return []
+
+    # 6. Hàm mục tiêu xếp hạng đa chỉ tiêu:
+    # Ưu tiên: Bảo toàn hạn mức gốc > Hạn chế xáo trộn kỳ hạn > Giảm thiểu PD > Giữ DTI an toàn
+    cutoff = retail_pricing_config.default_cutoff_pd
+    denom_term = max(float(base_term), 12.0)
+
+    def rank_score(c: Dict[str, Any]) -> float:
+        credit_loss = 4.0 * (1.0 - c["factor"])
+        term_loss = 1.5 * (abs(c["term"] - base_term) / denom_term)
+        pd_loss = 1.0 * (c["pd"] / cutoff)
+        dti_loss = 0.5 * max(0.0, (c["dti"] - 30.0) / 20.0)
+        return credit_loss + term_loss + pd_loss + dti_loss
+
+    approved_candidates.sort(key=rank_score)
+
+    # 7. Loại bỏ các ứng viên trùng lặp hoàn toàn về cặp giá trị (cand_credit, cand_term)
+    seen_combinations = set()
+    deduped_candidates: List[Dict[str, Any]] = []
+    for cand in approved_candidates:
+        key = (round(float(cand["credit"]), 2), int(cand["term"]))
+        if key not in seen_combinations:
+            seen_combinations.add(key)
+            deduped_candidates.append(cand)
+
+    return deduped_candidates
 
 
 def build_optimization_entry(
