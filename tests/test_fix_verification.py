@@ -559,6 +559,26 @@ class TestFixVerification(unittest.TestCase):
         self.assertEqual(state.baseline_amt_credit, 450000.0)
         print("[TEST 11 PASSED] ✓ Queue Drawer đóng/mở tường minh, lọc nhanh và chuyển hồ sơ nguyên tử thành công.")
 
+    def test_12_dti_color_thresholds_synced_with_config(self):
+        """Mục 12: Xác nhận ngưỡng màu DTI (sim_dti_color) đồng bộ chuẩn với retail_pricing_config (40% và 50%)."""
+        state = UnderwritingState()
+        # <= 40% (target_dti_healthy): Xanh (#10B981)
+        state.sim_dti = 38.5
+        self.assertEqual(state.sim_dti_color, "#10B981")
+        state.sim_dti = 40.0
+        self.assertEqual(state.sim_dti_color, "#10B981")
+
+        # 40% < DTI <= 50% (max_dti_limit): Vàng cam (#F59E0B)
+        state.sim_dti = 45.0
+        self.assertEqual(state.sim_dti_color, "#F59E0B")
+        state.sim_dti = 50.0
+        self.assertEqual(state.sim_dti_color, "#F59E0B")
+
+        # > 50% (vượt max_dti_limit): Đỏ (#EF4444)
+        state.sim_dti = 52.5
+        self.assertEqual(state.sim_dti_color, "#EF4444")
+        print("[TEST 12 PASSED] ✓ Ngưỡng màu cảnh báo DTI đồng bộ hoàn toàn với retail_pricing_config (40.0% / 50.0%).")
+
 
 if __name__ == "__main__":
     unittest.main()

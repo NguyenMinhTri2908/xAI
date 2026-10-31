@@ -12,32 +12,9 @@ from src.data_processing.main_pipeline import transform_application_for_inferenc
 
 RAW_APPLICATION_CSV = os.path.join(DATA_RAW_DIR, "application_test.csv")
 
-PRESET_DATASETS = [
-    {
-        "id": "demo_samples",
-        "name": "demo_samples.parquet (1,000 Demo Clients)",
-        "path": DEMO_SAMPLES_PARQUET
-    },
-    {
-        "id": "test_master",
-        "name": "test_features_master.parquet (Master Production)",
-        "path": MASTER_TEST_PARQUET
-    },
-    {
-        "id": "raw_application",
-        "name": "application_test.csv (Raw Home Credit)",
-        "path": RAW_APPLICATION_CSV
-    }
-]
-
 # In-memory storage for currently active dataset
 _ACTIVE_DATASET: Optional[pd.DataFrame] = None
 _ACTIVE_SOURCE_NAME: str = "demo_samples.parquet"
-
-
-def get_preset_options() -> List[Dict[str, str]]:
-    """Trả về danh sách các dataset mẫu có sẵn trong hệ thống."""
-    return PRESET_DATASETS
 
 
 def set_active_dataset(df: pd.DataFrame, source_name: str):

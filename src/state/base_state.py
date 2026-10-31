@@ -126,41 +126,6 @@ INITIAL_SELECTED_FILE: str = (
     else (INITIAL_PRODUCTION_DATASETS[0]["filename"] if INITIAL_PRODUCTION_DATASETS else "")
 )
 
-DEFAULT_RECOMMENDED_OPTION: Dict[str, Any] = {
-    "title": "Recommended Proposal",
-    "opt_type": "recommended",
-    "credit": 0.0,
-    "term": 12,
-    "annuity": 0.0,
-    "dti": 0.0,
-    "pd": 0.0,
-    "tier": "None",
-    "decision": "None",
-    "factor": 1.0,
-    "credit_display": "$0",
-    "credit_delta_text": "",
-    "credit_delta_color": "#94A3B8",
-    "term_display": "12 Months",
-    "term_delta_text": "",
-    "term_delta_color": "#94A3B8",
-    "annuity_display": "$0 / mo",
-    "annuity_val_color": "#F8FAFC",
-    "annuity_delta_text": "",
-    "annuity_delta_color": "#94A3B8",
-    "dti_display": "0.0%",
-    "dti_val_color": "#34D399",
-    "dti_delta_text": "",
-    "dti_delta_color": "#94A3B8",
-    "pd_display": "0.00%",
-    "pd_color": "#34D399",
-    "pd_delta_text": "",
-    "pd_delta_color": "#34D399",
-    "offered_rate": 12.0,
-    "rate_display": "12.00%",
-    "rate_delta_text": "",
-    "rate_delta_color": "#94A3B8",
-}
-
 
 class BaseUnderwritingState(rx.State):
     """Reflex Base State quản lý trạng thái nền tảng: Alert, Loading, Dialog."""

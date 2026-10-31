@@ -107,11 +107,10 @@ class CreditScoringEngine:
 
         for col, valid_cats in self.native_categories.items():
             if col in df_aligned.columns:
-                # Map values: retain valid training categories, set invalid/unknown to np.nan
-                df_aligned[col] = df_aligned[col].apply(
-                    lambda x: x if pd.notna(x) and str(x) in valid_cats else np.nan
-                )
-                df_aligned[col] = pd.Categorical(df_aligned[col], categories=valid_cats)
+                # Vectorized categorical validation: retain valid training categories, map invalid/unknown to np.nan
+                series = df_aligned[col]
+                valid_mask = series.notna() & series.astype(str).isin(valid_cats)
+                df_aligned[col] = pd.Categorical(series.where(valid_mask, np.nan), categories=valid_cats)
 
         # Enforce numeric columns to numeric float/int
         numeric_cols = [c for c in self.features if c not in self.native_categories]

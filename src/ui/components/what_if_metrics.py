@@ -71,11 +71,22 @@ def simulator_metrics_card() -> rx.Component:
                 rx.hstack(
                     # Cột 1: Probability of Default (PD)
                     rx.vstack(
-                        rx.text(
-                            "Probability of Default (PD)",
-                            size="1",
-                            color="#94A3B8",
-                            weight="medium",
+                        rx.hstack(
+                            rx.text(
+                                "Probability of Default (PD)",
+                                size="1",
+                                color="#94A3B8",
+                                weight="medium",
+                            ),
+                            rx.text(
+                                f"Cut-off: {retail_pricing_config.default_cutoff_pd * 100:.2f}%",
+                                size="1",
+                                color="#64748B",
+                                font_family="monospace",
+                                style={"font_size": "10px"},
+                            ),
+                            spacing="2",
+                            align="center",
                         ),
                         rx.cond(
                             UnderwritingState.is_simulated_changed,
@@ -176,7 +187,7 @@ def simulator_metrics_card() -> rx.Component:
                             UnderwritingState.sim_dti_display,
                             size="3",
                             weight="bold",
-                            color=rx.cond(UnderwritingState.is_sim_dti_exceeded, "#F59E0B", "#F8FAFC"),
+                            color=UnderwritingState.sim_dti_color,
                             font_family="monospace",
                         ),
                         spacing="1",

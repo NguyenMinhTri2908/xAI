@@ -1,7 +1,6 @@
 from typing import List
 import reflex as rx
 from .inspection_state import InspectionState, get_engine
-from .base_state import DEFAULT_RECOMMENDED_OPTION
 from src.config.pricing_config import retail_pricing_config
 from src.pricing.pricing_engine import pricing_engine
 from src.data_processing.ingestion_service import get_client_row_data
@@ -9,38 +8,6 @@ from src.data_processing.ingestion_service import get_client_row_data
 
 class SimulatorState(InspectionState):
     """Quản lý các đòn bẩy mô phỏng What-If (4 Sliders, Inputs, Real-time Recalculation)."""
-
-    # Simulation active levers
-    sim_amt_credit: float = 0.0
-    sim_term_months: int = 12
-    sim_amt_annuity: float = 0.0
-    sim_amt_income_total: float = 0.0
-    sim_dti: float = 0.0
-    interest_rate_factor: float = 0.08
-    is_sim_calculating: bool = False
-    sim_offered_rate: float = 12.0
-    sim_rate_display: str = "12.00%"
-    sim_rate_delta_text: str = ""
-    sim_rate_delta_color: str = "#94A3B8"
-    sim_decision_status: str = "APPROVED"
-    sim_decision_color: str = "#34D399"
-    sim_credit_decision: str = "APPROVED"
-    sim_credit_decision_color: str = "#34D399"
-
-    # Two-way bound string variables for text input fields
-    sim_amt_credit_str: str = "0"
-    sim_term_months_str: str = "12"
-    sim_amt_annuity_str: str = "0"
-    sim_amt_income_str: str = "0"
-
-    # Simulation real-time predicted outcomes
-    sim_pd: float = 0.0
-    sim_score_percent: float = 0.0
-    sim_tier: str = "None"
-    sim_decision: str = "None"
-    sim_delta_pts: float = 0.0
-    sim_delta_text: str = "0.00 pts"
-    sim_delta_color: str = "#94A3B8"
 
     @rx.var
     def sim_credit_slider_min(self) -> float:
@@ -183,7 +150,7 @@ class SimulatorState(InspectionState):
 
     @rx.var
     def sim_dti_color(self) -> str:
-        if self.sim_dti <= 35.0:
+        if self.sim_dti <= retail_pricing_config.target_dti_healthy:
             return "#10B981"
         elif self.sim_dti <= retail_pricing_config.max_dti_limit:
             return "#F59E0B"
@@ -288,81 +255,6 @@ class SimulatorState(InspectionState):
     def diff_income_color(self) -> str:
         diff = self.sim_amt_income_total - self.baseline_amt_income_total
         return "#10B981" if diff > 0 else "#EF4444"
-
-    @rx.event
-    def reset_simulation_to_baseline(self):
-        """Khôi phục lại toàn bộ tham số Simulator về mức Baseline ban đầu của khách hàng."""
-        # 1. Tính toán dứt điểm các giá trị an toàn (fallback hợp lệ chống kẹp kịch biên Radix UI)
-        base_credit = float(self.baseline_amt_credit or 0.0)
-        if base_credit <= 0.0:
-            base_credit = 100000.0
-
-        base_term = int(self.baseline_term_months or 0)
-        if base_term <= 0:
-            base_term = 12
-        base_term = min(max(base_term, 3), 60)
-
-        base_income = float(self.baseline_amt_income_total or 0.0)
-        if base_income <= 0.0:
-            base_income = 50000.0
-
-        base_annuity = float(self.baseline_amt_annuity or 0.0)
-        if base_annuity <= 0.0:
-            base_annuity = round((base_credit / base_term) * (1.0 + self.interest_rate_factor), 1)
-
-        base_dti = float(self.baseline_dti or 0.0)
-        if base_dti <= 0.0:
-            base_dti = round((base_annuity / base_income) * 100.0, 1)
-
-        # 2. Gán các giá trị con trượt và giá trị số học
-        self.sim_amt_credit = base_credit
-        self.sim_term_months = base_term
-        self.sim_amt_annuity = base_annuity
-        self.sim_amt_income_total = base_income
-        self.sim_dti = base_dti
-        self.sim_pd = float(self.baseline_pd or 0.0)
-        self.sim_score_percent = float(self.baseline_score_percent or 0.0)
-        self.sim_tier = str(self.baseline_tier or "None")
-        self.sim_decision = str(self.baseline_decision or "None")
-        self.sim_offered_rate = float(self.baseline_offered_rate or 12.0)
-        self.sim_rate_display = str(self.baseline_rate_display or "12.00%")
-        self.sim_rate_delta_text = ""
-        self.sim_rate_delta_color = "#94A3B8"
-        self.sim_decision_status = str(self.baseline_decision_status or "APPROVED")
-        self.sim_decision_color = str(self.baseline_decision_color or "#34D399")
-        self.sim_credit_decision = self.sim_decision_status
-        self.sim_credit_decision_color = self.sim_decision_color
-        self.is_sim_calculating = False
-        self.sim_delta_pts = 0.0
-        self.sim_delta_text = "0.00 pts"
-        self.sim_delta_color = "#94A3B8"
-
-        if hasattr(self, "is_optimizing"):
-            self.is_optimizing = False
-        if hasattr(self, "is_loading_alternatives"):
-            self.is_loading_alternatives = False
-        if hasattr(self, "alternatives_loaded"):
-            self.alternatives_loaded = False
-        if hasattr(self, "show_optimization_results"):
-            self.show_optimization_results = False
-        if hasattr(self, "is_baseline_optimal"):
-            self.is_baseline_optimal = False
-        if hasattr(self, "visible_proposals_count"):
-            self.visible_proposals_count = 2
-        if hasattr(self, "optimization_options"):
-            self.optimization_options = []
-        if hasattr(self, "recommended_option"):
-            self.recommended_option = None
-        if hasattr(self, "alternative_options"):
-            self.alternative_options = []
-        if hasattr(self, "show_alternative_options"):
-            self.show_alternative_options = False
-
-        # 3. Đồng bộ chuỗi hiển thị input chống mất số (undefined)
-        self.sim_amt_credit_str = f"{int(self.sim_amt_credit):,}"
-        self.sim_term_months_str = str(int(self.sim_term_months))
-        self.sim_amt_annuity_str = f"{int(self.sim_amt_annuity):,}"
-        self.sim_amt_income_str = f"{int(self.sim_amt_income_total):,}"
 
     def _sync_credit_or_term_drag(self):
         term = max(self.sim_term_months, 1)

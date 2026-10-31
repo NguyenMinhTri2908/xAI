@@ -1,25 +1,7 @@
-import os
-import json
 import reflex as rx
 from typing import Dict, List, Any
-from src.config import FEATURE_DICT_PATH
+from src.services.explanation_service import get_cached_feature_dictionary
 from src.ui.utils.formatters import format_shap_value
-
-
-def _load_cached_feature_dict() -> Dict[str, Dict[str, str]]:
-    """Tải và lưu trữ bộ nhớ đệm từ điển feature ngay khi nạp module."""
-    if os.path.exists(FEATURE_DICT_PATH):
-        try:
-            with open(FEATURE_DICT_PATH, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except Exception as e:
-            print(f"[FeatureSearchState] Error reading {FEATURE_DICT_PATH}: {e}")
-            return {}
-    return {}
-
-
-# Cache từ điển feature toàn diện (891+ features) khi nạp module
-_CACHED_RAW_FEATURE_DICT: Dict[str, Dict[str, str]] = _load_cached_feature_dict()
 
 # Nhãn mặc định chuẩn tiếng Anh nghiệp vụ
 DEFAULT_SOURCE_LABEL = "All Data Sources"
@@ -27,11 +9,8 @@ DEFAULT_IMPACT_LABEL = "All Impact Directions"
 
 
 def _get_feature_dict() -> Dict[str, Dict[str, str]]:
-    """Lấy dữ liệu từ điển tính năng từ cache bộ nhớ module-level để tránh phình to State."""
-    global _CACHED_RAW_FEATURE_DICT
-    if not _CACHED_RAW_FEATURE_DICT:
-        _CACHED_RAW_FEATURE_DICT = _load_cached_feature_dict()
-    return _CACHED_RAW_FEATURE_DICT
+    """Lấy dữ liệu từ điển tính năng từ cache bộ nhớ dùng chung duy nhất để tránh phình to RAM."""
+    return get_cached_feature_dictionary()
 
 
 class FeatureSearchState(rx.State):

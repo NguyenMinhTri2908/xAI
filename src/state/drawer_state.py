@@ -1,35 +1,18 @@
-import os
-import json
 import reflex as rx
 import pandas as pd
 from typing import Dict, Any
-from src.config import FEATURE_DICT_PATH, FEATURE_METADATA_PATH
-
-_CACHED_FEATURE_DICT: Dict[str, Dict[str, str]] = {}
-_CACHED_CATEGORICAL_MAPPINGS: Dict[str, Any] = {}
+from src.services.explanation_service import (
+    get_cached_feature_dictionary,
+    get_cached_categorical_mappings,
+)
 
 
 def _get_feature_dict() -> Dict[str, Dict[str, str]]:
-    global _CACHED_FEATURE_DICT
-    if not _CACHED_FEATURE_DICT and os.path.exists(FEATURE_DICT_PATH):
-        try:
-            with open(FEATURE_DICT_PATH, "r", encoding="utf-8") as f:
-                _CACHED_FEATURE_DICT = json.load(f)
-        except Exception as e:
-            print(f"[FeatureDrawerState] Error loading {FEATURE_DICT_PATH}: {e}")
-    return _CACHED_FEATURE_DICT
+    return get_cached_feature_dictionary()
 
 
 def _get_categorical_mappings() -> Dict[str, Any]:
-    global _CACHED_CATEGORICAL_MAPPINGS
-    if not _CACHED_CATEGORICAL_MAPPINGS and os.path.exists(FEATURE_METADATA_PATH):
-        try:
-            with open(FEATURE_METADATA_PATH, "r", encoding="utf-8") as f:
-                meta = json.load(f)
-                _CACHED_CATEGORICAL_MAPPINGS = meta.get("categorical_mappings", {})
-        except Exception as e:
-            print(f"[FeatureDrawerState] Error loading {FEATURE_METADATA_PATH}: {e}")
-    return _CACHED_CATEGORICAL_MAPPINGS
+    return get_cached_categorical_mappings()
 
 
 class FeatureDrawerState(rx.State):

@@ -8,7 +8,38 @@ Cung cấp các hàm thuần túy (Pure Functions) xử lý kết quả SHAP Val
 Không phụ thuộc vào Reflex State hoặc WebSocket context.
 """
 
+import os
+import json
 from typing import Dict, List, Any, Tuple
+from src.config import FEATURE_DICT_PATH, FEATURE_METADATA_PATH
+
+_SHARED_FEATURE_DICT_CACHE: Dict[str, Dict[str, str]] = {}
+_SHARED_CATEGORICAL_MAPPINGS_CACHE: Dict[str, Any] = {}
+
+
+def get_cached_feature_dictionary() -> Dict[str, Dict[str, str]]:
+    """Đọc và lưu bộ nhớ đệm duy nhất (Singleton Cache) cho feature_dictionary.json (891+ features)."""
+    global _SHARED_FEATURE_DICT_CACHE
+    if not _SHARED_FEATURE_DICT_CACHE and os.path.exists(FEATURE_DICT_PATH):
+        try:
+            with open(FEATURE_DICT_PATH, "r", encoding="utf-8") as f:
+                _SHARED_FEATURE_DICT_CACHE = json.load(f)
+        except Exception as e:
+            print(f"[ExplanationService] Error loading {FEATURE_DICT_PATH}: {e}")
+    return _SHARED_FEATURE_DICT_CACHE
+
+
+def get_cached_categorical_mappings() -> Dict[str, Any]:
+    """Đọc và lưu bộ nhớ đệm duy nhất cho bảng ánh xạ biến phân loại (categorical_mappings)."""
+    global _SHARED_CATEGORICAL_MAPPINGS_CACHE
+    if not _SHARED_CATEGORICAL_MAPPINGS_CACHE and os.path.exists(FEATURE_METADATA_PATH):
+        try:
+            with open(FEATURE_METADATA_PATH, "r", encoding="utf-8") as f:
+                meta = json.load(f)
+                _SHARED_CATEGORICAL_MAPPINGS_CACHE = meta.get("categorical_mappings", {})
+        except Exception as e:
+            print(f"[ExplanationService] Error loading {FEATURE_METADATA_PATH}: {e}")
+    return _SHARED_CATEGORICAL_MAPPINGS_CACHE
 
 
 def process_shap_explanations(
