@@ -147,11 +147,15 @@ def get_client_row_data(client_id: str) -> Optional[pd.Series]:
     if df.empty or "SK_ID_CURR" not in df.columns:
         return None
 
+    clean_id = str(client_id).strip().strip('"').strip("'")
+    if not clean_id:
+        return None
+
     try:
-        int_id = int(client_id)
+        int_id = int(clean_id)
         matches = df[df["SK_ID_CURR"] == int_id]
     except (ValueError, TypeError):
-        matches = df[df["SK_ID_CURR"].astype(str) == str(client_id)]
+        matches = df[df["SK_ID_CURR"].astype(str) == clean_id]
 
     if matches.empty:
         return None

@@ -213,10 +213,22 @@ class InspectionState(DatasetState):
         return "rgba(15, 23, 42, 0.6)"
 
     @rx.event
+    def select_client_from_queue(self, client_id: str):
+        """Chọn hồ sơ từ Queue Drawer: tự động đóng Drawer tức thì và nạp hồ sơ."""
+        self.is_queue_open = False
+        return self.select_and_evaluate_client(client_id)
+
+    @rx.event
     def select_and_evaluate_client(self, client_id: str):
         if not client_id:
             return
-        self.selected_client_id = str(client_id)
+        clean_id = str(client_id).strip().strip('"').strip("'")
+        if not clean_id:
+            return
+
+        # Đảm bảo đóng Queue Drawer ngay lập tức khi chuyển hồ sơ
+        self.is_queue_open = False
+        self.selected_client_id = clean_id
         self.is_loading = True
 
         # Clean Reset toàn bộ trạng thái AI Optimizer cũ chống rò rỉ dữ liệu giữa các hồ sơ
@@ -229,7 +241,7 @@ class InspectionState(DatasetState):
         self.visible_proposals_count = 2
         self.status_message = ""
 
-        raw_series = get_client_row_data(client_id)
+        raw_series = get_client_row_data(clean_id)
         if raw_series is None:
             self.is_loading = False
             return
@@ -346,7 +358,7 @@ class InspectionState(DatasetState):
 
         # Tiền xử lý và lưu cache 891 features cho client hiện tại
         try:
-            engine.cache_client_features(client_series, str(client_id))
+            engine.cache_client_features(client_series, clean_id)
         except Exception as e:
             print(f"[cache_client_features] Warning: {e}")
 

@@ -512,6 +512,53 @@ class TestFixVerification(unittest.TestCase):
 
         print("[TEST 10 PASSED] ✓ Cô lập State 3 vùng (Baseline, Simulator, AI Optimizer) và Clean Reset Lifecycle hoạt động hoàn hảo.")
 
+    @patch("src.state.inspection_state.get_engine")
+    @patch("src.state.inspection_state.get_client_row_data")
+    def test_11_queue_drawer_lifecycle_and_selection(self, mock_get_client_row, mock_get_engine):
+        """Mục 11: Kiểm tra vòng đời đóng/mở Queue Drawer, tìm kiếm nhanh và chọn hồ sơ nguyên tử."""
+        mock_engine = MagicMock()
+        mock_engine.predict_single.return_value = {
+            "probability_of_default": 0.032,
+            "score_percent": 3.20,
+            "tier": "Tier A",
+            "decision": "APPROVE",
+            "top_risk_factors": [],
+            "top_positive_factors": [],
+            "shap_dict": {},
+        }
+        mock_get_engine.return_value = mock_engine
+        mock_get_client_row.return_value = pd.Series({
+            "SK_ID_CURR": 100002,
+            "AMT_CREDIT": 450000.0,
+            "AMT_ANNUITY": 15000.0,
+            "AMT_INCOME_TOTAL": 120000.0,
+        })
+
+        state = UnderwritingState()
+        state.client_list = [
+            {"SK_ID_CURR": "100001", "AMT_CREDIT_DISPLAY": "$568,800", "TERM_DISPLAY": "28m", "DECISION": "APPROVE", "DECISION_COLOR": "green", "PD_DISPLAY": "3.77%"},
+            {"SK_ID_CURR": "100002", "AMT_CREDIT_DISPLAY": "$450,000", "TERM_DISPLAY": "30m", "DECISION": "APPROVE", "DECISION_COLOR": "green", "PD_DISPLAY": "3.20%"},
+        ]
+
+        # 1. Mở Queue Drawer
+        state.open_queue_drawer()
+        self.assertTrue(state.is_queue_open)
+        self.assertEqual(len(state.filtered_queue_list), 2)
+
+        # 2. Lọc tìm kiếm trong Queue Drawer
+        state.set_queue_search_query("100002")
+        self.assertEqual(len(state.filtered_queue_list), 1)
+        self.assertEqual(state.filtered_queue_list[0]["SK_ID_CURR"], "100002")
+        state.clear_queue_search()
+        self.assertEqual(len(state.filtered_queue_list), 2)
+
+        # 3. Click chọn hồ sơ từ Queue Drawer (ngay cả khi chuỗi vô tình bị bọc dấu ngoặc kép)
+        state.select_client_from_queue('"100002"')
+        self.assertFalse(state.is_queue_open)
+        self.assertEqual(state.selected_client_id, "100002")
+        self.assertEqual(state.baseline_amt_credit, 450000.0)
+        print("[TEST 11 PASSED] ✓ Queue Drawer đóng/mở tường minh, lọc nhanh và chuyển hồ sơ nguyên tử thành công.")
+
 
 if __name__ == "__main__":
     unittest.main()

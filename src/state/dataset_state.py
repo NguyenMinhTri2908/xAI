@@ -90,6 +90,28 @@ class DatasetState(BaseUnderwritingState):
     def clear_registry_search(self):
         self.registry_search_query = ""
 
+    @rx.var
+    def filtered_queue_list(self) -> List[Dict[str, Any]]:
+        """Danh sách hồ sơ trong Queue Drawer, hỗ trợ lọc nhanh theo Client ID."""
+        if not self.client_list:
+            return []
+        q = self.queue_search_query.strip().lower()
+        if not q:
+            return self.client_list
+        return [
+            row for row in self.client_list
+            if q in str(row.get("SK_ID_CURR", "")).lower()
+        ]
+
+    @rx.var
+    def queue_count_display(self) -> str:
+        """Hiển thị số lượng hồ sơ trong Queue Drawer."""
+        total = len(self.client_list)
+        filtered = len(self.filtered_queue_list)
+        if self.queue_search_query.strip():
+            return f"{filtered} / {total}"
+        return f"{total} Clients"
+
     @rx.event
     def scan_production_dir(self):
         """Tự động quét thư mục data/production và cập nhật danh sách tập dữ liệu."""

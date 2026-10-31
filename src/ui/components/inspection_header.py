@@ -24,145 +24,19 @@ def inspection_breadcrumb_bar() -> rx.Component:
                         on_click=rx.redirect("/data"),
                     ),
                     rx.divider(orientation="vertical", height="16px", border_color="#1F2937"),
-                    # Queue Drawer
-                    rx.drawer.root(
-                        rx.drawer.trigger(
-                            rx.button(
-                                rx.icon("panel-left", size=14),
-                                rx.text("Queue", size="1", weight="bold"),
-                                variant="surface",
-                                color_scheme="gray",
-                                size="1",
-                                cursor="pointer",
-                            )
+                    # Nút mở Queue Drawer (Điều khiển qua State)
+                    rx.button(
+                        rx.hstack(
+                            rx.icon("panel-left", size=14),
+                            rx.text("Queue", size="1", weight="bold"),
+                            spacing="1",
+                            align="center",
                         ),
-                        rx.drawer.overlay(background="rgba(0, 0, 0, 0.7)"),
-                        rx.drawer.content(
-                            rx.vstack(
-                                rx.hstack(
-                                    rx.vstack(
-                                        rx.heading("Loan Applications Queue", size="3", color="white"),
-                                        rx.text("Select a client to evaluate", size="1", color="#9CA3AF"),
-                                        spacing="0",
-                                    ),
-                                    rx.spacer(),
-                                    rx.drawer.close(
-                                        rx.button(
-                                            rx.icon("x", size=14),
-                                            variant="ghost",
-                                            color_scheme="gray",
-                                            size="1",
-                                            cursor="pointer",
-                                        )
-                                    ),
-                                    width="100%",
-                                    align="center",
-                                    padding_bottom="2",
-                                    border_bottom="1px solid #1E293B",
-                                ),
-                                # Danh sách hồ sơ dạng cuộn trong Drawer
-                                rx.scroll_area(
-                                    rx.vstack(
-                                        rx.foreach(
-                                            UnderwritingState.client_list,
-                                            lambda row: rx.box(
-                                                rx.hstack(
-                                                    rx.vstack(
-                                                        rx.hstack(
-                                                            rx.text(
-                                                                "#" + row["SK_ID_CURR"].to_string(),
-                                                                size="2",
-                                                                weight="bold",
-                                                                color=rx.cond(
-                                                                    row["SK_ID_CURR"].to_string() == UnderwritingState.selected_client_id,
-                                                                    "#38BDF8",
-                                                                    "white",
-                                                                ),
-                                                                font_family="monospace",
-                                                            ),
-                                                            rx.cond(
-                                                                row["SK_ID_CURR"].to_string() == UnderwritingState.selected_client_id,
-                                                                rx.badge("Active", size="1", color_scheme="blue", variant="solid"),
-                                                                rx.fragment(),
-                                                            ),
-                                                            spacing="2",
-                                                            align="center",
-                                                        ),
-                                                        rx.hstack(
-                                                            rx.text(
-                                                                row["AMT_CREDIT_DISPLAY"],
-                                                                size="1",
-                                                                color="#9CA3AF",
-                                                                font_family="monospace",
-                                                            ),
-                                                            rx.text("·", size="1", color="#4B5563"),
-                                                            rx.text(
-                                                                row["TERM_DISPLAY"],
-                                                                size="1",
-                                                                color="#9CA3AF",
-                                                            ),
-                                                            spacing="1",
-                                                        ),
-                                                        spacing="0",
-                                                        align_items="flex-start",
-                                                    ),
-                                                    rx.spacer(),
-                                                    rx.vstack(
-                                                        rx.badge(
-                                                            row["DECISION"],
-                                                            color_scheme=row["DECISION_COLOR"],
-                                                            variant="surface",
-                                                            size="1",
-                                                        ),
-                                                        rx.text(
-                                                            row["PD_DISPLAY"],
-                                                            size="1",
-                                                            color="#9CA3AF",
-                                                            font_family="monospace",
-                                                        ),
-                                                        spacing="0",
-                                                        align_items="flex-end",
-                                                    ),
-                                                    width="100%",
-                                                    align="center",
-                                                    padding="3",
-                                                ),
-                                                width="100%",
-                                                border_radius="8px",
-                                                background=rx.cond(
-                                                    row["SK_ID_CURR"].to_string() == UnderwritingState.selected_client_id,
-                                                    "#1E293B",
-                                                    "transparent",
-                                                ),
-                                                border=rx.cond(
-                                                    row["SK_ID_CURR"].to_string() == UnderwritingState.selected_client_id,
-                                                    "1px solid #38BDF8",
-                                                    "1px solid transparent",
-                                                ),
-                                                cursor="pointer",
-                                                _hover={"background": "#1E293B"},
-                                                on_click=UnderwritingState.select_and_evaluate_client(
-                                                    row["SK_ID_CURR"].to_string()
-                                                ),
-                                            ),
-                                        ),
-                                        spacing="2",
-                                        width="100%",
-                                    ),
-                                    type="auto",
-                                    scrollbars="vertical",
-                                    style={"height": "calc(100vh - 120px)"},
-                                    width="100%",
-                                ),
-                                spacing="3",
-                                width="100%",
-                                padding="4",
-                            ),
-                            background="#0F172A",
-                            border_right="1px solid #1E293B",
-                            width="360px",
-                            max_width="90vw",
-                        ),
+                        variant="surface",
+                        color_scheme="gray",
+                        size="1",
+                        cursor="pointer",
+                        on_click=UnderwritingState.open_queue_drawer,
                     ),
                     rx.divider(orientation="vertical", height="16px", border_color="#1F2937"),
                     rx.hstack(

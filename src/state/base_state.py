@@ -179,6 +179,10 @@ class BaseUnderwritingState(rx.State):
     upload_dialog_open: bool = False
     uploaded_file_name: str = ""
 
+    # Queue Drawer State (Left Slide-Over Panel)
+    is_queue_open: bool = False
+    queue_search_query: str = ""
+
     # AI Optimization & Restructuring State (Shared across State hierarchy)
     is_optimizing: bool = False
     is_baseline_optimal: bool = False
@@ -217,4 +221,25 @@ class BaseUnderwritingState(rx.State):
 
     def close_upload_dialog(self):
         self.upload_dialog_open = False
+
+    @rx.event
+    def open_queue_drawer(self):
+        """Mở thanh Queue Drawer bên trái."""
+        self.is_queue_open = True
+
+    @rx.event
+    def close_queue_drawer(self):
+        """Đóng thanh Queue Drawer bên trái."""
+        self.is_queue_open = False
+
+    @rx.event
+    def set_queue_search_query(self, query: str):
+        """Cập nhật từ khóa lọc nhanh Client ID trong Queue Drawer."""
+        self.queue_search_query = str(query).strip()
+
+    @rx.event
+    def clear_queue_search(self):
+        """Xóa từ khóa tìm kiếm trong Queue Drawer."""
+        self.queue_search_query = ""
+
 

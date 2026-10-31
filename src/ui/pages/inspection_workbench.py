@@ -9,6 +9,7 @@ from src.ui.components.what_if import what_if_view
 from src.ui.components.decision_notes import decision_notes_view
 from src.ui.components.feature_search_view import feature_search_view
 from src.ui.components.feature_drawer import feature_detail_drawer
+from src.ui.components.queue_drawer import queue_drawer
 
 
 def inspection_workbench_page() -> rx.Component:
@@ -55,7 +56,8 @@ def inspection_workbench_page() -> rx.Component:
             width="100%",
         ),
 
-        # Feature Detail Drawer
+        # Slide-Over Drawers (Queue bên trái & Feature Detail bên phải)
+        queue_drawer(),
         feature_detail_drawer(),
 
         on_mount=UnderwritingState.load_demo_clients,
