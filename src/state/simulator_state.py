@@ -142,18 +142,17 @@ class SimulatorState(InspectionState):
 
     @rx.var
     def sim_status_color(self) -> str:
-        if self.sim_decision == "APPROVE":
+        if self.sim_decision in ("APPROVE", "APPROVED", "ACCEPT"):
             return "#10B981"
-        elif self.sim_decision == "DECLINE":
+        elif self.sim_decision in ("DECLINE", "DECLINED"):
             return "#EF4444"
-        return "#F59E0B"
+        return "#EF4444"
 
     @rx.var
     def sim_dti_color(self) -> str:
-        if self.sim_dti <= retail_pricing_config.target_dti_healthy:
+        """Khung an toàn DTI <= 50.0% (#10B981), vượt trần DTI > 50.0% (#EF4444)."""
+        if self.sim_dti <= retail_pricing_config.max_dti_limit:
             return "#10B981"
-        elif self.sim_dti <= retail_pricing_config.max_dti_limit:
-            return "#F59E0B"
         return "#EF4444"
 
     @rx.var
@@ -436,7 +435,7 @@ class SimulatorState(InspectionState):
             if sim_pd is None or math.isnan(float(sim_pd)) or float(sim_pd) <= 0.0001:
                 print(f"[recalculate_simulation_pd] Warning: sim_pd was {sim_pd}, falling back to baseline {baseline_pd_dec}")
                 sim_pd = baseline_pd_dec
-                sim_tier = self.baseline_tier if self.baseline_tier != "None" else "Tier A"
+                sim_tier = self.baseline_tier if self.baseline_tier != "None" else "ACCEPT"
                 sim_decision = self.baseline_decision if self.baseline_decision != "None" else "APPROVE"
 
             self.sim_pd = float(sim_pd)
@@ -476,6 +475,7 @@ class SimulatorState(InspectionState):
                 pd_decimal=float(self.sim_pd),
                 dti_percent=float(self.sim_dti),
             )
+            self.sim_tier = eval_res.get("tier", "ACCEPT" if eval_res["is_approved"] else "DECLINE")
             self.sim_decision_status = eval_res["decision"]
             self.sim_decision_color = eval_res["color"]
             self.sim_credit_decision = self.sim_decision_status
@@ -495,6 +495,7 @@ class SimulatorState(InspectionState):
                 pd_decimal=float(self.sim_pd),
                 dti_percent=float(self.sim_dti),
             )
+            self.sim_tier = eval_res.get("tier", "ACCEPT" if eval_res["is_approved"] else "DECLINE")
             self.sim_decision_status = eval_res["decision"]
             self.sim_decision_color = eval_res["color"]
             self.sim_credit_decision = self.sim_decision_status

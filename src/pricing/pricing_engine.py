@@ -86,6 +86,7 @@ class RiskBasedPricingEngine:
             status_text = "Approved under Risk Appetite"
 
         return {
+            "tier": "ACCEPT" if is_approved else "DECLINE",
             "decision": "APPROVED" if is_approved else "DECLINED",
             "is_approved": is_approved,
             "reason_code": reason_code,

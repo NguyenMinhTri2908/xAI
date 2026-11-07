@@ -201,7 +201,7 @@ class OptimizationState(SimulatorState):
         is_already_approved = (
             (base_pd_percent <= cutoff_percent and base_dti <= retail_pricing_config.target_dti_healthy)
             or (
-                self.baseline_decision in ("APPROVED", "APPROVE")
+                self.baseline_decision in ("APPROVED", "APPROVE", "ACCEPT")
                 and self.baseline_decision_status != "DECLINED"
                 and base_pd_percent <= cutoff_percent
             )

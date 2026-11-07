@@ -284,21 +284,17 @@ class InspectionState(DatasetState):
     @rx.var
     def decision_color(self) -> str:
         dec = self.current_decision.upper()
-        if "APPROVE" in dec:
-            return "#10B981"  # Xanh lá
-        elif "WAIT" in dec or "REVIEW" in dec or "COMMITTEE" in dec:
-            return "#F59E0B"  # Vàng hổ phách
+        if "APPROVE" in dec or "ACCEPT" in dec:
+            return "#10B981"  # Xanh lá (ACCEPT / APPROVED)
         elif "DECLINE" in dec or "REJECT" in dec:
-            return "#EF4444"  # Đỏ
+            return "#EF4444"  # Đỏ (DECLINE / DECLINED)
         return "#94A3B8"
 
     @rx.var
     def decision_bg_color(self) -> str:
         dec = self.current_decision.upper()
-        if "APPROVE" in dec:
+        if "APPROVE" in dec or "ACCEPT" in dec:
             return "rgba(16, 185, 129, 0.12)"
-        elif "WAIT" in dec or "REVIEW" in dec or "COMMITTEE" in dec:
-            return "rgba(245, 158, 11, 0.12)"
         elif "DECLINE" in dec or "REJECT" in dec:
             return "rgba(239, 68, 68, 0.12)"
         return "rgba(15, 23, 42, 0.6)"
@@ -441,6 +437,8 @@ class InspectionState(DatasetState):
         self.baseline_decision_status = eval_res["decision"]
         self.baseline_decision_color = eval_res["color"]
         self.credit_decision_text = eval_res["status_text"]
+        self.current_tier = eval_res.get("tier", "ACCEPT" if eval_res["is_approved"] else "DECLINE")
+        self.baseline_tier = self.current_tier
 
         self.credit_decision_status = self.baseline_decision_status
         self.credit_decision_color = self.baseline_decision_color

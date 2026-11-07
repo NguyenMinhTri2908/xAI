@@ -46,15 +46,16 @@ def generate_candidate_pool(
 
     approved_candidates: List[Dict[str, Any]] = []
 
-    # 3. Vòng 1: Tìm kiếm trong vùng DTI lành mạnh (<= 40.0%)
+    # 3. Duyệt không gian kỳ hạn và hạn mức theo chuẩn kiểm soát đồng nhất:
+    # Tất cả phương án tái cơ cấu hợp lệ phải thỏa mãn Khung an toàn DTI <= 50.0% và PD <= default_cutoff_pd (6.80%)
     for cand_term in terms:
         for factor in factors:
             cand_credit = round(base_credit * factor, -2)
             cand_annuity = round((cand_credit / cand_term) * (1.0 + interest_rate_factor), 1)
             cand_dti = round((cand_annuity / max(income, 1.0)) * 100.0, 1)
 
-            # Ràng buộc điều kiện khả thi lành mạnh: DTI <= target_dti_healthy (40.0%)
-            if cand_dti > retail_pricing_config.target_dti_healthy:
+            # Ràng buộc Khung an toàn DTI chuẩn EBA/Basel: DTI <= 50.0% (max_dti_limit = target_dti_healthy = 50.0%)
+            if cand_dti > retail_pricing_config.max_dti_limit:
                 continue
 
             # Dự đoán siêu tốc qua cache model ensemble
@@ -99,56 +100,7 @@ def generate_candidate_pool(
                 }
                 approved_candidates.append(candidate_info)
 
-    # 4. Vòng 2: Nếu chưa có phương án nào, thử nới lỏng theo trần DTI tối đa (<= 50.0%)
-    if not approved_candidates:
-        for cand_term in terms:
-            for factor in factors:
-                cand_credit = round(base_credit * factor, -2)
-                cand_annuity = round((cand_credit / cand_term) * (1.0 + interest_rate_factor), 1)
-                cand_dti = round((cand_annuity / max(income, 1.0)) * 100.0, 1)
-
-                if cand_dti > retail_pricing_config.max_dti_limit:
-                    continue
-
-                cand_pd, cand_tier, _ = engine.predict_pd_from_cache(
-                    credit=cand_credit,
-                    annuity=cand_annuity,
-                    income=income,
-                )
-                if cand_pd is None or cand_pd <= 0:
-                    continue
-
-                eval_cand = pricing_engine.evaluate_credit_decision(
-                    pd_decimal=float(cand_pd),
-                    dti_percent=float(cand_dti),
-                )
-                if eval_cand["is_approved"]:
-                    pricing_cand = pricing_engine.compute_baseline_pricing(
-                        pd_decimal=float(cand_pd),
-                        term_months=int(cand_term),
-                    )
-                    candidate_info = {
-                        "credit": float(cand_credit),
-                        "term": int(cand_term),
-                        "annuity": float(cand_annuity),
-                        "dti": float(cand_dti),
-                        "pd": float(cand_pd),
-                        "tier": str(cand_tier),
-                        "decision": eval_cand["decision"],
-                        "is_approved": True,
-                        "reason_code": eval_cand["reason_code"],
-                        "offered_rate": pricing_cand["applied_rate_percent"],
-                        "rate_display": pricing_cand["applied_rate_display"],
-                        "factor": float(factor),
-                        "credit_display": f"${int(cand_credit):,}",
-                        "term_display": f"{int(cand_term)} tháng",
-                        "annuity_display": f"${int(cand_annuity):,}/mo",
-                        "dti_display": f"{cand_dti:.1f}%",
-                        "pd_display": f"{cand_pd * 100:.2f}%",
-                    }
-                    approved_candidates.append(candidate_info)
-
-    # 5. Nếu hoàn toàn không thể cứu được hồ sơ, trả về rỗng (tuyệt đối không trả về kịch bản DECLINED)
+    # 4. Nếu hoàn toàn không thể cứu được hồ sơ, trả về rỗng (tuyệt đối không trả về kịch bản DECLINED)
     if not approved_candidates:
         return []
 

@@ -4,7 +4,6 @@ METADATA CẤU HÌNH ĐỊNH GIÁ & QUẢN TRỊ RỦI RO BÁN LẺ (RETAIL UNSE
 Tập trung toàn bộ tham số chi phí vốn, vận hành, tổn thất kỳ vọng và khẩu vị rủi ro[cite: 1, 5].
 Nguồn dữ liệu chuẩn duy nhất (Single Source of Truth) cho toàn bộ hệ thống thẩm định[cite: 8].
 """
-
 from dataclasses import dataclass, field
 from typing import Dict
 
@@ -44,9 +43,9 @@ class RetailPricingConfig:
     portfolio_max_bad_rate: float = 0.0300  # Trần tỷ lệ nợ xấu danh mục chấp nhận được: 3.00%[cite: 5, 20]
 
     # 8. RÀNG BUỘC KHẢ NĂNG CHI TRẢ & GÁNH NẶNG NỢ (Affordability Constraints / DTI)
-    # Tỷ lệ nghĩa vụ trả nợ trên thu nhập (Debt Service-to-Income / DTI = Annuity / Income * 100)[cite: 5, 6]
+    # Trần DTI chuẩn mực đồng nhất 50.0% theo khuyến nghị của EBA/Basel cho vay tiêu dùng tín chấp
     max_dti_limit: float = 50.0       # Trần DTI cứng: Vượt quá 50.0% -> DECLINED để chống bẫy vỡ nợ
-    target_dti_healthy: float = 40.0  # Mức DTI mục tiêu an toàn khi AI tự động cơ cấu hạn mức / kỳ hạn[cite: 5, 6]
+    target_dti_healthy: float = 50.0  # Trần DTI chuẩn mực đồng nhất 50.0% theo khuyến nghị của EBA/Basel cho vay tiêu dùng tín chấp
 
     def get_ftp_rate(self, term_months: int) -> float:
         """Lấy lãi suất FTP tương ứng theo số tháng vay thực tế của khách hàng[cite: 1, 4]."""

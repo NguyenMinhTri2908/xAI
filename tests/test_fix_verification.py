@@ -190,7 +190,7 @@ class TestFixVerification(unittest.TestCase):
                 "annuity": 3800.0,
                 "dti": 22.8,
                 "pd": 0.042,
-                "tier": "Tier 1",
+                "tier": "ACCEPT",
                 "decision": "APPROVED",
                 "is_approved": True,
                 "reason_code": "PASSED_ALL",
@@ -263,9 +263,9 @@ class TestFixVerification(unittest.TestCase):
 
         # 2. Giả lập mô hình dự đoán: Cho phép duyệt nhiều phương án
         # Giả sử mọi phương án đều cho PD = 0.035 (thỏa mãn cutoff 0.068)
-        mock_engine.predict_pd_from_cache.return_value = (0.035, "Tier A", "APPROVE")
+        mock_engine.predict_pd_from_cache.return_value = (0.035, "ACCEPT", "APPROVE")
 
-        # Khách hàng có nhu cầu: Vay $500,000, kỳ hạn 24 tháng, thu nhập $75,000 (DTI tại 24m là ~30% <= 40%)
+        # Khách hàng có nhu cầu: Vay $500,000, kỳ hạn 24 tháng, thu nhập $75,000 (DTI tại 24m là ~30% <= 50.0%)
         pool = generate_candidate_pool(
             engine=mock_engine,
             base_credit=500000.0,
@@ -286,7 +286,7 @@ class TestFixVerification(unittest.TestCase):
         self.assertTrue(top_cand["is_approved"])
 
         # 3. Kiểm tra trường hợp không thể cứu (mọi phương án đều bị PD vượt ngưỡng):
-        mock_engine.predict_pd_from_cache.return_value = (0.150, "Tier D", "DECLINE")
+        mock_engine.predict_pd_from_cache.return_value = (0.150, "DECLINE", "DECLINE")
         unrescuable_pool = generate_candidate_pool(
             engine=mock_engine,
             base_credit=500000.0,
@@ -351,7 +351,7 @@ class TestFixVerification(unittest.TestCase):
                 "annuity": 3000.0,
                 "dti": 20.0,
                 "pd": 0.04 + i * 0.005,
-                "tier": "Tier 1",
+                "tier": "ACCEPT",
                 "decision": "APPROVED",
                 "is_approved": True,
                 "reason_code": "PASSED_ALL",
@@ -408,7 +408,7 @@ class TestFixVerification(unittest.TestCase):
         self.assertEqual(state.visible_proposals_count_display, "Showing 4 of 4")
 
         # Kiểm tra Deduplication của generate_candidate_pool: Không bao giờ có 2 phần tử cùng (credit, term)
-        mock_engine.predict_pd_from_cache.return_value = (0.04, "Tier A", "APPROVE")
+        mock_engine.predict_pd_from_cache.return_value = (0.04, "ACCEPT", "APPROVE")
         pool = generate_candidate_pool(
             engine=mock_engine,
             base_credit=400000.0,
@@ -433,13 +433,13 @@ class TestFixVerification(unittest.TestCase):
         mock_engine.predict_single.return_value = {
             "probability_of_default": 0.095,
             "score_percent": 9.5,
-            "tier": "Tier D",
+            "tier": "DECLINE",
             "decision": "DECLINE",
             "top_risk_factors": [],
             "top_positive_factors": [],
             "all_shap_values": {"EXT_SOURCE_1": 0.05},
         }
-        mock_engine.predict_pd_from_cache.return_value = (0.042, "Tier A", "APPROVE")
+        mock_engine.predict_pd_from_cache.return_value = (0.042, "ACCEPT", "APPROVE")
 
         # Giả lập Hồ sơ A (Declined)
         client_a_series = pd.Series({
@@ -520,7 +520,7 @@ class TestFixVerification(unittest.TestCase):
         mock_engine.predict_single.return_value = {
             "probability_of_default": 0.032,
             "score_percent": 3.20,
-            "tier": "Tier A",
+            "tier": "ACCEPT",
             "decision": "APPROVE",
             "top_risk_factors": [],
             "top_positive_factors": [],
@@ -560,24 +560,20 @@ class TestFixVerification(unittest.TestCase):
         print("[TEST 11 PASSED] ✓ Queue Drawer đóng/mở tường minh, lọc nhanh và chuyển hồ sơ nguyên tử thành công.")
 
     def test_12_dti_color_thresholds_synced_with_config(self):
-        """Mục 12: Xác nhận ngưỡng màu DTI (sim_dti_color) đồng bộ chuẩn với retail_pricing_config (40% và 50%)."""
+        """Mục 12: Xác nhận ngưỡng màu DTI (sim_dti_color) đồng bộ chuẩn với retail_pricing_config (Khung an toàn DTI <= 50.0%)."""
         state = UnderwritingState()
-        # <= 40% (target_dti_healthy): Xanh (#10B981)
+        # Khung an toàn DTI <= 50.0% (target_dti_healthy = max_dti_limit = 50.0%): Xanh (#10B981)
         state.sim_dti = 38.5
         self.assertEqual(state.sim_dti_color, "#10B981")
-        state.sim_dti = 40.0
+        state.sim_dti = 45.0
+        self.assertEqual(state.sim_dti_color, "#10B981")
+        state.sim_dti = 50.0
         self.assertEqual(state.sim_dti_color, "#10B981")
 
-        # 40% < DTI <= 50% (max_dti_limit): Vàng cam (#F59E0B)
-        state.sim_dti = 45.0
-        self.assertEqual(state.sim_dti_color, "#F59E0B")
-        state.sim_dti = 50.0
-        self.assertEqual(state.sim_dti_color, "#F59E0B")
-
-        # > 50% (vượt max_dti_limit): Đỏ (#EF4444)
+        # > 50.0% (vượt max_dti_limit): Đỏ (#EF4444)
         state.sim_dti = 52.5
         self.assertEqual(state.sim_dti_color, "#EF4444")
-        print("[TEST 12 PASSED] ✓ Ngưỡng màu cảnh báo DTI đồng bộ hoàn toàn với retail_pricing_config (40.0% / 50.0%).")
+        print("[TEST 12 PASSED] ✓ Ngưỡng màu cảnh báo DTI đồng bộ hoàn toàn với retail_pricing_config (Khung an toàn DTI <= 50.0%).")
 
 
 if __name__ == "__main__":

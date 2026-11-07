@@ -94,7 +94,7 @@ class TestRestructuringService(unittest.TestCase):
             "annuity": 2500.0,
             "dti": 30.0,
             "pd": 0.045,
-            "tier": "Tier 2",
+            "tier": "ACCEPT",
             "decision": "APPROVED",
             "is_approved": True,
             "reason_code": "PASSED_ALL",
@@ -170,7 +170,7 @@ class TestRestructuringService(unittest.TestCase):
     def test_generate_candidate_pool_with_mock_engine(self):
         mock_engine = MagicMock()
         # Giả lập model trả về PD an toàn (0.045) cho mọi phương án
-        mock_engine.predict_pd_from_cache.return_value = (0.045, "Tier 2", None)
+        mock_engine.predict_pd_from_cache.return_value = (0.045, "ACCEPT", None)
 
         pool = generate_candidate_pool(
             engine=mock_engine,
@@ -182,9 +182,10 @@ class TestRestructuringService(unittest.TestCase):
         )
 
         self.assertGreater(len(pool), 0)
+        self.assertEqual(retail_pricing_config.target_dti_healthy, 50.0)
         for cand in pool:
-            # Tất cả ứng viên trong pool phải thỏa mãn DTI <= target_dti_healthy (40%)
-            self.assertLessEqual(cand["dti"], retail_pricing_config.target_dti_healthy)
+            # Tất cả ứng viên trong pool phải thỏa mãn Khung an toàn DTI <= 50.0% (target_dti_healthy = max_dti_limit = 50.0%)
+            self.assertLessEqual(cand["dti"], retail_pricing_config.max_dti_limit)
             # Ứng viên được duyệt phải có is_approved = True
             self.assertTrue(cand["is_approved"])
             self.assertIn("credit_display", cand)

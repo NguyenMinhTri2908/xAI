@@ -33,7 +33,7 @@ class CreditScoringEngine:
     Automated Credit Scoring & Underwriting Engine.
     - Loads 10-fold ensemble models (5 LightGBM + 5 XGBoost).
     - Computes Probability of Default (PD) via Weighted Soft Voting.
-    - Assigns standard Credit Tiers (A, B, C, D) and underwriting recommendations.
+    - Assigns binary underwriting status (ACCEPT / DECLINE) and recommendations.
     - Extracts local feature attribution via TreeSHAP and decodes categorical codes using metadata.
     """
 
@@ -120,24 +120,24 @@ class CreditScoringEngine:
 
         return df_aligned
 
-    def _determine_credit_tier(self, pd_score: float) -> Tuple[str, str]:
+    def _determine_credit_tier(
+        self,
+        pd_score: float,
+        dti_percent: Optional[float] = None,
+    ) -> Tuple[str, str]:
         """
-        Phân tầng xếp hạng rủi ro (Credit Tier) và khuyến nghị chính sách đồng bộ với RetailPricingConfig:
-        Ngưỡng Cut-off tối ưu T* = 6.80% (0.0680), kiểm soát Bad Rate danh mục <= 2.96%:
-        - PD <= 3.40%: Tier A (Super Prime / Rủi ro thấp) -> APPROVE
-        - 3.40% < PD <= 6.80%: Tier B (Prime / Thỏa mãn khẩu vị rủi ro) -> APPROVE
-        - 6.80% < PD <= 10.20%: Tier C (Vùng xám / Cần hội đồng phê duyệt) -> WAITING / COMMITTEE REVIEW
-        - PD > 10.20%: Tier D (High Risk / Vượt ngưỡng rủi ro) -> DECLINE
+        Phân loại trạng thái thẩm định nhị phân (ACCEPT / DECLINE) đồng bộ với RetailPricingConfig:
+        Ngưỡng Cut-off tối ưu T* = 6.80% (0.0680) và trần DTI = 50.0%:
+        - NHÓM ACCEPT (Gộp Tier A + Tier B): PD <= 6.80% và DTI <= 50.0% -> ("ACCEPT", "APPROVE")
+        - NHÓM DECLINE (Gộp Tier C + Tier D): PD > 6.80% hoặc DTI > 50.0% -> ("DECLINE", "DECLINE")
         """
         cutoff = retail_pricing_config.default_cutoff_pd
-        if pd_score <= cutoff * 0.5:
-            return "Tier A", "APPROVE"
-        elif pd_score <= cutoff:
-            return "Tier B", "APPROVE"
-        elif pd_score <= cutoff * 1.5:
-            return "Tier C", "WAITING / COMMITTEE REVIEW"
+        dti_limit = retail_pricing_config.max_dti_limit
+        dti_ok = (dti_percent is None) or (float(dti_percent) <= dti_limit)
+        if pd_score <= cutoff and dti_ok:
+            return "ACCEPT", "APPROVE"
         else:
-            return "Tier D", "DECLINE"
+            return "DECLINE", "DECLINE"
 
     def predict_single(self, client_series: pd.Series) -> Dict[str, Any]:
         """Runs full inference and feature attribution for a single loan application record."""

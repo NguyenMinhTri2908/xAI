@@ -58,7 +58,7 @@ def render_queue_client_item(row: rx.Var[dict]) -> rx.Component:
                     color_scheme=rx.cond(
                         row["DECISION_COLOR"] == "green",
                         "green",
-                        rx.cond(row["DECISION_COLOR"] == "amber", "amber", "red"),
+                        "red",
                     ),
                     variant="surface",
                     size="1",

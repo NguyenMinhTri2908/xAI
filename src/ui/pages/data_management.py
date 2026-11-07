@@ -542,7 +542,7 @@ def client_registry_table() -> rx.Component:
                                             color_scheme=rx.cond(
                                                 row["PD_COLOR"] == "#10B981",
                                                 "green",
-                                                rx.cond(row["PD_COLOR"] == "#F59E0B", "amber", "red"),
+                                                "red",
                                             ),
                                             variant="surface",
                                             size="1",
@@ -550,7 +550,12 @@ def client_registry_table() -> rx.Component:
                                     ),
                                     # RATING TIER
                                     rx.table.cell(
-                                        rx.badge(row["TIER"], variant="soft", color_scheme="gray", size="1")
+                                        rx.badge(
+                                            row["TIER"],
+                                            variant="soft",
+                                            color_scheme=rx.cond(row["TIER"] == "ACCEPT", "green", "red"),
+                                            size="1",
+                                        )
                                     ),
                                     # RECOMMENDATION
                                     rx.table.cell(

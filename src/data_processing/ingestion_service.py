@@ -191,12 +191,15 @@ def format_df_to_summary_records(sub_df: pd.DataFrame, compute_pd: bool = True) 
             decision = pred.get("decision", "N/A")
             pd_val = pred.get("pd_val", 0.0)
             cutoff = retail_pricing_config.default_cutoff_pd
-            if pd_val <= cutoff:
-                pd_color = "#10B981"  # Xanh lá (Within Cut-off)
-            elif pd_val <= cutoff * 1.5:
-                pd_color = "#F59E0B"  # Vàng hổ phách (Near Cut-off / Gray Zone)
+            dti_val = (annuity_num / income_num) * 100.0 if (income_num > 0 and annuity_num > 0) else 0.0
+            if pd_val <= cutoff and dti_val <= retail_pricing_config.max_dti_limit:
+                tier = "ACCEPT"
+                decision = "APPROVE"
+                pd_color = "#10B981"  # Xanh lá (ACCEPT: Within Cut-off & DTI Limit)
             else:
-                pd_color = "#EF4444"  # Đỏ (Above Cut-off)
+                tier = "DECLINE"
+                decision = "DECLINE"
+                pd_color = "#EF4444"  # Đỏ (DECLINE: Above Cut-off or DTI Limit)
 
         term_str = "N/A"
         if credit_num > 0 and annuity_num > 0:
@@ -205,8 +208,8 @@ def format_df_to_summary_records(sub_df: pd.DataFrame, compute_pd: bool = True) 
 
         decision_color_scheme = (
             "green"
-            if decision in ("APPROVE", "APPROVED")
-            else ("amber" if any(w in str(decision).upper() for w in ("WAIT", "REVIEW", "COMMITTEE")) else "red")
+            if decision in ("APPROVE", "APPROVED", "ACCEPT")
+            else "red"
         )
 
         records.append({
