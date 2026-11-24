@@ -116,8 +116,17 @@ def transform_application_for_inference(df_raw: pd.DataFrame, benchmarks: dict =
     return df
 
 if __name__ == "__main__":
+    import sys
+    from pathlib import Path
+
+    PROJECT_ROOT = str(Path(__file__).resolve().parent.parent.parent)
+    if PROJECT_ROOT not in sys.path:
+        sys.path.insert(0, PROJECT_ROOT)
+
+    from src.config.paths import DATA_RAW_DIR
+
     # Smoke test with raw test data
-    RAW_TEST_PATH = "/Users/nguyenminhtri/FinalYearPro/data/raw/application_test.csv"
+    RAW_TEST_PATH = os.path.join(DATA_RAW_DIR, "application_test.csv")
     if os.path.exists(RAW_TEST_PATH):
         print(f"Executing inference test on raw application_test sample: {RAW_TEST_PATH}")
         df_sample = pd.read_csv(RAW_TEST_PATH, nrows=5)

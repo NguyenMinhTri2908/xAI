@@ -15,7 +15,6 @@ if str(PROJECT_ROOT) not in sys.path:
 def get_production_dir() -> Path:
     """Xác định chính xác thư mục data/production qua multi-path check và đảm bảo thư mục tồn tại."""
     candidates = [
-        Path("/Users/nguyenminhtri/FinalYearPro/data/production"),
         PROJECT_ROOT / "data" / "production",
         Path("data/production").resolve(),
     ]

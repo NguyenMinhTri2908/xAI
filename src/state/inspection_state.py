@@ -5,15 +5,18 @@ from .dataset_state import DatasetState
 from .feature_search_state import FeatureSearchState
 from src.ui.utils.formatters import format_client_age, format_client_experience
 from src.engine.credit_scoring import get_scoring_engine
-from src.pricing.pricing_engine import pricing_engine
-from src.data_processing.ingestion_service import (
+from src.engine.pricing_engine import pricing_engine
+from src.services.ingestion_service import (
     get_client_row_data,
     load_dataset_from_source,
     get_active_client_ids,
     get_client_table_summary,
 )
 from src.services.explanation_service import process_shap_explanations
-from src.services.financial_service import compute_derived_financials
+from src.services.financial_service import (
+    estimate_requested_term_months,
+    compute_contractual_emi_and_dti,
+)
 
 
 def get_engine():
@@ -103,7 +106,15 @@ class InspectionState(DatasetState):
 
         base_annuity = float(self.baseline_amt_annuity or 0.0)
         if base_annuity <= 0.0:
-            base_annuity = round((base_credit / base_term) * (1.0 + self.interest_rate_factor), 1)
+            applied_rate = self.interest_rate_factor / 100.0 if self.interest_rate_factor > 1.0 else self.interest_rate_factor
+            r_month = applied_rate / 12.0
+            if r_month > 0:
+                base_annuity = round(
+                    base_credit * (r_month * (1 + r_month)**base_term) / ((1 + r_month)**base_term - 1),
+                    1,
+                )
+            else:
+                base_annuity = round(base_credit / base_term, 1)
 
         base_dti = float(self.baseline_dti or 0.0)
         if base_dti <= 0.0:
@@ -336,7 +347,9 @@ class InspectionState(DatasetState):
         # Đảm bảo tính bất biến (Immutability): Tạo bản sao độc lập (Deep Copy)
         client_series = raw_series.copy()
 
-        # 1. Trích xuất AMT_CREDIT
+        # ----------------------------------------------------------------------
+        # BƯỚC 1: Đọc dữ liệu hồ sơ thô & xác định kỳ hạn vay đề nghị (Tenure)
+        # ----------------------------------------------------------------------
         credit_val = client_series.get("AMT_CREDIT", None)
         try:
             credit_num = float(credit_val) if pd.notna(credit_val) else 0.0
@@ -345,16 +358,12 @@ class InspectionState(DatasetState):
             credit_num = 0.0
             credit_str = "None"
 
-        # 2. Trích xuất AMT_ANNUITY
         annuity_val = client_series.get("AMT_ANNUITY", None)
         try:
-            annuity_num = float(annuity_val) if pd.notna(annuity_val) else 0.0
-            annuity_str = f"${annuity_num:,.0f} / mo" if annuity_num > 0 else "None"
+            raw_annuity_num = float(annuity_val) if pd.notna(annuity_val) else 0.0
         except (ValueError, TypeError):
-            annuity_num = 0.0
-            annuity_str = "None"
+            raw_annuity_num = 0.0
 
-        # 3. Trích xuất AMT_INCOME_TOTAL
         income_val = client_series.get("AMT_INCOME_TOTAL", None)
         try:
             income_num = float(income_val) if pd.notna(income_val) else 0.0
@@ -363,14 +372,21 @@ class InspectionState(DatasetState):
             income_num = 0.0
             income_str = "None"
 
-        # 4 & 5. Tính toán TERM và DTI phái sinh qua Domain Financial Service
-        fin_metrics = compute_derived_financials(credit_num, annuity_num, income_num)
-        term_months = fin_metrics["term_months"]
-        term_str = fin_metrics["term_display"]
-        dti_ratio = fin_metrics["dti_percent"]
-        dti_str = fin_metrics["dti_display"]
+        explicit_term_val = client_series.get("TERM_MONTHS", None)
+        has_explicit_term = False
+        try:
+            if pd.notna(explicit_term_val) and float(explicit_term_val) > 0:
+                term_months = int(round(float(explicit_term_val)))
+                has_explicit_term = True
+            else:
+                term_months = estimate_requested_term_months(credit_num, raw_annuity_num)
+        except (ValueError, TypeError):
+            term_months = estimate_requested_term_months(credit_num, raw_annuity_num)
 
-        # 6. Gán Dictionary Thông Tin Khách Hàng
+        has_valid_term = has_explicit_term or (credit_num > 0.0 and raw_annuity_num > 0.0)
+        client_term = term_months if has_valid_term else 12
+        term_str = f"{term_months} months" if has_valid_term else "None"
+
         raw_age = client_series.get("AGE")
         if pd.isna(raw_age) or raw_age is None:
             raw_age = client_series.get("DAYS_BIRTH")
@@ -383,53 +399,54 @@ class InspectionState(DatasetState):
         if pd.isna(raw_exp) or raw_exp is None:
             raw_exp = client_series.get("EMPLOYED_YEARS")
 
-        self.selected_client_raw = {
-            "ID": str(client_id),
-            "NAME": "Client Name",
-            "AGE": format_client_age(raw_age),
-            "EXPERIENCE": format_client_experience(raw_exp),
-            "Credit": credit_str,
-            "Annuity": annuity_str,
-            "TERM": term_str,
-            "PAYMENT_TO_INCOME": dti_str,
-            "Income": income_str,
-        }
-
-        # 7. Chạy mô hình backend
+        # ----------------------------------------------------------------------
+        # BƯỚC 2: Chạy ML Engine (10-Fold GBDT) & trích xuất TreeSHAP
+        # ----------------------------------------------------------------------
         engine = get_engine()
         result = engine.predict_single(client_series)
 
         self.current_pd = result.get("probability_of_default", 0.0)
         self.current_score_percent = result.get("score_percent", 0.0)
-        self.current_tier = result.get("tier", "None")
-        self.current_decision = result.get("decision", "None")
+        self.baseline_pd = self.current_pd
+        self.baseline_score_percent = self.current_score_percent
 
-        # Trích xuất và chuẩn hóa giải thích SHAP qua Domain Explanation Service
         raw_risks, raw_positives, shap_lookup = process_shap_explanations(result)
         self.top_risk_factors = raw_risks
         self.top_positive_factors = raw_positives
         self.current_client_shap = shap_lookup
 
-        # 8. Cập nhật Baseline và khởi tạo Terms Simulator
-        self.baseline_amt_credit = credit_num
-        self.baseline_amt_annuity = annuity_num
-        self.baseline_amt_income_total = income_num
-        self.baseline_term_months = term_months if (credit_num > 0 and annuity_num > 0) else 12
-        self.baseline_dti = dti_ratio if (income_num > 0 and annuity_num > 0) else 0.0
-        self.baseline_pd = self.current_pd
-        self.baseline_score_percent = self.current_score_percent
-        self.baseline_tier = self.current_tier
-        self.baseline_decision = self.current_decision
-
+        # ----------------------------------------------------------------------
+        # BƯỚC 3: Định giá RBP 5 thành phần EBA từ PD & Kỳ hạn vay
+        # ----------------------------------------------------------------------
         pd_dec = float(self.baseline_score_percent) / 100.0
-        client_term = int(getattr(self, "baseline_term_months", 24))
-
-        # Tính toán lãi suất RBP Baseline
-        p_res = pricing_engine.compute_baseline_pricing(pd_dec, client_term)
+        p_res = pricing_engine.compute_baseline_pricing(
+            pd_decimal=pd_dec,
+            term_months=client_term,
+            principal=credit_num,
+        )
+        eba_rate_decimal = float(p_res["applied_rate"])
         self.baseline_offered_rate = p_res["applied_rate_percent"]
         self.baseline_rate_display = p_res["applied_rate_display"]
 
-        # Đánh giá quyết định tín dụng theo Cut-off & DTI cho Baseline qua Pricing Engine tập trung
+        # ----------------------------------------------------------------------
+        # BƯỚC 4: Tính Actuarial EMI & Baseline DTI đồng nhất từ EBA Risk-Based Rate
+        # ----------------------------------------------------------------------
+        contractual = compute_contractual_emi_and_dti(
+            principal=credit_num,
+            annual_rate=eba_rate_decimal,
+            term_months=client_term,
+            income=income_num,
+        )
+        self.baseline_amt_credit = credit_num
+        self.baseline_term_months = client_term
+        self.baseline_amt_annuity = contractual["annuity"]
+        self.baseline_amt_income_total = income_num
+        self.baseline_dti = contractual["dti_percent"]
+        self.interest_rate_factor = eba_rate_decimal
+
+        # ----------------------------------------------------------------------
+        # BƯỚC 5: Thẩm định Two-Gate (PD <= 6.80% & DTI <= 50.0%) & xuất Sticky Header
+        # ----------------------------------------------------------------------
         eval_res = pricing_engine.evaluate_credit_decision(
             pd_decimal=pd_dec,
             dti_percent=float(self.baseline_dti),
@@ -439,11 +456,22 @@ class InspectionState(DatasetState):
         self.credit_decision_text = eval_res["status_text"]
         self.current_tier = eval_res.get("tier", "ACCEPT" if eval_res["is_approved"] else "DECLINE")
         self.baseline_tier = self.current_tier
-
+        self.current_decision = self.baseline_decision_status
+        self.baseline_decision = self.current_decision
         self.credit_decision_status = self.baseline_decision_status
         self.credit_decision_color = self.baseline_decision_color
 
-        self.interest_rate_factor = fin_metrics["implied_rate_factor"]
+        self.selected_client_raw = {
+            "ID": str(client_id),
+            "NAME": "Client Name",
+            "AGE": format_client_age(raw_age),
+            "EXPERIENCE": format_client_experience(raw_exp),
+            "Credit": credit_str,
+            "Annuity": contractual["annuity_display"],
+            "TERM": term_str,
+            "PAYMENT_TO_INCOME": contractual["dti_display"],
+            "Income": income_str,
+        }
 
         # Tiền xử lý và lưu cache 891 features cho client hiện tại
         try:

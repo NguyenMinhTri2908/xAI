@@ -128,8 +128,8 @@ class CreditScoringEngine:
         """
         Phân loại trạng thái thẩm định nhị phân (ACCEPT / DECLINE) đồng bộ với RetailPricingConfig:
         Ngưỡng Cut-off tối ưu T* = 6.80% (0.0680) và trần DTI = 50.0%:
-        - NHÓM ACCEPT (Gộp Tier A + Tier B): PD <= 6.80% và DTI <= 50.0% -> ("ACCEPT", "APPROVE")
-        - NHÓM DECLINE (Gộp Tier C + Tier D): PD > 6.80% hoặc DTI > 50.0% -> ("DECLINE", "DECLINE")
+        - NHÓM ACCEPT : PD <= 6.80% và DTI <= 50.0% -> ("ACCEPT", "APPROVE")
+        - NHÓM DECLINE : PD > 6.80% hoặc DTI > 50.0% -> ("DECLINE", "DECLINE")
         """
         cutoff = retail_pricing_config.default_cutoff_pd
         dti_limit = retail_pricing_config.max_dti_limit

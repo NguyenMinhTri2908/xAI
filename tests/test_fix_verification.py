@@ -63,10 +63,10 @@ from src.state import UnderwritingState
 
 
 class TestFixVerification(unittest.TestCase):
-    """Kiểm thử tự động xác minh 3 lỗi đã được khắc phục triệt để."""
+    """Verify critical bug fixes, state isolation, and underwriting invariants."""
 
     def test_01_optimization_attributes_exist(self):
-        """Mục 1: Xác nhận không còn lỗi AttributeError trên OptimizationState."""
+        """Test 01: Verify OptimizationState exposes expected bindings and maps simulator variables."""
         state = UnderwritingState()
         # 1. selected_client_idx property
         state.selected_client_id = "100092"
@@ -91,10 +91,10 @@ class TestFixVerification(unittest.TestCase):
         self.assertEqual(state.sim_term_months, 36)
         self.assertEqual(state.sim_amt_annuity, 2400.0)
         self.assertEqual(state.sim_amt_credit_str, "80,000")
-        print("[TEST 1 PASSED] ✓ OptimizationState không còn lỗi AttributeError và gán đúng tên biến Simulator.")
+        print("[TEST 1 PASSED] ✓ OptimizationState attributes and simulator variable mappings verified.")
 
     def test_02_inspect_client_sync_and_shap(self):
-        """Mục 2: Xác nhận inspect_client đồng bộ Simulator reset, SHAP và redirect."""
+        """Test 02: Verify inspect_client synchronizes simulator reset, SHAP lookup, and navigation."""
         state = UnderwritingState()
         self.assertTrue(hasattr(state, "current_client_shap"))
 
@@ -107,10 +107,10 @@ class TestFixVerification(unittest.TestCase):
         self.assertEqual(len(events), 3)
         self.assertEqual(events[0], "RESET_SIM_EVENT")
         self.assertEqual(events[1], "UPDATE_SHAP_EVENT")
-        print("[TEST 2 PASSED] ✓ inspect_client đồng bộ đầy đủ Simulator reset, SHAP Event và Redirect.")
+        print("[TEST 2 PASSED] ✓ inspect_client synchronizes simulator reset, SHAP update event, and redirect.")
 
     def test_03_slider_clamping_and_fallback(self):
-        """Mục 3: Xác nhận slider không bị kẹt kịch biên và không mất số."""
+        """Test 03: Verify simulator slider clamping, safe fallbacks, and display formatting."""
         state = UnderwritingState()
 
         # Trường hợp 1: Baseline bằng 0 hoặc rỗng -> Fallback an toàn không bị 0% / 100%
@@ -137,18 +137,18 @@ class TestFixVerification(unittest.TestCase):
         self.assertIn("Months", state.sim_term_months_display)
         self.assertIn("$", state.sim_amt_annuity_display)
         self.assertIn("$", state.sim_amt_income_display)
-        print("[TEST 3 PASSED] ✓ Slider Simulator có dải biên độ an toàn, Clamping chuẩn xác, chuỗi hiển thị ổn định.")
+        print("[TEST 3 PASSED] ✓ Simulator sliders maintain valid clamped bounds and display strings.")
 
     from unittest.mock import patch
 
     @patch("src.engine.credit_scoring.CreditScoringEngine")
     def test_04_singleton_scoring_engine(self, mock_engine_cls):
-        """Mục 4: Xác nhận CreditScoringEngine được tập trung hóa thành một singleton duy nhất."""
+        """Test 04: Verify CreditScoringEngine is shared as a single system-wide singleton."""
         import src.engine.credit_scoring as cs_mod
         cs_mod._SCORING_ENGINE_INSTANCE = None
 
         from src.engine.credit_scoring import get_scoring_engine as eng_get
-        from src.data_processing.ingestion_service import get_scoring_engine as ing_get
+        from src.services.ingestion_service import get_scoring_engine as ing_get
         from src.state.inspection_state import get_engine as insp_get
         from src.state.optimization_state import get_scoring_engine as opt_get
 
@@ -162,11 +162,11 @@ class TestFixVerification(unittest.TestCase):
         self.assertIs(e2, e3)
         self.assertIs(e3, e4)
         mock_engine_cls.assert_called_once()
-        print("[TEST 4 PASSED] ✓ CreditScoringEngine là singleton duy nhất trên toàn bộ hệ thống.")
+        print("[TEST 4 PASSED] ✓ CreditScoringEngine singleton invariant verified across all accessors.")
 
     @patch("src.state.optimization_state.get_scoring_engine")
     def test_05_ai_auto_optimize_flow(self, mock_get_engine):
-        """Mục 5: Xác nhận ai_auto_optimize sinh kịch bản thành công và bật show_optimization_results."""
+        """Test 05: Verify ai_auto_optimize generates proposals and activates results modal."""
         mock_engine = MagicMock()
         mock_engine._cached_clean_df = MagicMock()
         mock_engine._cached_client_id = "100092"
@@ -222,10 +222,10 @@ class TestFixVerification(unittest.TestCase):
         self.assertIsNotNone(state.recommended_option)
         self.assertEqual(len(state.optimization_options), 1)
         self.assertEqual(state.recommended_option["title"], "Recommended Proposal")
-        print("[TEST 5 PASSED] ✓ ai_auto_optimize sinh kịch bản thành công và bật show_optimization_results.")
+        print("[TEST 5 PASSED] ✓ ai_auto_optimize proposal generation and state lifecycle verified.")
 
     def test_06_fail_fast_on_missing_or_zero_baseline(self):
-        """Mục 6: Xác nhận Fail-fast khi thiếu dữ liệu cơ sở, tuyệt đối không dùng fallback ma 100k/50k."""
+        """Test 06: Verify fail-fast guard halts inference on missing or zero baseline inputs."""
         state = UnderwritingState()
         state.selected_client_id = "100092"
         state.baseline_amt_credit = 0.0
@@ -249,10 +249,10 @@ class TestFixVerification(unittest.TestCase):
         self.assertTrue(state.show_alert)
         self.assertEqual(state.alert_type, "error")
         self.assertIn("missing or invalid", state.alert_message)
-        print("[TEST 6 PASSED] ✓ Fail-fast hoạt động chuẩn xác: Chặn đứng suy luận trên dữ liệu 0/rỗng, loại bỏ hoàn toàn fallback ma.")
+        print("[TEST 6 PASSED] ✓ Fail-fast guard rejects invalid baseline data without synthetic fallbacks.")
 
     def test_07_candidate_ranking_preserves_credit_and_term(self):
-        """Mục 7: Xác nhận logic xếp hạng ưu tiên bảo toàn hạn mức và kỳ hạn gốc, trả về [] khi không có phương án đạt chuẩn."""
+        """Test 07: Verify ranking prioritizes principal/term preservation and fails closed when unrescuable."""
         from src.services.restructuring_service import generate_candidate_pool
 
         mock_engine = MagicMock()
@@ -295,11 +295,11 @@ class TestFixVerification(unittest.TestCase):
         )
         # Phải trả về danh sách rỗng [], KHÔNG ĐƯỢC trả về phương án DECLINED
         self.assertEqual(unrescuable_pool, [])
-        print("[TEST 7 PASSED] ✓ Thuật toán xếp hạng ưu tiên bảo toàn hạn mức/kỳ hạn gốc và trả về [] dứt khoát khi không đạt chuẩn.")
+        print("[TEST 7 PASSED] ✓ Candidate ranking preserves credit/term and returns empty pool when unrescuable.")
 
     @patch("src.state.optimization_state.get_scoring_engine")
     def test_08_fast_path_when_baseline_approved(self, mock_get_engine):
-        """Mục 8: Fast-path cho hồ sơ APPROVED: Không tìm kiếm kịch bản, báo ngay hồ sơ đã tối ưu."""
+        """Test 08: Verify approved baseline triggers fast-path short-circuit with zero ML searches."""
         mock_engine = MagicMock()
         mock_get_engine.return_value = mock_engine
 
@@ -331,12 +331,12 @@ class TestFixVerification(unittest.TestCase):
         self.assertTrue(state.show_optimization_results)
         self.assertIsNone(state.recommended_option)
         self.assertEqual(state.alternative_options, [])
-        self.assertIn("đáp ứng hoàn hảo", state.status_message)
-        print("[TEST 8 PASSED] ✓ Fast-path hoạt động chuẩn xác: Hồ sơ APPROVED được xác nhận tối ưu ngay lập tức, không tốn tài nguyên tìm kiếm.")
+        self.assertIn("satisfies institutional risk appetite", state.status_message)
+        print("[TEST 8 PASSED] ✓ Approved baseline fast-path short-circuit verified.")
 
     @patch("src.state.optimization_state.get_scoring_engine")
     def test_09_proposals_pagination_and_deduplication(self, mock_get_engine):
-        """Mục 9: Xác nhận danh sách phẳng theo thứ hạng, phân trang Show more và deduplication (credit, term)."""
+        """Test 09: Verify ranked flat proposal list, pagination controls, and (credit, term) deduplication."""
         from src.services.restructuring_service import generate_candidate_pool
 
         mock_engine = MagicMock()
@@ -419,13 +419,13 @@ class TestFixVerification(unittest.TestCase):
         )
         keys = [(c["credit"], c["term"]) for c in pool]
         self.assertEqual(len(keys), len(set(keys)))
-        print("[TEST 9 PASSED] ✓ Danh sách phẳng theo thứ hạng, phân trang Show more và deduplication (credit, term) hoạt động hoàn hảo.")
+        print("[TEST 9 PASSED] ✓ Proposal ranking, show-more pagination, and (credit, term) deduplication verified.")
 
     @patch("src.state.simulator_state.get_engine")
     @patch("src.state.inspection_state.get_engine")
     @patch("src.state.inspection_state.get_client_row_data")
     def test_10_clean_reset_and_state_isolation(self, mock_get_client_row, mock_insp_engine, mock_sim_engine):
-        """Mục 10: Xác nhận Cô lập State (Baseline vs Simulator) và Vòng đời Clean Reset khi chuyển hồ sơ."""
+        """Test 10: Verify 3-zone state isolation (Baseline/Simulator/Optimizer) and clean reset on switch."""
         mock_engine = MagicMock()
         mock_insp_engine.return_value = mock_engine
         mock_sim_engine.return_value = mock_engine
@@ -510,12 +510,12 @@ class TestFixVerification(unittest.TestCase):
         self.assertEqual(state.sim_amt_credit, 400000.0)
         self.assertEqual(state.sim_amt_credit_str, "400,000")
 
-        print("[TEST 10 PASSED] ✓ Cô lập State 3 vùng (Baseline, Simulator, AI Optimizer) và Clean Reset Lifecycle hoạt động hoàn hảo.")
+        print("[TEST 10 PASSED] ✓ Three-zone state isolation and clean reset lifecycle verified.")
 
     @patch("src.state.inspection_state.get_engine")
     @patch("src.state.inspection_state.get_client_row_data")
     def test_11_queue_drawer_lifecycle_and_selection(self, mock_get_client_row, mock_get_engine):
-        """Mục 11: Kiểm tra vòng đời đóng/mở Queue Drawer, tìm kiếm nhanh và chọn hồ sơ nguyên tử."""
+        """Test 11: Verify Queue Drawer toggle, search filtering, and atomic client selection."""
         mock_engine = MagicMock()
         mock_engine.predict_single.return_value = {
             "probability_of_default": 0.032,
@@ -557,10 +557,10 @@ class TestFixVerification(unittest.TestCase):
         self.assertFalse(state.is_queue_open)
         self.assertEqual(state.selected_client_id, "100002")
         self.assertEqual(state.baseline_amt_credit, 450000.0)
-        print("[TEST 11 PASSED] ✓ Queue Drawer đóng/mở tường minh, lọc nhanh và chuyển hồ sơ nguyên tử thành công.")
+        print("[TEST 11 PASSED] ✓ Queue Drawer lifecycle, search filtering, and client selection verified.")
 
     def test_12_dti_color_thresholds_synced_with_config(self):
-        """Mục 12: Xác nhận ngưỡng màu DTI (sim_dti_color) đồng bộ chuẩn với retail_pricing_config (Khung an toàn DTI <= 50.0%)."""
+        """Test 12: Verify sim_dti_color thresholds synchronize with retail_pricing_config (DTI <= 50.0%)."""
         state = UnderwritingState()
         # Khung an toàn DTI <= 50.0% (target_dti_healthy = max_dti_limit = 50.0%): Xanh (#10B981)
         state.sim_dti = 38.5
@@ -573,7 +573,97 @@ class TestFixVerification(unittest.TestCase):
         # > 50.0% (vượt max_dti_limit): Đỏ (#EF4444)
         state.sim_dti = 52.5
         self.assertEqual(state.sim_dti_color, "#EF4444")
-        print("[TEST 12 PASSED] ✓ Ngưỡng màu cảnh báo DTI đồng bộ hoàn toàn với retail_pricing_config (Khung an toàn DTI <= 50.0%).")
+        print("[TEST 12 PASSED] ✓ DTI color warning thresholds synchronized with retail_pricing_config (DTI <= 50.0%).")
+
+    @patch("src.state.simulator_state.get_engine")
+    def test_13_fix_b6_sim_dti_recomputed_before_two_gate_decision(self, mock_sim_engine):
+        """Test 13 (Fix B6): Verify sim_dti is recomputed prior to Two-Gate evaluation in apply and recalculate."""
+        mock_engine = MagicMock()
+        mock_engine._cached_clean_df = pd.DataFrame([{"AMT_CREDIT": 200000.0}])
+        mock_engine._cached_client_id = "999999"
+        mock_engine.predict_pd_from_cache.return_value = (0.045, "ACCEPT", "APPROVE")
+        mock_sim_engine.return_value = mock_engine
+
+        state = UnderwritingState()
+        state.selected_client_id = "999999"
+        state.baseline_amt_credit = 500000.0
+        state.baseline_amt_income_total = 30000.0
+        state.baseline_term_months = 24
+        state.baseline_amt_annuity = 19175.0
+        state.baseline_dti = 63.9
+        state.baseline_pd = 0.085
+        state.baseline_score_percent = 8.5
+        state.baseline_offered_rate = 15.0
+
+        # 1. Stale high DTI (63.9%) trước khi apply proposal có annuity=$5,873 -> actual DTI = 19.6% -> APPROVED
+        state.sim_amt_credit = 500000.0
+        state.sim_term_months = 24
+        state.sim_amt_annuity = 19175.0
+        state.sim_amt_income_total = 30000.0
+        state.sim_dti = 63.9
+
+        state.apply_optimization_option({"credit": 200000.0, "term": 48, "annuity": 5873.0})
+        self.assertEqual(state.sim_dti, 19.6)
+        self.assertEqual(state.sim_decision_status, "APPROVED")
+
+        # 2. Fallback income về baseline_amt_income_total khi sim_amt_income_total == 0.0
+        state.sim_amt_income_total = 0.0
+        state.sim_dti = 63.9
+        state.apply_optimization_option({"credit": 200000.0, "term": 48, "annuity": 5873.0})
+        self.assertEqual(state.sim_dti, 19.6)
+        self.assertEqual(state.sim_decision_status, "APPROVED")
+
+        # 3. Gọi trực tiếp recalculate_simulation_pd khi sim_dti đang stale ở 19.6% nhưng annuity thực là $18,000 (60.0% > 50%)
+        state.sim_amt_income_total = 30000.0
+        state.sim_amt_annuity = 18000.0
+        state.sim_dti = 19.6
+        state.recalculate_simulation_pd()
+        self.assertEqual(state.sim_dti, 60.0)
+        self.assertEqual(state.sim_decision_status, "DECLINED")
+        print("[TEST 13 PASSED] ✓ Fix B6: sim_dti is recomputed before Two-Gate evaluate_credit_decision.")
+
+    @patch("src.state.optimization_state.get_scoring_engine")
+    def test_14_unrescuable_fail_closed_and_invalid_input_guards(self, mock_get_engine):
+        """Test 14: Verify unrescuable decline fail-closed behavior and negative/zero input guards."""
+        from src.services.restructuring_service import generate_candidate_pool
+
+        mock_engine = MagicMock()
+        mock_engine._cached_clean_df = pd.DataFrame([{"AMT_CREDIT": 250000.0}])
+        mock_engine._cached_client_id = "103771"
+        mock_get_engine.return_value = mock_engine
+
+        state = UnderwritingState()
+        state.selected_client_id = "103771"
+        state.baseline_amt_credit = 266652.0
+        state.baseline_amt_income_total = 135000.0
+        state.baseline_term_months = 13
+        state.baseline_amt_annuity = 23626.2
+        state.baseline_dti = 17.5
+        state.baseline_score_percent = 44.34
+        state.baseline_decision_status = "DECLINED"
+        state.baseline_decision = "DECLINED"
+        state._find_candidate_pool = MagicMock(return_value=[])
+
+        gen = state.ai_auto_optimize()
+        if hasattr(gen, "__next__"):
+            try:
+                for _ in gen:
+                    pass
+            except StopIteration:
+                pass
+
+        self.assertFalse(state.is_optimizing)
+        self.assertFalse(state.is_baseline_optimal)
+        self.assertTrue(state.show_optimization_results)
+        self.assertIsNone(state.recommended_option)
+        self.assertEqual(state.optimization_options, [])
+        self.assertIn("No restructuring terms", state.status_message)
+
+        # Kiểm tra guard đầu vào bất hợp lệ của generate_candidate_pool
+        self.assertEqual(generate_candidate_pool(mock_engine, base_credit=-50000.0, income=50000.0), [])
+        self.assertEqual(generate_candidate_pool(mock_engine, base_credit=100000.0, income=0.0), [])
+        mock_engine.predict_batch_pd.assert_not_called()
+        print("[TEST 14 PASSED] ✓ Unrescuable fail-closed state and invalid-input guards verified.")
 
 
 if __name__ == "__main__":

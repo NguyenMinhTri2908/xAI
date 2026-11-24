@@ -1,15 +1,33 @@
-*.db
-__pycache__/
-.web
-.states
-assets/external/
+# ==============================================================================
+# WHITELIST .gitignore — Ignore everything by default; allow ONLY release files
+# ==============================================================================
+*
+
+# 1. Core Root Configuration & Documentation
+!.gitignore
+!README.md
+!requirements.txt
+!rxconfig.py
+
+# 2. Production Application Source, Metadata & Model Weights (src/)
+!src/
+!src/**
+
+# 3. Automated Verification Test Suite (tests/)
+!tests/
+!tests/**
+
+# 4. Fixed Data Directory Policy
+# - data/raw/: keep empty on GitHub via .gitkeep (local Kaggle CSVs untouched)
+# - data/production/: whitelist ONLY demo_samples.parquet (1,000 rows, 2.7 MB)
+!data/
+!data/raw/
+!data/raw/.gitkeep
+!data/production/
+!data/production/demo_samples.parquet
+
+# 5. Re-exclude Python Bytecode, Caches & OS Metadata inside whitelisted trees
+**/__pycache__/
 *.py[cod]
-__pycache__/
-/data/
+*$py.class
 .DS_Store
-venv/
-.venv/
-.idea/
-.vscode/
-# AntiGravity / Cursor Agent rules
-.cursorrules

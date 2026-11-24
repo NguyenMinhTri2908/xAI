@@ -501,7 +501,7 @@ def optimal_baseline_alert() -> rx.Component:
                 rx.hstack(
                     rx.icon("circle-check", size=18, color="#10B981"),
                     rx.text(
-                        "Hồ sơ đạt chuẩn phê duyệt",
+                        "Baseline Meets Risk Appetite",
                         size="2",
                         weight="bold",
                         color="#10B981",
@@ -524,8 +524,8 @@ def optimal_baseline_alert() -> rx.Component:
                 align="center",
             ),
             rx.text(
-                "✓ Hồ sơ đạt chuẩn: Các chỉ số rủi ro (PD, DTI) của khách hàng đang nằm hoàn toàn trong ngưỡng an toàn. "
-                "Khuyến nghị giữ nguyên điều kiện hợp đồng ban đầu, không yêu cầu tái cơ cấu.",
+                "✓ Approved Baseline: Both PD and DTI satisfy institutional risk appetite thresholds. "
+                "Retaining original contract terms is recommended; no restructuring required.",
                 size="1",
                 color="#94A3B8",
                 style={"font_size": "12px", "line_height": "1.5"},

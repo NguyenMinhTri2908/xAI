@@ -103,6 +103,15 @@ def process_bureau_balance_pipeline(raw_bb_path: str, output_parquet_path: str =
     return df_bb_agg
 
 if __name__ == "__main__":
-    RAW_PATH = "/Users/nguyenminhtri/FinalYearPro/data/raw/bureau_balance.csv"
-    OUTPUT_PATH = "/Users/nguyenminhtri/FinalYearPro/data/preprocess/df_bureau_balance_clean_fe.parquet"
+    import sys
+    from pathlib import Path
+
+    PROJECT_ROOT = str(Path(__file__).resolve().parent.parent.parent)
+    if PROJECT_ROOT not in sys.path:
+        sys.path.insert(0, PROJECT_ROOT)
+
+    from src.config.paths import DATA_RAW_DIR, DATA_PREPROCESS_DIR
+
+    RAW_PATH = os.path.join(DATA_RAW_DIR, "bureau_balance.csv")
+    OUTPUT_PATH = os.path.join(DATA_PREPROCESS_DIR, "df_bureau_balance_clean_fe.parquet")
     process_bureau_balance_pipeline(RAW_PATH, OUTPUT_PATH)

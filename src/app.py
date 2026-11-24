@@ -10,9 +10,18 @@ from src.state import UnderwritingState
 # Re-export index để tương thích ngược
 index = data_management_page
 
-# Khởi tạo Reflex Application với style vô hiệu hóa hiệu ứng rung nảy của slider
+# Khởi tạo Reflex Application với Dark Theme cố định, tabular-nums toàn cục và vô hiệu hóa rung nảy slider
 app = rx.App(
+    theme=rx.theme(
+        appearance="dark",
+        accent_color="blue",
+        gray_color="slate",
+        radius="medium",
+    ),
     style={
+        "body, table, input, code, pre": {
+            "font_variant_numeric": "tabular-nums",
+        },
         ".rt-SliderRoot, .rt-SliderTrack, .rt-SliderRange, .rt-SliderThumb": {
             "transition": "none !important",
             "animation": "none !important",
@@ -21,7 +30,7 @@ app = rx.App(
             "transition": "none !important",
             "animation": "none !important",
         },
-    }
+    },
 )
 
 # TRANG 1: DATA INGESTION & DATASET MANAGEMENT (Trang chủ và /data)

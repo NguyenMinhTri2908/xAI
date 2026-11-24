@@ -251,6 +251,15 @@ def process_credit_card_pipeline(raw_cc_path: str, output_parquet_path: str = No
 
 
 if __name__ == "__main__":
-    RAW_PATH = "/Users/nguyenminhtri/FinalYearPro/data/raw/credit_card_balance.csv"
-    OUTPUT_PATH = "/Users/nguyenminhtri/FinalYearPro/data/preprocess/table/credit_card_balance_aggregated.parquet"
+    import sys
+    from pathlib import Path
+
+    PROJECT_ROOT = str(Path(__file__).resolve().parent.parent.parent)
+    if PROJECT_ROOT not in sys.path:
+        sys.path.insert(0, PROJECT_ROOT)
+
+    from src.config.paths import DATA_RAW_DIR, DATA_PREPROCESS_DIR
+
+    RAW_PATH = os.path.join(DATA_RAW_DIR, "credit_card_balance.csv")
+    OUTPUT_PATH = os.path.join(DATA_PREPROCESS_DIR, "credit_card_balance_aggregated.parquet")
     process_credit_card_pipeline(RAW_PATH, OUTPUT_PATH)

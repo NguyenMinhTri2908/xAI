@@ -10,8 +10,10 @@ Không phụ thuộc vào Reflex State hoặc WebSocket context (Pure Python Tes
 """
 
 from typing import List, Dict, Any, Tuple
+import numpy as np
+import pandas as pd
 from src.config.pricing_config import retail_pricing_config
-from src.pricing.pricing_engine import pricing_engine
+from src.engine.pricing_engine import pricing_engine
 
 
 DEFAULT_CANDIDATE_TERMS = [12, 18, 24, 30, 36, 42, 48, 60]
@@ -44,61 +46,141 @@ def generate_candidate_pool(
         terms.sort()
     factors = credit_factors or DEFAULT_CREDIT_FACTORS
 
-    approved_candidates: List[Dict[str, Any]] = []
+    surviving_candidates: List[Dict[str, Any]] = []
 
     # 3. Duyệt không gian kỳ hạn và hạn mức theo chuẩn kiểm soát đồng nhất:
     # Tất cả phương án tái cơ cấu hợp lệ phải thỏa mãn Khung an toàn DTI <= 50.0% và PD <= default_cutoff_pd (6.80%)
+    applied_rate = interest_rate_factor / 100.0 if interest_rate_factor > 1.0 else interest_rate_factor
+    if applied_rate <= 0.0:
+        applied_rate = retail_pricing_config.r_floor
+    r_month = applied_rate / 12.0
+
     for cand_term in terms:
         for factor in factors:
             cand_credit = round(base_credit * factor, -2)
-            cand_annuity = round((cand_credit / cand_term) * (1.0 + interest_rate_factor), 1)
+            # Công thức Niên kim (Actuarial EMI chuẩn Châu Âu - Khớp với Luận văn):
+            if r_month > 0:
+                cand_annuity = round(
+                    cand_credit * (r_month * (1 + r_month)**cand_term) / ((1 + r_month)**cand_term - 1),
+                    1,
+                )
+            else:
+                cand_annuity = round(cand_credit / cand_term, 1)
             cand_dti = round((cand_annuity / max(income, 1.0)) * 100.0, 1)
 
             # Ràng buộc Khung an toàn DTI chuẩn EBA/Basel: DTI <= 50.0% (max_dti_limit = target_dti_healthy = 50.0%)
             if cand_dti > retail_pricing_config.max_dti_limit:
                 continue
 
-            # Dự đoán siêu tốc qua cache model ensemble
+            surviving_candidates.append({
+                "credit": float(cand_credit),
+                "term": int(cand_term),
+                "annuity": float(cand_annuity),
+                "dti": float(cand_dti),
+                "factor": float(factor),
+            })
+
+    if not surviving_candidates:
+        return []
+
+    # 4. Suy luận PD: ưu tiên vector hóa theo lô qua _cached_clean_df + predict_batch_pd, fallback tuần tự cho mock engine
+    cached_df = getattr(engine, "_cached_clean_df", None)
+    use_batch = (
+        isinstance(cached_df, pd.DataFrame)
+        and not cached_df.empty
+        and hasattr(engine, "predict_batch_pd")
+    )
+
+    evaluated_candidates: List[Tuple[Dict[str, Any], float, str]] = []
+    if use_batch:
+        m = len(surviving_candidates)
+        batch_df = cached_df.iloc[np.zeros(m, dtype=int)].reset_index(drop=True).copy()
+
+        eps = 1e-6
+        credits_arr = np.array([c["credit"] for c in surviving_candidates], dtype=float)
+        annuities_arr = np.array([c["annuity"] for c in surviving_candidates], dtype=float)
+        income_f = float(income)
+
+        batch_df["AMT_CREDIT"] = credits_arr
+        batch_df["AMT_ANNUITY"] = annuities_arr
+        batch_df["AMT_INCOME_TOTAL"] = income_f
+        batch_df["CREDIT_TO_INCOME"] = credits_arr / (income_f + eps)
+        batch_df["ANNUITY_TO_INCOME"] = annuities_arr / (income_f + eps)
+        batch_df["CREDIT_TO_ANNUITY"] = credits_arr / (annuities_arr + eps)
+
+        target_idx = cached_df.index[0]
+        if "AMT_GOODS_PRICE" in batch_df.columns and pd.notna(cached_df.loc[target_idx, "AMT_GOODS_PRICE"]):
+            gp = float(cached_df.loc[target_idx, "AMT_GOODS_PRICE"])
+            batch_df["CREDIT_TO_GOODS_RATIO"] = credits_arr / (gp + eps)
+            batch_df["GOODS_CREDIT_DIFF"] = gp - credits_arr
+            batch_df["ANNUITY_TO_GOODS_RATIO"] = annuities_arr / (gp + eps)
+
+        if "EMPLOYED_YEARS" in batch_df.columns and pd.notna(cached_df.loc[target_idx, "EMPLOYED_YEARS"]):
+            try:
+                emp_yrs = float(cached_df.loc[target_idx, "EMPLOYED_YEARS"])
+                if emp_yrs > 0:
+                    batch_df["INCOME_PER_EMPLOYED_YEAR"] = income_f / (emp_yrs + eps)
+            except (ValueError, TypeError):
+                pass
+
+        batch_results = engine.predict_batch_pd(batch_df)
+        for cand, pred in zip(surviving_candidates, batch_results):
+            cand_pd = pred.get("pd_val")
+            cand_tier = pred.get("tier", "None")
+            if cand_pd is None or np.isnan(cand_pd) or cand_pd <= 0.0001:
+                continue
+            evaluated_candidates.append((cand, float(cand_pd), str(cand_tier)))
+    else:
+        for cand in surviving_candidates:
             cand_pd, cand_tier, _ = engine.predict_pd_from_cache(
-                credit=cand_credit,
-                annuity=cand_annuity,
+                credit=cand["credit"],
+                annuity=cand["annuity"],
                 income=income,
             )
             if cand_pd is None or cand_pd <= 0:
                 continue
+            evaluated_candidates.append((cand, float(cand_pd), str(cand_tier)))
 
-            # Đánh giá thẩm định thống nhất qua evaluate_credit_decision
-            eval_cand = pricing_engine.evaluate_credit_decision(
+    approved_candidates: List[Dict[str, Any]] = []
+    for cand, cand_pd, cand_tier in evaluated_candidates:
+        cand_credit = cand["credit"]
+        cand_term = cand["term"]
+        cand_annuity = cand["annuity"]
+        cand_dti = cand["dti"]
+        factor = cand["factor"]
+
+        # Đánh giá thẩm định thống nhất qua evaluate_credit_decision
+        eval_cand = pricing_engine.evaluate_credit_decision(
+            pd_decimal=float(cand_pd),
+            dti_percent=float(cand_dti),
+        )
+
+        # Chỉ giữ các ứng viên THỰC SỰ ĐƯỢC DUYỆT (is_approved == True)
+        if eval_cand["is_approved"]:
+            pricing_cand = pricing_engine.compute_baseline_pricing(
                 pd_decimal=float(cand_pd),
-                dti_percent=float(cand_dti),
+                term_months=int(cand_term),
             )
-
-            # Chỉ giữ các ứng viên THỰC SỰ ĐƯỢC DUYỆT (is_approved == True)
-            if eval_cand["is_approved"]:
-                pricing_cand = pricing_engine.compute_baseline_pricing(
-                    pd_decimal=float(cand_pd),
-                    term_months=int(cand_term),
-                )
-                candidate_info = {
-                    "credit": float(cand_credit),
-                    "term": int(cand_term),
-                    "annuity": float(cand_annuity),
-                    "dti": float(cand_dti),
-                    "pd": float(cand_pd),
-                    "tier": str(cand_tier),
-                    "decision": eval_cand["decision"],
-                    "is_approved": True,
-                    "reason_code": eval_cand["reason_code"],
-                    "offered_rate": pricing_cand["applied_rate_percent"],
-                    "rate_display": pricing_cand["applied_rate_display"],
-                    "factor": float(factor),
-                    "credit_display": f"${int(cand_credit):,}",
-                    "term_display": f"{int(cand_term)} tháng",
-                    "annuity_display": f"${int(cand_annuity):,}/mo",
-                    "dti_display": f"{cand_dti:.1f}%",
-                    "pd_display": f"{cand_pd * 100:.2f}%",
-                }
-                approved_candidates.append(candidate_info)
+            candidate_info = {
+                "credit": float(cand_credit),
+                "term": int(cand_term),
+                "annuity": float(cand_annuity),
+                "dti": float(cand_dti),
+                "pd": float(cand_pd),
+                "tier": str(cand_tier),
+                "decision": eval_cand["decision"],
+                "is_approved": True,
+                "reason_code": eval_cand["reason_code"],
+                "offered_rate": pricing_cand["applied_rate_percent"],
+                "rate_display": pricing_cand["applied_rate_display"],
+                "factor": float(factor),
+                "credit_display": f"${int(cand_credit):,}",
+                "term_display": f"{int(cand_term)} Months",
+                "annuity_display": f"${int(cand_annuity):,}/mo",
+                "dti_display": f"{cand_dti:.1f}%",
+                "pd_display": f"{cand_pd * 100:.2f}%",
+            }
+            approved_candidates.append(candidate_info)
 
     # 4. Nếu hoàn toàn không thể cứu được hồ sơ, trả về rỗng (tuyệt đối không trả về kịch bản DECLINED)
     if not approved_candidates:

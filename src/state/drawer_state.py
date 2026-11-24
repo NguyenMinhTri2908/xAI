@@ -146,7 +146,7 @@ class FeatureDrawerState(rx.State):
                 try:
                     client_id = u_state.selected_client_id
                     if client_id:
-                        from src.data_processing.ingestion_service import get_client_row_data
+                        from src.services.ingestion_service import get_client_row_data
                         row = get_client_row_data(client_id)
                         if row is not None:
                             val = row.get(feat_str) if feat_str in row else row.get(feat_str.upper())

@@ -1,9 +1,8 @@
 import reflex as rx
 
 config = rx.Config(
-    app_name="ui",
-    app_module_import="src.ui.app",
-    reload_paths=["src"],
+    app_name="src",
+    app_module_import="src.app",
     plugins=[
         rx.plugins.RadixThemesPlugin(),
         rx.plugins.SitemapPlugin(),

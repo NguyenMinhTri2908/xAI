@@ -90,21 +90,27 @@ def load_dataset_from_upload(file_bytes: bytes, filename: str) -> Tuple[pd.DataF
         except Exception:
             df = pd.read_parquet(io.BytesIO(file_bytes))
 
-    # Nếu file raw (có DAYS_BIRTH / DAYS_EMPLOYED mà thiếu các biến phái sinh như AGE_YEARS)
-    if ("DAYS_BIRTH" in df.columns or "AMT_CREDIT" in df.columns) and "EXT_SOURCE_MEAN" not in df.columns:
-        try:
-            df = transform_application_for_inference(df)
-        except Exception as e:
-            print(f"[IngestionService] Notice: raw transform skipped or failed: {e}")
-
     # Đảm bảo có SK_ID_CURR
     if "SK_ID_CURR" not in df.columns:
-        if df.index.name == "SK_ID_CURR":
+        if df.index.name == "SK_ID_CURR" or "SK_ID_CURR" in str(df.index.names):
             df = df.reset_index()
         else:
             df["SK_ID_CURR"] = range(100001, 100001 + len(df))
 
-    source_label = f"{filename} ({len(df)} records)"
+    # Chạy pipeline tạo đủ 891 features nếu là tệp raw hoặc chưa đủ features
+    try:
+        from src.data_processing.build_master_dataset import process_master_pipeline
+        df = process_master_pipeline(df)
+    except Exception as e:
+        print(f"[IngestionService] Notice: process_master_pipeline fallback: {e}")
+        if ("DAYS_BIRTH" in df.columns or "AMT_CREDIT" in df.columns) and "EXT_SOURCE_MEAN" not in df.columns:
+            try:
+                df = transform_application_for_inference(df)
+            except Exception as ex:
+                print(f"[IngestionService] Notice: raw transform skipped or failed: {ex}")
+
+    num_feats = len([c for c in df.columns if c != 'SK_ID_CURR'])
+    source_label = f"{filename} ({len(df):,} clients | {num_feats} features)"
     set_active_dataset(df, source_label)
     return df, source_label
 
@@ -203,8 +209,13 @@ def format_df_to_summary_records(sub_df: pd.DataFrame, compute_pd: bool = True) 
 
         term_str = "N/A"
         if credit_num > 0 and annuity_num > 0:
-            term_approx = round((credit_num * 1.08) / annuity_num)
-            term_str = f"{int(term_approx)}m"
+            import math
+            r_month = 0.08 / 12.0
+            if credit_num * r_month < annuity_num:
+                term_approx = round(-math.log(1.0 - (credit_num * r_month) / annuity_num) / math.log(1.0 + r_month))
+            else:
+                term_approx = round(credit_num / annuity_num)
+            term_str = f"{max(1, int(term_approx))}m"
 
         decision_color_scheme = (
             "green"

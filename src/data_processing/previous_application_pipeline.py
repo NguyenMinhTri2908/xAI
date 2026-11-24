@@ -193,6 +193,15 @@ def process_previous_application_pipeline(raw_prev_path: str, output_parquet_pat
     return prev_agg
 
 if __name__ == "__main__":
-    RAW_PATH = "/Users/nguyenminhtri/FinalYearPro/data/raw/previous_application.csv"
-    OUTPUT_PATH = "/Users/nguyenminhtri/FinalYearPro/data/preprocess/prev_app_clean_fe_v2.parquet"
+    import sys
+    from pathlib import Path
+
+    PROJECT_ROOT = str(Path(__file__).resolve().parent.parent.parent)
+    if PROJECT_ROOT not in sys.path:
+        sys.path.insert(0, PROJECT_ROOT)
+
+    from src.config.paths import DATA_RAW_DIR, DATA_PREPROCESS_DIR
+
+    RAW_PATH = os.path.join(DATA_RAW_DIR, "previous_application.csv")
+    OUTPUT_PATH = os.path.join(DATA_PREPROCESS_DIR, "prev_app_clean_fe_v2.parquet")
     process_previous_application_pipeline(RAW_PATH, OUTPUT_PATH)

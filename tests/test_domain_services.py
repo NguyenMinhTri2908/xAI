@@ -1,16 +1,20 @@
 """
-UNIT TESTS FOR DOMAIN SERVICES (PHASE 2)
-========================================
-Kiểm thử độc lập các dịch vụ nghiệp vụ thuần túy trong src/services:
-- FinancialService: Tính toán kỳ hạn, DTI, hệ số lãi suất ngầm định.
-- ExplanationService: Chuẩn hóa SHAP attributions, thanh bar trực quan hóa.
-- RestructuringService: Thuật toán lọc không gian cơ cấu nợ, sinh delta chỉ số, phương án đa mục tiêu.
+UNIT TESTS FOR DOMAIN SERVICES
+==============================
+Independent verification of pure domain services in src/services:
+- FinancialService: Inverse Actuarial EMI tenure derivation, DTI, and implied annual rate.
+- ExplanationService: SHAP attribution normalization and bar width scaling.
+- RestructuringService: Counterfactual grid search, delta formatting, and multi-objective proposals.
 """
 
 import unittest
 from unittest.mock import MagicMock
+import pandas as pd
 
-from src.services.financial_service import compute_derived_financials
+from src.services.financial_service import (
+    calculate_actuarial_emi,
+    compute_derived_financials,
+)
 from src.services.explanation_service import process_shap_explanations
 from src.services.restructuring_service import (
     generate_candidate_pool,
@@ -23,17 +27,19 @@ from src.config.pricing_config import retail_pricing_config
 
 
 class TestFinancialService(unittest.TestCase):
-    """Kiểm tra dịch vụ tính toán tài chính phái sinh."""
+    """Verify derived financial metric calculations."""
 
     def test_standard_financial_calculation(self):
         # Khoản vay: $120,000, Trả góp: $5,000/tháng, Thu nhập: $20,000/tháng
+        # Kỳ hạn nghịch đảo Niên kim (Actuarial EMI @ 8.0%) -> 26 tháng
         res = compute_derived_financials(credit=120000.0, annuity=5000.0, income=20000.0)
-        self.assertEqual(res["term_months"], 24)
-        self.assertEqual(res["term_display"], "24 months")
+        self.assertEqual(res["term_months"], 26)
+        self.assertEqual(res["term_display"], "26 months")
         self.assertEqual(res["dti_percent"], 25.0)
         self.assertEqual(res["dti_display"], "25.0%")
-        # Implied factor: ((5000 * 24) / 120000) - 1.0 = 0.0
-        self.assertEqual(res["implied_rate_factor"], 0.0)
+        self.assertTrue(0.005 <= res["implied_rate_factor"] <= 0.35)
+        reconstructed_emi = calculate_actuarial_emi(120000.0, res["implied_rate_factor"], res["term_months"])
+        self.assertLess(abs(reconstructed_emi - 5000.0), 10.0)
 
     def test_zero_or_negative_values(self):
         # Tránh lỗi chia cho 0 khi dữ liệu bị khuyết
@@ -45,14 +51,15 @@ class TestFinancialService(unittest.TestCase):
         self.assertEqual(res["implied_rate_factor"], 0.08)
 
     def test_implied_rate_factor_fallback(self):
-        # Trường hợp implied factor vượt biên [0.0, 0.35], tự fallback về default 0.08
+        # Trường hợp annuity * term <= principal * 1.005 -> fallback về lãi suất chuẩn 0.08
         res = compute_derived_financials(credit=50000.0, annuity=10000.0, income=30000.0)
-        # term = 5 months. (10000 * 5) / 50000 - 1 = 0.0
-        self.assertEqual(res["implied_rate_factor"], 0.0)
+        self.assertEqual(res["term_months"], 5)
+        self.assertEqual(res["dti_percent"], 33.3)
+        self.assertEqual(res["implied_rate_factor"], 0.08)
 
 
 class TestExplanationService(unittest.TestCase):
-    """Kiểm tra dịch vụ chuẩn hóa giải thích mô hình SHAP."""
+    """Verify SHAP explanation normalization and lookup service."""
 
     def test_process_shap_explanations(self):
         mock_model_result = {
@@ -85,7 +92,7 @@ class TestExplanationService(unittest.TestCase):
 
 
 class TestRestructuringService(unittest.TestCase):
-    """Kiểm tra thuật toán tái cơ cấu nợ và gợi ý đa mục tiêu."""
+    """Verify loan restructuring optimization and multi-objective proposal generation."""
 
     def setUp(self):
         self.mock_candidate = {
@@ -190,6 +197,77 @@ class TestRestructuringService(unittest.TestCase):
             self.assertTrue(cand["is_approved"])
             self.assertIn("credit_display", cand)
             self.assertIn("rate_display", cand)
+
+    def test_generate_candidate_pool_vectorized_batch_path_and_guards(self):
+        """Verify Fix B5 vectorized batch scoring path with cached DataFrame and invalid-input guards."""
+        cached_df = pd.DataFrame([{
+            "AMT_CREDIT": 200000.0,
+            "AMT_ANNUITY": 10000.0,
+            "AMT_INCOME_TOTAL": 50000.0,
+            "AMT_GOODS_PRICE": 180000.0,
+            "EMPLOYED_YEARS": 5.0,
+            "CREDIT_TO_INCOME": 4.0,
+            "ANNUITY_TO_INCOME": 0.2,
+            "CREDIT_TO_ANNUITY": 20.0,
+            "CREDIT_TO_GOODS_RATIO": 1.11,
+            "GOODS_CREDIT_DIFF": -20000.0,
+            "ANNUITY_TO_GOODS_RATIO": 0.055,
+            "INCOME_PER_EMPLOYED_YEAR": 10000.0,
+        }])
+
+        captured_batches = []
+
+        def fake_predict_batch(df_batch):
+            captured_batches.append(df_batch.copy())
+            return [
+                {"pd_val": 0.042, "pd_display": "4.2%", "tier": "ACCEPT", "decision": "APPROVE"}
+                for _ in range(len(df_batch))
+            ]
+
+        mock_engine = MagicMock()
+        mock_engine._cached_clean_df = cached_df
+        mock_engine.predict_batch_pd.side_effect = fake_predict_batch
+
+        # Guard: credit <= 0 hoặc income <= 0 trả về [] mà không gọi predict_batch_pd
+        self.assertEqual(generate_candidate_pool(mock_engine, base_credit=0.0, income=50000.0), [])
+        self.assertEqual(generate_candidate_pool(mock_engine, base_credit=100000.0, income=-10.0), [])
+        mock_engine.predict_batch_pd.assert_not_called()
+
+        pool = generate_candidate_pool(
+            engine=mock_engine,
+            base_credit=100000.0,
+            income=50000.0,
+            base_term=24,
+            interest_rate_factor=0.08,
+            candidate_terms=[24, 36],
+            credit_factors=[1.0, 0.8],
+        )
+
+        mock_engine.predict_batch_pd.assert_called_once()
+        mock_engine.predict_pd_from_cache.assert_not_called()
+        self.assertEqual(len(pool), 4)
+        self.assertEqual(len(captured_batches), 1)
+
+        batch_df = captured_batches[0]
+        self.assertEqual(batch_df.shape, (4, 12))
+        eps = 1e-6
+        self.assertAlmostEqual(float(batch_df.loc[0, "AMT_INCOME_TOTAL"]), 50000.0)
+        self.assertAlmostEqual(float(batch_df.loc[0, "INCOME_PER_EMPLOYED_YEAR"]), 50000.0 / (5.0 + eps))
+        self.assertAlmostEqual(
+            float(batch_df.loc[0, "GOODS_CREDIT_DIFF"]),
+            180000.0 - float(batch_df.loc[0, "AMT_CREDIT"]),
+        )
+        self.assertAlmostEqual(
+            float(batch_df.loc[0, "CREDIT_TO_INCOME"]),
+            float(batch_df.loc[0, "AMT_CREDIT"]) / (50000.0 + eps),
+        )
+        self.assertAlmostEqual(
+            float(batch_df.loc[0, "ANNUITY_TO_GOODS_RATIO"]),
+            float(batch_df.loc[0, "AMT_ANNUITY"]) / (180000.0 + eps),
+        )
+        # Cache gốc phải bất biến
+        self.assertEqual(float(cached_df.loc[0, "AMT_CREDIT"]), 200000.0)
+        self.assertEqual(float(cached_df.loc[0, "GOODS_CREDIT_DIFF"]), -20000.0)
 
 
 if __name__ == "__main__":

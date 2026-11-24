@@ -1,4 +1,5 @@
 import os
+import io
 from pathlib import Path
 from typing import List, Dict, Any
 import reflex as rx
@@ -11,7 +12,8 @@ from .base_state import (
     INITIAL_PRODUCTION_DATASETS,
     INITIAL_SELECTED_FILE,
 )
-from src.data_processing.ingestion_service import (
+from src.data_processing import process_master_pipeline
+from src.services.ingestion_service import (
     load_dataset_from_upload,
     set_active_dataset,
     get_active_dataset,
@@ -51,7 +53,7 @@ class DatasetState(BaseUnderwritingState):
                 if not df.empty and "SK_ID_CURR" in df.columns:
                     matches = df[df["SK_ID_CURR"].astype(str).str.contains(q, case=False, na=False)].head(20)
                     if not matches.empty:
-                        from src.data_processing.ingestion_service import format_df_to_summary_records
+                        from src.services.ingestion_service import format_df_to_summary_records
                         extra = format_df_to_summary_records(matches)
                         self.client_list = extra + self.client_list
 
@@ -235,6 +237,10 @@ class DatasetState(BaseUnderwritingState):
     async def handle_file_upload(self, files: List[rx.UploadFile]):
         """Xử lý nạp file CSV/Parquet tùy chỉnh do người dùng upload."""
         if not files:
+            self.alert_message = "No file selected. Please select a CSV or Parquet file first."
+            self.alert_type = "warning"
+            self.show_alert = True
+            self.status_message = self.alert_message
             return
 
         file = files[0]
@@ -262,8 +268,16 @@ class DatasetState(BaseUnderwritingState):
                 self.is_ingesting = False
                 return
 
-            df, source_label = load_dataset_from_upload(file_bytes, file.filename)
-            if df is None or df.empty:
+            # 1. Đọc tệp tải lên thành DataFrame thô (df_raw)
+            if fname.endswith(".parquet") or fname.endswith(".pq"):
+                df_raw = pd.read_parquet(io.BytesIO(file_bytes))
+            else:
+                try:
+                    df_raw = pd.read_csv(io.BytesIO(file_bytes))
+                except Exception:
+                    df_raw = pd.read_parquet(io.BytesIO(file_bytes))
+
+            if df_raw is None or df_raw.empty:
                 self.alert_message = f"File {file.filename} contained no valid data."
                 self.alert_type = "error"
                 self.show_alert = True
@@ -271,21 +285,34 @@ class DatasetState(BaseUnderwritingState):
                 self.is_ingesting = False
                 return
 
+            # 2. Kiểm tra khóa chính SK_ID_CURR
+            if "SK_ID_CURR" not in df_raw.columns:
+                if df_raw.index.name == "SK_ID_CURR" or "SK_ID_CURR" in str(df_raw.index.names):
+                    df_raw = df_raw.reset_index()
+                else:
+                    self.alert_message = f"Validation Error: File '{file.filename}' is missing required primary key 'SK_ID_CURR'."
+                    self.alert_type = "error"
+                    self.show_alert = True
+                    self.status_message = self.alert_message
+                    self.is_ingesting = False
+                    return
+
+            # 3. GỌI TRỰC TIẾP PIPELINE SẴN CÓ TỪ data_processing
+            # Merge bảng phụ và sinh đủ 891 features chuẩn mô hình
+            df = process_master_pipeline(df_raw)
+
+            # 4. Lưu dataset hoàn chỉnh vào data/production
             prod_dir = get_production_dir()
             os.makedirs(prod_dir, exist_ok=True)
 
-            export_ext = ".parquet" if (fname.endswith(".csv") or fname.endswith(".parquet") or fname.endswith(".pq")) else Path(file.filename).suffix
-            base_export_name = Path(file.filename).stem + export_ext
-
+            base_export_name = Path(file.filename).stem + ".parquet"
             unique_file_path = get_unique_filepath(prod_dir, base_export_name)
             saved_filename = unique_file_path.name
 
-            if export_ext == ".parquet":
-                df.to_parquet(unique_file_path, index=False)
-            else:
-                df.to_csv(unique_file_path, index=False)
+            df.to_parquet(unique_file_path, compression="snappy", index=False)
 
-            active_label = f"{saved_filename} ({len(df):,} records)"
+            num_features = len([c for c in df.columns if c != "SK_ID_CURR"])
+            active_label = f"{saved_filename} ({len(df):,} clients | {num_features} features)"
             set_active_dataset(df, active_label)
 
             self.selected_dataset_source = saved_filename
@@ -302,7 +329,7 @@ class DatasetState(BaseUnderwritingState):
 
             self.alert_token += 1
             current_token = self.alert_token
-            self.alert_message = f"✓ Dataset ingested & saved to data/production as {saved_filename}"
+            self.alert_message = f"✓ Pipeline executed: Ingested & Generated {num_features} features for {len(df):,} clients. Saved as {saved_filename}"
             self.alert_type = "success"
             self.show_alert = True
             self.status_message = self.alert_message
@@ -317,8 +344,9 @@ class DatasetState(BaseUnderwritingState):
                     yield InspectionState.select_and_evaluate_client(first_id)
 
             yield type(self).auto_dismiss_alert(current_token)
+            yield rx.clear_selected_files("main_dataset_upload")
         except Exception as e:
-            self.alert_message = f"Error processing uploaded file: {str(e)}"
+            self.alert_message = f"Pipeline Processing Error: {str(e)}"
             self.alert_type = "error"
             self.show_alert = True
             self.status_message = self.alert_message

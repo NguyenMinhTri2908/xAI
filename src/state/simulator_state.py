@@ -2,8 +2,8 @@ from typing import List
 import reflex as rx
 from .inspection_state import InspectionState, get_engine
 from src.config.pricing_config import retail_pricing_config
-from src.pricing.pricing_engine import pricing_engine
-from src.data_processing.ingestion_service import get_client_row_data
+from src.engine.pricing_engine import pricing_engine
+from src.services.ingestion_service import get_client_row_data
 
 
 class SimulatorState(InspectionState):
@@ -43,7 +43,13 @@ class SimulatorState(InspectionState):
         if base_credit <= 0:
             base_credit = 100000.0
         credit_min = base_credit * 0.5
-        min_annuity = (credit_min / 60.0) * (1.0 + self.interest_rate_factor)
+        term = 60
+        applied_rate = self.interest_rate_factor / 100.0 if self.interest_rate_factor > 1.0 else self.interest_rate_factor
+        r_month = applied_rate / 12.0
+        if r_month > 0:
+            min_annuity = credit_min * (r_month * (1 + r_month)**term) / ((1 + r_month)**term - 1)
+        else:
+            min_annuity = credit_min / term
         return float(max(round(min_annuity, -2), 500.0))
 
     @rx.var
@@ -211,7 +217,7 @@ class SimulatorState(InspectionState):
     @rx.var
     def diff_credit_color(self) -> str:
         diff = self.sim_amt_credit - self.baseline_amt_credit
-        return "#10B981" if diff > 0 else "#EF4444"
+        return "#38BDF8" if diff > 0 else "#94A3B8"
 
     @rx.var
     def diff_term_text(self) -> str:
@@ -224,8 +230,7 @@ class SimulatorState(InspectionState):
 
     @rx.var
     def diff_term_color(self) -> str:
-        diff = self.sim_term_months - self.baseline_term_months
-        return "#10B981" if diff > 0 else "#EF4444"
+        return "#94A3B8"
 
     @rx.var
     def diff_annuity_text(self) -> str:
@@ -239,7 +244,7 @@ class SimulatorState(InspectionState):
     @rx.var
     def diff_annuity_color(self) -> str:
         diff = self.sim_amt_annuity - self.baseline_amt_annuity
-        return "#10B981" if diff > 0 else "#EF4444"
+        return "#34D399" if diff < 0 else "#F87171"
 
     @rx.var
     def diff_income_text(self) -> str:
@@ -255,9 +260,30 @@ class SimulatorState(InspectionState):
         diff = self.sim_amt_income_total - self.baseline_amt_income_total
         return "#10B981" if diff > 0 else "#EF4444"
 
+    def _snap_term_from_annuity(self, principal: float, target_annuity: float) -> int:
+        """Tìm kỳ hạn chuẩn gần nhất dựa trên công thức Niên kim (Actuarial EMI)."""
+        snapped_steps = [3, 6, 12, 18, 24, 30, 36, 42, 48, 54, 60]
+        annuity_val = max(float(target_annuity), 1.0)
+        applied_rate = self.interest_rate_factor / 100.0 if self.interest_rate_factor > 1.0 else self.interest_rate_factor
+        r_month = applied_rate / 12.0
+
+        def emi_for_term(term: int) -> float:
+            if r_month > 0:
+                return principal * (r_month * (1 + r_month)**term) / ((1 + r_month)**term - 1)
+            return principal / term
+
+        return min(snapped_steps, key=lambda s: abs(emi_for_term(s) - annuity_val))
+
     def _sync_credit_or_term_drag(self):
         term = max(self.sim_term_months, 1)
-        self.sim_amt_annuity = round((self.sim_amt_credit / term) * (1.0 + self.interest_rate_factor), 1)
+        principal = self.sim_amt_credit
+        applied_rate = self.interest_rate_factor / 100.0 if self.interest_rate_factor > 1.0 else self.interest_rate_factor
+        r_month = applied_rate / 12.0
+        if r_month > 0:
+            annuity = principal * (r_month * (1 + r_month)**term) / ((1 + r_month)**term - 1)
+        else:
+            annuity = principal / term
+        self.sim_amt_annuity = round(annuity, 1)
         income = max(self.sim_amt_income_total, 1.0)
         self.sim_dti = round((self.sim_amt_annuity / income) * 100.0, 1)
         self.sim_amt_annuity_str = f"{int(self.sim_amt_annuity):,}"
@@ -270,9 +296,7 @@ class SimulatorState(InspectionState):
 
     def _sync_annuity_changed(self):
         annuity = max(self.sim_amt_annuity, 1.0)
-        raw_term = (self.sim_amt_credit * (1.0 + self.interest_rate_factor)) / annuity
-        snapped_steps = [3, 6, 12, 18, 24, 30, 36, 42, 48, 54, 60]
-        self.sim_term_months = min(snapped_steps, key=lambda s: abs(s - raw_term))
+        self.sim_term_months = self._snap_term_from_annuity(self.sim_amt_credit, annuity)
         income = max(self.sim_amt_income_total, 1.0)
         self.sim_dti = round((self.sim_amt_annuity / income) * 100.0, 1)
         self.sim_term_months_str = str(int(self.sim_term_months))
@@ -315,9 +339,7 @@ class SimulatorState(InspectionState):
                 return
             self.sim_amt_annuity = clamped
             self.is_sim_calculating = True
-            raw_term = (self.sim_amt_credit * (1.0 + self.interest_rate_factor)) / max(self.sim_amt_annuity, 1.0)
-            snapped_steps = [3, 6, 12, 18, 24, 30, 36, 42, 48, 54, 60]
-            self.sim_term_months = min(snapped_steps, key=lambda s: abs(s - raw_term))
+            self.sim_term_months = self._snap_term_from_annuity(self.sim_amt_credit, self.sim_amt_annuity)
             income = max(self.sim_amt_income_total, 1.0)
             self.sim_dti = round((self.sim_amt_annuity / income) * 100.0, 1)
             self.sim_term_months_str = str(int(self.sim_term_months))
@@ -376,9 +398,7 @@ class SimulatorState(InspectionState):
             num = float(clean)
             if num > 0:
                 self.sim_amt_annuity = num
-                raw_term = (self.sim_amt_credit * (1.0 + self.interest_rate_factor)) / self.sim_amt_annuity
-                snapped_steps = [3, 6, 12, 18, 24, 30, 36, 42, 48, 54, 60]
-                self.sim_term_months = min(snapped_steps, key=lambda s: abs(s - raw_term))
+                self.sim_term_months = self._snap_term_from_annuity(self.sim_amt_credit, self.sim_amt_annuity)
                 self.sim_term_months_str = str(int(self.sim_term_months))
                 income = max(self.sim_amt_income_total, 1.0)
                 self.sim_dti = round((self.sim_amt_annuity / income) * 100.0, 1)
@@ -408,12 +428,6 @@ class SimulatorState(InspectionState):
             return
 
         try:
-            engine = get_engine()
-            if (getattr(engine, "_cached_clean_df", None) is None or getattr(engine, "_cached_client_id", None) != str(self.selected_client_id)) and self.selected_client_id:
-                client_series = get_client_row_data(self.selected_client_id)
-                if client_series is not None:
-                    engine.cache_client_features(client_series, str(self.selected_client_id))
-
             credit = float(self.sim_amt_credit)
             annuity = float(self.sim_amt_annuity)
             income = float(self.sim_amt_income_total)
@@ -423,6 +437,14 @@ class SimulatorState(InspectionState):
                 annuity = float(self.baseline_amt_annuity) if float(self.baseline_amt_annuity) > 0 else 5000.0
             if income <= 0:
                 income = float(self.baseline_amt_income_total) if float(self.baseline_amt_income_total) > 0 else 50000.0
+
+            self.sim_dti = round((float(annuity) / max(float(income), 1.0)) * 100.0, 1)
+
+            engine = get_engine()
+            if (getattr(engine, "_cached_clean_df", None) is None or getattr(engine, "_cached_client_id", None) != str(self.selected_client_id)) and self.selected_client_id:
+                client_series = get_client_row_data(self.selected_client_id)
+                if client_series is not None:
+                    engine.cache_client_features(client_series, str(self.selected_client_id))
 
             sim_pd, sim_tier, sim_decision = engine.predict_pd_from_cache(
                 credit=credit,

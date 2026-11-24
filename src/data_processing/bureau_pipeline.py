@@ -239,6 +239,15 @@ def process_bureau_pipeline(raw_bureau_path: str, output_parquet_path: str = Non
 
 
 if __name__ == "__main__":
-    RAW_PATH = "/Users/nguyenminhtri/FinalYearPro/data/raw/bureau.csv"
-    OUTPUT_PATH = "/Users/nguyenminhtri/FinalYearPro/data/preprocess/df_bureau_clean_fe.parquet"
+    import sys
+    from pathlib import Path
+
+    PROJECT_ROOT = str(Path(__file__).resolve().parent.parent.parent)
+    if PROJECT_ROOT not in sys.path:
+        sys.path.insert(0, PROJECT_ROOT)
+
+    from src.config.paths import DATA_RAW_DIR, DATA_PREPROCESS_DIR
+
+    RAW_PATH = os.path.join(DATA_RAW_DIR, "bureau.csv")
+    OUTPUT_PATH = os.path.join(DATA_PREPROCESS_DIR, "df_bureau_clean_fe.parquet")
     process_bureau_pipeline(RAW_PATH, OUTPUT_PATH)

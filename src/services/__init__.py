@@ -18,7 +18,20 @@ from src.services.explanation_service import (
     process_shap_explanations,
 )
 from src.services.financial_service import (
+    calculate_actuarial_emi,
+    estimate_requested_term_months,
+    compute_contractual_emi_and_dti,
     compute_derived_financials,
+)
+from src.services.ingestion_service import (
+    load_dataset_from_source,
+    load_dataset_from_upload,
+    set_active_dataset,
+    get_active_dataset,
+    get_active_client_ids,
+    get_client_row_data,
+    get_client_table_summary,
+    format_df_to_summary_records,
 )
 
 __all__ = [
@@ -28,5 +41,16 @@ __all__ = [
     "DEFAULT_CANDIDATE_TERMS",
     "DEFAULT_CREDIT_FACTORS",
     "process_shap_explanations",
+    "calculate_actuarial_emi",
+    "estimate_requested_term_months",
+    "compute_contractual_emi_and_dti",
     "compute_derived_financials",
+    "load_dataset_from_source",
+    "load_dataset_from_upload",
+    "set_active_dataset",
+    "get_active_dataset",
+    "get_active_client_ids",
+    "get_client_row_data",
+    "get_client_table_summary",
+    "format_df_to_summary_records",
 ]

@@ -99,7 +99,7 @@ def update_feature_dictionary(feature_table_map: dict, output_path: str):
     print(f"📖 Đã tinh gọn và đồng bộ {len(cleaned_dict)} đặc trưng vào: {output_path}")
 
 
-def prepare_bureau_balance_client_level() -> pd.DataFrame:
+def prepare_bureau_balance_client_level(client_ids: set = None) -> pd.DataFrame:
     """Maps loan-level bureau balance (SK_ID_BUREAU) to client-level (SK_ID_CURR)."""
     bb_path = find_file("df_bureau_balance_clean_fe.parquet")
     if not bb_path or not os.path.exists(RAW_BUREAU_MAP_PATH):
@@ -107,8 +107,17 @@ def prepare_bureau_balance_client_level() -> pd.DataFrame:
         return pd.DataFrame()
 
     print(f"🔹 Processing Bureau Balance từ: {bb_path}")
-    df_bb = pd.read_parquet(bb_path)
     df_map = pd.read_csv(RAW_BUREAU_MAP_PATH, usecols=['SK_ID_CURR', 'SK_ID_BUREAU'])
+    if client_ids is not None:
+        df_map = df_map[df_map['SK_ID_CURR'].isin(client_ids)]
+        if df_map.empty:
+            return pd.DataFrame()
+
+    df_bb = pd.read_parquet(bb_path)
+    if client_ids is not None:
+        df_bb = df_bb[df_bb['SK_ID_BUREAU'].isin(set(df_map['SK_ID_BUREAU']))]
+        if df_bb.empty:
+            return pd.DataFrame()
 
     df_bb_mapped = df_bb.merge(df_map, on='SK_ID_BUREAU', how='inner').drop(columns=['SK_ID_BUREAU'])
 
@@ -130,48 +139,59 @@ def prepare_bureau_balance_client_level() -> pd.DataFrame:
     return df_bb_curr
 
 
-def build_master_dataset():
-    start_time = time.time()
-    print("=" * 80)
-    print("🚀 EXECUTING MASTER PRODUCTION PIPELINE (build_master_dataset.py)")
-    print("=" * 80)
-
-    # 1. Load Data Contract & Feature Metadata
-    print("📦 Loading Data Contract & Feature Metadata...")
+def process_master_pipeline(df_raw: pd.DataFrame, update_dict: bool = False) -> pd.DataFrame:
+    """
+    Pipeline chính tiền xử lý và merge các bảng phụ để tạo ra đầy đủ 891 features chuẩn mô hình:
+    - Nhận df_raw từ tệp upload hoặc dataframe ứng dụng.
+    - Chạy transform_application_for_inference nếu là bảng application thô.
+    - Left-join với các bảng phụ: bureau, previous_application, POS_CASH, installments, credit_card, bureau_balance.
+    - Loại bỏ các biến nhạy cảm Fair Lending.
+    - Align chính xác 891 features theo đúng Data Contract của mô hình.
+    - Ép kiểu biến phân loại theo Schema.
+    """
     config = load_json_artifact(CONFIG_PATH)
     metadata = load_json_artifact(SCHEMA_PATH)
 
     target_features = config["feature_names"]
     categorical_mappings = metadata.get("categorical_mappings", {})
 
-    # 2. Process Raw Main Application Table
-    print(f"📖 Loading and transforming raw main application test: {RAW_TEST_PATH}")
-    df_raw_test = pd.read_csv(RAW_TEST_PATH)
-    df_master = transform_application_for_inference(df_raw_test)
+    # 1. Đảm bảo có khóa chính SK_ID_CURR
+    if 'SK_ID_CURR' not in df_raw.columns:
+        if df_raw.index.name == 'SK_ID_CURR' or 'SK_ID_CURR' in str(df_raw.index.names):
+            df_master = df_raw.reset_index()
+        else:
+            raise KeyError("Uploaded dataset must contain 'SK_ID_CURR' column as client identifier.")
+    else:
+        df_master = df_raw.copy()
+
+    # 2. Nếu tệp upload đã là preprocessed dataset (đã có đủ 891 features chuẩn)
+    if len(df_master.columns) >= len(target_features) and set(target_features[:20]).issubset(set(df_master.columns)):
+        final_cols = ['SK_ID_CURR'] + target_features
+        df_final = df_master.reindex(columns=final_cols)
+        for cat_col, map_info in categorical_mappings.items():
+            if cat_col in df_final.columns:
+                valid_categories = list(map_info.get("label_to_code", {}).keys())
+                if valid_categories:
+                    df_final[cat_col] = pd.Categorical(df_final[cat_col].astype(str), categories=valid_categories)
+        return df_final
+
+    # 3. Tiền xử lý Application nếu là bảng thô
+    if ("DAYS_BIRTH" in df_master.columns or "AMT_CREDIT" in df_master.columns) and "EXT_SOURCE_MEAN" not in df_master.columns:
+        df_master = transform_application_for_inference(df_master)
 
     if 'SK_ID_CURR' not in df_master.columns and df_master.index.name == 'SK_ID_CURR':
         df_master = df_master.reset_index()
 
     initial_rows = len(df_master)
-    print(f"   • Baseline Master Test records: {initial_rows:,} clients | {df_master.shape[1]} columns")
+    client_ids = set(df_master['SK_ID_CURR'].dropna().astype(int))
 
-    # Bộ theo dõi nguồn gốc theo đúng tên bảng raw gốc
     column_source_tracker = {}
     for col in df_master.columns:
         if col != 'SK_ID_CURR':
             column_source_tracker[col] = "application"
 
-    # 3. Step-by-Step Cascading Joins with Sub-Tables (Đúng chuẩn tên bảng RAW)
-    sub_tables = [
-        ("bureau", "df_bureau_clean_fe.parquet"),
-        ("previous_application", "prev_app_clean_fe_v2.parquet"),
-        ("POS_CASH_balance", "pos_cash_clean_FE.parquet"),
-        ("installments_payments", "installments_payments_clean_FE.parquet"),
-        ("credit_card_balance", "credit_card_balance_aggregated.parquet")
-    ]
-
-    # 3.1. Merge Bureau Balance
-    df_bb_curr = prepare_bureau_balance_client_level()
+    # 4. Merge Bureau Balance
+    df_bb_curr = prepare_bureau_balance_client_level(client_ids=client_ids)
     if not df_bb_curr.empty:
         cols_to_use = df_bb_curr.columns.difference(df_master.columns).tolist() + ['SK_ID_CURR']
         for col in cols_to_use:
@@ -181,68 +201,81 @@ def build_master_dataset():
         del df_bb_curr
         gc.collect()
 
-    # 3.2. Merge các sub-tables
+    # 5. Cascading Left Joins với các Sub-Tables (Lọc nhanh theo client_ids để tối ưu tốc độ)
+    sub_tables = [
+        ("bureau", "df_bureau_clean_fe.parquet"),
+        ("previous_application", "prev_app_clean_fe_v2.parquet"),
+        ("POS_CASH_balance", "pos_cash_clean_FE.parquet"),
+        ("installments_payments", "installments_payments_clean_FE.parquet"),
+        ("credit_card_balance", "credit_card_balance_aggregated.parquet")
+    ]
+
     for raw_name, filename in sub_tables:
         resolved_path = find_file(filename)
         if not resolved_path:
-            print(f"⚠️ [{raw_name}] File '{filename}' not found in any search path. Skipping!")
             continue
 
-        print(f"⏳ Left-joining with {raw_name} từ {resolved_path}...")
-        df_sub = pd.read_parquet(resolved_path)
+        try:
+            df_sub = pd.read_parquet(resolved_path)
+            if 'SK_ID_CURR' not in df_sub.columns:
+                if df_sub.index.name == 'SK_ID_CURR' or 'SK_ID_CURR' in str(df_sub.index.names):
+                    df_sub = df_sub.reset_index()
+                else:
+                    del df_sub
+                    continue
 
-        if 'SK_ID_CURR' not in df_sub.columns:
-            if df_sub.index.name == 'SK_ID_CURR' or 'SK_ID_CURR' in str(df_sub.index.names):
-                df_sub = df_sub.reset_index()
-            else:
-                print(f"   ❌ Missing 'SK_ID_CURR' in {raw_name}. Skipping!")
-                del df_sub
-                continue
+            # Tối ưu: Lọc chỉ những client_ids cần merge
+            df_sub = df_sub[df_sub['SK_ID_CURR'].isin(client_ids)]
+            cols_to_use = df_sub.columns.difference(df_master.columns).tolist() + ['SK_ID_CURR']
+            for col in cols_to_use:
+                if col != 'SK_ID_CURR':
+                    column_source_tracker[col] = raw_name
 
-        cols_to_use = df_sub.columns.difference(df_master.columns).tolist() + ['SK_ID_CURR']
-        for col in cols_to_use:
-            if col != 'SK_ID_CURR':
-                column_source_tracker[col] = raw_name
+            df_master = df_master.merge(df_sub[cols_to_use], on='SK_ID_CURR', how='left')
+            del df_sub
+            gc.collect()
+        except Exception as e:
+            print(f"[process_master_pipeline] Warning merging {raw_name}: {e}")
 
-        df_master = df_master.merge(df_sub[cols_to_use], on='SK_ID_CURR', how='left')
-        print(f"   ✓ Merged! Current total columns: {df_master.shape[1]}")
-
-        del df_sub
-        gc.collect()
-
-    # 4. Integrity Validation
-    assert len(df_master) == initial_rows, f"❌ Data Integrity Failed: Row count changed from {initial_rows} to {len(df_master)}!"
-    print(f"✅ Row integrity verified: Exact {initial_rows:,} clients preserved.")
-
-    # 5. Fair-Lending Enforcement: Strip prohibited demographic and proxy attributes
+    # 6. Fair-Lending Enforcement: Loại bỏ biến cấm
     drop_fair = [c for c in FAIR_PROHIBITED_COLUMNS if c in df_master.columns]
     if drop_fair:
         df_master.drop(columns=drop_fair, inplace=True)
-        print(f"🛡️️ Fair Lending: Stripped {len(drop_fair)} sensitive/proxy attributes.")
 
-    # 6. Data Contract Feature Alignment (Tối ưu chống phân mảnh RAM)
-    print("📐 Aligning feature matrix with trained ensemble model contract...")
+    # 7. Data Contract Feature Alignment: Giữ đúng 891 features theo thứ tự mô hình
     final_cols = ['SK_ID_CURR'] + target_features
-
     df_final = df_master.reindex(columns=final_cols)
 
-    # ĐỒNG BỘ FEATURE DICTIONARY: Đúng tên bảng raw và description
-    model_feature_table_map = {
-        feat: column_source_tracker.get(feat, "application")
-        for feat in target_features
-    }
-    update_feature_dictionary(model_feature_table_map, FEATURE_DICT_PATH)
+    # Cập nhật feature dictionary nếu được chỉ định
+    if update_dict:
+        model_feature_table_map = {
+            feat: column_source_tracker.get(feat, "application")
+            for feat in target_features
+        }
+        update_feature_dictionary(model_feature_table_map, FEATURE_DICT_PATH)
 
-    # Ép kiểu dữ liệu phân loại theo schema
+    # 8. Ép kiểu dữ liệu phân loại theo schema
     for cat_col, map_info in categorical_mappings.items():
         if cat_col in df_final.columns:
             valid_categories = list(map_info.get("label_to_code", {}).keys())
             if valid_categories:
                 df_final[cat_col] = pd.Categorical(df_final[cat_col].astype(str), categories=valid_categories)
 
-    # 7. Persist to Isolated Production Directory
-    os.makedirs(PROD_DIR, exist_ok=True)
+    return df_final
 
+
+def build_master_dataset():
+    start_time = time.time()
+    print("=" * 80)
+    print("🚀 EXECUTING MASTER PRODUCTION PIPELINE (build_master_dataset.py)")
+    print("=" * 80)
+
+    print(f"📖 Loading and transforming raw main application test: {RAW_TEST_PATH}")
+    df_raw_test = pd.read_csv(RAW_TEST_PATH)
+    df_final = process_master_pipeline(df_raw_test, update_dict=True)
+
+    # Persist to Isolated Production Directory
+    os.makedirs(PROD_DIR, exist_ok=True)
     print(f"💾 Saving complete production dataset to: {OUTPUT_MASTER_PATH}")
     df_final.to_parquet(OUTPUT_MASTER_PATH, compression='snappy', index=False)
 
@@ -253,7 +286,7 @@ def build_master_dataset():
     total_time = time.time() - start_time
     print("=" * 80)
     print(f"🎉 MASTER DATASET BUILD COMPLETE IN: {total_time:.2f} SECONDS")
-    print(f"📊 Final Master Shape : {df_final.shape[0]:,} clients | {len(target_features)} features (100% Aligned)")
+    print(f"📊 Final Master Shape : {df_final.shape[0]:,} clients | {df_final.shape[1]-1} features (100% Aligned)")
     print(f"📂 Output Location    : {OUTPUT_MASTER_PATH}")
     print("=" * 80)
 

@@ -6,9 +6,34 @@ class RiskBasedPricingEngine:
     def __init__(self, config: Optional[RetailPricingConfig] = None):
         self.config = config or retail_pricing_config
 
-    def compute_baseline_pricing(self, pd_decimal: float, term_months: int) -> Dict[str, Any]:
+    def calculate_monthly_emi(
+        self,
+        principal: float,
+        applied_rate: float,
+        term_months: int,
+    ) -> float:
         """
-        Tính toán lãi suất RBP cho hồ sơ đơn lẻ dựa trên PD và kỳ hạn vay thực tế.
+        Tính toán khoản trả góp hàng tháng (EMI) theo công thức Niên kim (Actuarial EMI):
+        EMI = P * [r_m * (1 + r_m)^n] / [(1 + r_m)^n - 1]
+        """
+        if principal <= 0.0 or term_months <= 0:
+            return 0.0
+        rate_dec = applied_rate / 100.0 if applied_rate > 1.0 else applied_rate
+        r_month = rate_dec / 12.0
+        if r_month > 0:
+            annuity = principal * (r_month * (1 + r_month)**term_months) / ((1 + r_month)**term_months - 1)
+        else:
+            annuity = principal / term_months
+        return round(float(annuity), 1)
+
+    def compute_baseline_pricing(
+        self,
+        pd_decimal: float,
+        term_months: int,
+        principal: Optional[float] = None,
+    ) -> Dict[str, Any]:
+        """
+        Tính toán lãi suất RBP và khoản trả góp EMI cho hồ sơ đơn lẻ dựa trên PD và kỳ hạn vay thực tế.
         """
         r_ftp = self.config.get_ftp_rate(term_months)
         c_opex = self.config.c_opex
@@ -25,16 +50,20 @@ class RiskBasedPricingEngine:
         # Áp sàn/trần thương mại
         applied_rate = max(self.config.r_floor, min(self.config.r_ceiling, raw_rate))
 
-        return {
+        result: Dict[str, Any] = {
             "r_ftp": r_ftp,
             "c_opex": c_opex,
             "s_el": round(s_el, 4),
             "s_capital": s_capital,
             "m_target": m_target,
             "raw_rate": round(raw_rate, 4),
+            "applied_rate": round(applied_rate, 4),
             "applied_rate_percent": round(applied_rate * 100.0, 2),  # vd: 13.25
             "applied_rate_display": f"{applied_rate * 100.0:.2f}%",
         }
+        if principal is not None and principal > 0:
+            result["annuity"] = self.calculate_monthly_emi(principal, applied_rate, term_months)
+        return result
 
     def evaluate_credit_decision(
         self,

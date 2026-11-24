@@ -9,7 +9,7 @@ import reflex as rx
 from src.config.pricing_config import retail_pricing_config
 from src.state.simulator_state import SimulatorState
 from src.engine.credit_scoring import get_scoring_engine
-from src.data_processing.ingestion_service import get_client_row_data
+from src.services.ingestion_service import get_client_row_data
 from src.services.restructuring_service import (
     generate_candidate_pool,
     build_optimization_entry,
@@ -214,7 +214,7 @@ class OptimizationState(SimulatorState):
             self.alternative_options = []
             self.optimization_options = []
             self.show_optimization_results = True
-            self.status_message = "Hồ sơ hiện tại đã đáp ứng hoàn hảo khẩu vị rủi ro. Không yêu cầu tái cơ cấu."
+            self.status_message = "Baseline application satisfies institutional risk appetite. No restructuring required."
             return
 
         # 4. Bắt đầu tìm kiếm phương án cứu hồ sơ DECLINED
@@ -293,6 +293,11 @@ class OptimizationState(SimulatorState):
         credit_val = float(target.get("credit", self.sim_amt_credit))
         term_val = int(target.get("term", self.sim_term_months))
         annuity_val = float(target.get("annuity", self.sim_amt_annuity))
+        income_val = (
+            float(self.sim_amt_income_total)
+            if float(self.sim_amt_income_total or 0.0) > 0
+            else float(self.baseline_amt_income_total or 0.0)
+        )
 
         self.sim_amt_credit = credit_val
         self.sim_amt_credit_str = f"{int(credit_val):,}"
@@ -300,6 +305,7 @@ class OptimizationState(SimulatorState):
         self.sim_term_months_str = str(term_val)
         self.sim_amt_annuity = annuity_val
         self.sim_amt_annuity_str = f"{int(annuity_val):,}"
+        self.sim_dti = round((float(annuity_val) / max(float(income_val), 1.0)) * 100.0, 1)
 
         self.recalculate_simulation_pd()
         self.show_optimization_results = False

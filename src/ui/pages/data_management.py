@@ -300,17 +300,24 @@ def custom_upload_card() -> rx.Component:
                     spacing="1",
                     padding_y="4",
                     padding_x="3",
+                    pointer_events="none",
                 ),
                 id="main_dataset_upload",
-                accept={"text/csv": [".csv"], "application/octet-stream": [".parquet"]},
+                accept={
+                    "text/csv": [".csv"],
+                    "text/plain": [".csv"],
+                    "application/vnd.ms-excel": [".csv"],
+                    "application/octet-stream": [".parquet", ".pq"],
+                    "application/x-parquet": [".parquet", ".pq"],
+                    "application/parquet": [".parquet", ".pq"],
+                },
                 max_files=1,
+                max_size=524288000,
                 border="1px dashed #4F46E5",
                 border_radius="8px",
                 background="#0B0F19",
                 cursor="pointer",
                 width="100%",
-                on_drop=UnderwritingState.reset_alert,
-                on_click=UnderwritingState.reset_alert,
             ),
 
             # Chú thích kỹ thuật thực tế
@@ -333,6 +340,13 @@ def custom_upload_card() -> rx.Component:
                         ),
                         rx.spacer(),
                         rx.badge("READY", color_scheme="green", variant="solid", size="1"),
+                        rx.icon(
+                            "x",
+                            size=14,
+                            color="#94A3B8",
+                            cursor="pointer",
+                            on_click=rx.clear_selected_files("main_dataset_upload"),
+                        ),
                         width="100%",
                         align="center",
                     ),
@@ -563,15 +577,15 @@ def client_registry_table() -> rx.Component:
                                     ),
                                     # TOTAL INCOME
                                     rx.table.cell(
-                                        rx.text(row["INCOME_DISPLAY"], size="1", color="#CBD5E1")
+                                        rx.text(row["INCOME_DISPLAY"], size="1", color="#CBD5E1", font_family="monospace")
                                     ),
                                     # LOAN AMOUNT
                                     rx.table.cell(
-                                        rx.text(row["CREDIT_DISPLAY"], size="1", weight="medium", color="#FFFFFF")
+                                        rx.text(row["CREDIT_DISPLAY"], size="1", weight="medium", color="#FFFFFF", font_family="monospace")
                                     ),
                                     # ANNUITY
                                     rx.table.cell(
-                                        rx.text(row["ANNUITY_DISPLAY"], size="1", color="#94A3B8")
+                                        rx.text(row["ANNUITY_DISPLAY"], size="1", color="#94A3B8", font_family="monospace")
                                     ),
                                     # ACTION (Inspect Client Button)
                                     rx.table.cell(
@@ -669,7 +683,7 @@ def top_alert_banner() -> rx.Component:
                 rx.cond(
                     UnderwritingState.alert_type == "success",
                     rx.icon("bell", size=18, color="#34D399"),
-                    rx.icon("circle_alert", size=18, color="#F87171"),
+                    rx.icon("circle-alert", size=18, color="#F87171"),
                 ),
                 rx.text(
                     UnderwritingState.alert_message,
